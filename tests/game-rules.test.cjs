@@ -1086,7 +1086,7 @@ assert.match(mainSource, /获得<strong>2点英雄技能经验<\/strong>/, "竞�
 // —— 选人英雄与15个存档栏位 ——
 assert.equal(CF.HEROES.length, 12, "选人界面应展示队长、8名可选英雄与3名成就英雄");
 assert.equal(CF.selectableHeroes().length, 9, "除队长外应有8名可选英雄");
-assert.equal(CF.HEROES.filter(hero => hero.locked).length, 3, "两名吸血鬼与狼人应作为未开放的成就英雄");
+assert.equal(CF.HEROES.filter(hero => hero.locked).length, 3, "魅魔、狼人与吸血鬼（原图第6、8、12张）应作为未开放的成就英雄");
 assert.ok(CF.HEROES.filter(hero => hero.locked).every(hero => !hero.name && !hero.skill), "成就英雄暂时只保留头像，不含内容");
 assert.equal(new Set(CF.selectableHeroes().map(hero => hero.skill)).size, 9, "每名可选英雄都应拥有独特的英雄技能");
 CF.HEROES.forEach(hero => assert.ok(fs.existsSync(path.join(root, hero.portrait)), `${hero.id}头像文件应存在`));
@@ -1166,10 +1166,18 @@ assert.equal(sig.currentAttack(sig.state.player.board.front[0]), 5, "血怒狂�
 assert.equal(sig.state.player.board.front[0].ready, true, "血怒狂击后随从可以再次攻击");
 assert.equal(sig.state.player.hp, 28, "血怒狂击应消耗英雄生命");
 
-sig = signatureBattle("crimson_succubus", test => { test.state.enemy.board.back[2] = combatUnit("goblin_archer", { attack: 5, health: 5, maxHealth: 5, keywords: [] }); });
-sig.selectSkill();
-assert.equal(sig.state.enemy.board.back[2].attack, 3, "魅惑之吻应永久夺取攻击力");
-assert.equal(sig.state.player.hp, 32, "魅惑之吻应按夺取的攻击力治疗英雄");
+assert.equal(CF.HEROES.map((hero, index) => hero.locked ? index + 1 : 0).filter(Boolean).join(","), "6,8,12", "成就英雄应为原图第6、8、12张");
+sig = signatureBattle("crimson_hood", test => {
+  test.state.enemy.board.front[0] = combatUnit("goblin_guard", { attack: 2, health: 2, maxHealth: 2, keywords: [] });
+  test.state.enemy.board.front[1] = combatUnit("goblin_guard", { attack: 2, health: 9, maxHealth: 9, keywords: [] });
+});
+sig.selectSkill(); sig.castSkill("front", 0);
+assert.equal(sig.state.enemy.board.front[0], null, "猩红连刃应击杀前排目标");
+assert.equal(sig.state.player.mana, 20, "猩红连刃击杀后应返还法力");
+assert.equal(sig.state.player.skillCooldown, 0, "猩红连刃击杀后本回合可以再次使用");
+sig.selectSkill(); sig.castSkill("front", 1);
+assert.equal(sig.state.player.skillCooldown, 1, "猩红连刃未击杀时进入冷却");
+assert.equal(sig.state.player.mana, 19, "猩红连刃未击杀时正常消耗法力");
 
 sig = signatureBattle("silverleaf_ranger");
 sig.selectSkill();

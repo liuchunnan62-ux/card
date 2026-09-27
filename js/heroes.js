@@ -1,7 +1,8 @@
 (function () {
   "use strict";
 
-  // 可选英雄：护卫队长 + 8名可选英雄 + 3名成就英雄（暂未开放，只展示头像）。
+  // 可选英雄：护卫队长 + 8名可选英雄 + 3名成就英雄（魅魔、狼人、吸血鬼；暂未开放，只展示头像）。
+  // 数组顺序与原始立绘图一致。
   // 每名可选英雄拥有一个独特的英雄技能，新游戏选择英雄后自动解锁并装备。
   const CF = window.CardForge;
   const pick = (value, level) => Array.isArray(value) ? value[Math.max(0, Math.min(2, Number(level || 1) - 1))] : value;
@@ -28,9 +29,9 @@
       playerDescription: level => `英雄失去2点生命，使一个己方随从本回合获得+${pick([2, 3, 4], level)}攻击，并可以立即再次攻击。`
     },
     {
-      id: "sig_charm_kiss", icon: "💋", name: "魅惑之吻", cost: 2, target: "auto", effect: "charm_kiss",
+      id: "sig_crimson_chain", icon: "🗡️", name: "猩红连刃", cost: 1, target: "enemy-front", effect: "crimson_chain",
       amount: [2, 3, 4],
-      playerDescription: level => `使攻击力最高的敌方随从永久失去${pick([2, 3, 4], level)}点攻击，英雄恢复等同于实际夺取攻击力的生命。`
+      playerDescription: level => `对一个敌方前排随从造成${pick([2, 3, 4], level)}点伤害；若击杀目标，返还法力且本回合可以再次使用。`
     },
     {
       id: "sig_forest_ambush", icon: "🍃", name: "林间伏兵", cost: 2, target: "auto", effect: "forest_ambush",
@@ -70,13 +71,15 @@
       id: "horned_berserker", name: "格罗姆", title: "裂角蛮王", portrait: "assets/heroes/horned-berserker.webp", skill: "sig_blood_frenzy",
       bio: "北地部族的蛮王，以自己的鲜血点燃战士的怒火。"
     },
-    {
-      id: "crimson_succubus", name: "莉莉丝", title: "深红魅魔", portrait: "assets/heroes/crimson-succubus.webp", skill: "sig_charm_kiss",
-      bio: "背离魔族联军的魅魔，一个吻就能让最凶猛的敌人放下武器。"
-    },
+    { id: "locked_succubus", locked: true, portrait: "assets/heroes/locked-succubus.webp" },
     {
       id: "silverleaf_ranger", name: "埃尔德", title: "银叶游侠", portrait: "assets/heroes/silverleaf-ranger.webp", skill: "sig_forest_ambush",
       bio: "月林巡林员的首领，总能让敌人在树影里看到不该出现的弓手。"
+    },
+    { id: "locked_werewolf", locked: true, portrait: "assets/heroes/locked-werewolf.webp" },
+    {
+      id: "crimson_hood", name: "瑟拉", title: "猩红刺客", portrait: "assets/heroes/crimson-hood.webp", skill: "sig_crimson_chain",
+      bio: "游走于王都暗巷的刺客，只在一击必杀时才会拔出猩红短刃，而一击之后往往还有下一击。"
     },
     {
       id: "aegis_knight", name: "奥斯坦", title: "银盾骑士", portrait: "assets/heroes/aegis-knight.webp", skill: "sig_aegis_wall",
@@ -86,8 +89,6 @@
       id: "grove_dryad", name: "希尔瓦", title: "森灵德鲁伊", portrait: "assets/heroes/grove-dryad.webp", skill: "sig_sapling",
       bio: "古林之心孕育的德鲁伊，她种下的每一株幼苗都会长成守护森林的古树。"
     },
-    { id: "locked_hood", locked: true, portrait: "assets/heroes/locked-vampire-hood.webp" },
-    { id: "locked_werewolf", locked: true, portrait: "assets/heroes/locked-werewolf.webp" },
     { id: "locked_count", locked: true, portrait: "assets/heroes/locked-vampire-count.webp" }
   ];
 

@@ -272,7 +272,6 @@
       if (skill.effect === "draw" && player.hp <= this.skillValue(skill, "selfDamage")) return this.toast("生命值过低，无法发动这个技能。", "bad");
       if (skill.target === "enemy-any" && !enemyUnits.length) return this.toast("敌方战场上没有随从。", "bad");
       if (skill.effect === "blood_frenzy" && player.hp <= this.skillValue(skill, "selfDamage")) return this.toast("生命值过低，无法发动这个技能。", "bad");
-      if (skill.effect === "charm_kiss" && !enemyUnits.some(unit => this.currentAttack(unit) > 0 && unit.attack > 0)) return this.toast("敌方战场上没有可魅惑的随从。", "bad");
       if (skill.effect === "dawn_revival" && player.hp >= player.maxHp && !friendlyUnits.some(unit => unit.health < unit.maxHealth)) return this.toast("我方英雄与随从都已是满生命。", "bad");
       if (["forest_ambush", "sapling"].includes(skill.effect) && this.allSlotsFull(player.board)) return this.toast("我方战场已经没有空位。", "bad");
       if (skill.effect === "aegis_wall" && !player.board.front.some(Boolean) && this.allSlotsFull(player.board)) return this.toast("我方战场已经没有空位。", "bad");
@@ -1010,17 +1009,15 @@
         this.sound("buff");
         return true;
       }
-      if (skill.effect === "charm_kiss") {
-        const candidates = enemyUnits.filter(item => item.unit.attack > 0)
-          .sort((left, right) => this.currentAttack(right.unit) - this.currentAttack(left.unit));
-        const target = candidates[0]?.unit;
-        if (target) {
-          const stolen = Math.min(target.attack, value("amount"));
-          target.attack -= stolen;
-          const healed = healHero(stolen);
-          this.addLog(`${target.name}被魅惑，永久失去${stolen}点攻击（当前${this.currentAttack(target)}）；英雄恢复${healed}点生命。`, "player");
+      if (skill.effect === "crimson_chain") {
+        const target = enemy.board[row][column];
+        this.damageUnit("enemy", row, column, value("amount"), skill.name, true, "player");
+        if (target && !enemy.board[row][column]) {
+          player.mana = Math.min(player.maxMana, player.mana + skill.cost);
+          player.skillCooldown = 0;
+          this.addLog(`${skill.name}击杀了${target.name}：返还${skill.cost}点法力，本回合可以再次使用。`, "player");
         }
-        this.sound("darkSpell");
+        this.sound("melee");
         return true;
       }
       if (skill.effect === "forest_ambush") {
