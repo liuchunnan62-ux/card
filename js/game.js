@@ -206,6 +206,7 @@
       const text = Emotes?.playerLine(emoteId, Math.random, CF.currentHero?.()?.id);
       this.state.emoteMenuOpen = false;
       if (!text || this.state.ended) return this.render();
+      this.sound("emote");
       const now = Date.now();
       if (now < this.state.emoteReadyAt) return this.render();
       this.state.emoteReadyAt = now + EMOTE_COOLDOWN;
@@ -269,6 +270,7 @@
       const card = this.state.player.hand[index];
       if (!card) return;
       if (this.effectiveCost(card, "player") > this.state.player.mana) return this.toast("法力不足。", "bad");
+      this.sound("cardPick");
       if (card.type === "weapon") return this.equipWeapon("player", index);
       if (card.type === "unit" && this.allSlotsFull(this.state.player.board)) return this.toast("战场已经没有空位。", "bad");
       if ((card.effect === "front_aoe" || card.frontOnly) && !this.state.enemy.board.front.some(Boolean)) return this.toast("敌方前排没有目标。", "bad");
@@ -1346,6 +1348,7 @@
       if (!this.canPlayerAct()) return;
       this.state.selected = null;
       this.state.player.board.front.concat(this.state.player.board.back).filter(Boolean).forEach(unit => { unit.tempAttack = 0; });
+      this.sound("endTurn");
       this.state.phase = "enemy";
       this.state.busy = true;
       this.addLog(`你结束第${this.state.round}回合，保留${this.state.player.hand.length}张手牌；${this.enemyConfig.name}开始行动。`, "player");
@@ -2125,7 +2128,7 @@
       const player = this.state.player;
       this.state.phase = "player";
       this.state.busy = false;
-      if (!initial) this.state.round += 1;
+      if (!initial) { this.state.round += 1; this.sound("turnStart"); }
       player.mana = player.maxMana;
       if (player.weapon) player.weapon.ready = true;
       player.skillCooldown = Math.max(0, player.skillCooldown - 1);

@@ -45,6 +45,17 @@ const CF = context.CardForge;
 const board = CF.emptyBoard();
 assert.ok(CF.SoundFX, "程序化战斗音效系统应加载");
 assert.equal(CF.SoundFX.play("melee"), false, "缺少浏览器音频上下文时音效应安全跳过");
+{
+  const soundSource = fs.readFileSync(path.join(root, "js/sound.js"), "utf8");
+  const used = new Set();
+  for (const file of ["js/main.js", "js/game.js"]) {
+    const source = fs.readFileSync(path.join(root, file), "utf8");
+    for (const match of source.matchAll(/(?:sfx|sound|SoundFX\?\.play)\((?:[^"()]*\?\s*)?"([A-Za-z]+)"(?:\s*:\s*"([A-Za-z]+)")?/g)) match.slice(1).filter(Boolean).forEach(name => used.add(name));
+    for (const match of source.matchAll(/sfx\(\{([^}]*)\}/g)) for (const name of match[1].matchAll(/"([A-Za-z]+)"/g)) used.add(name[1]);
+  }
+  ["bossVictory", "chapterClear", "arenaWin", "arenaChampion", "trialClear", "cardLevelUp", "heroLevelUp", "rescue", "purchase"].forEach(name => assert.ok(used.has(name), `界面应在相应操作时播放${name}音效`));
+  used.forEach(name => assert.match(soundSource, new RegExp(`\\n\\s+${name}: \\(\\) =>`), `音效${name}应在sound.js中定义`));
+}
 assert.ok(CF.Music, "程序化背景音乐系统应加载");
 assert.deepEqual(Object.keys(CF.Music.tracks).sort(), ["adventure", "arena", "menu", "trial"], "主界面、冒险、竞技场与试炼应各有一首背景音乐");
 Object.entries(CF.Music.tracks).forEach(([name, track]) => {
