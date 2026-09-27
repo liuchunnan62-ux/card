@@ -146,7 +146,14 @@
         ${showHome ? '<button class="icon-btn" data-action="home" title="返回主菜单">⌂ 主菜单</button>' : ""}
       </header>`;
     },
-    frame(content, showHome = true) { this.hideAttackArrow(); app.innerHTML = this.topbar(showHome) + content; if (this.screen === "deck") this.decorateDeckRows(); },
+    frame(content, showHome = true) { this.hideAttackArrow(); app.innerHTML = this.topbar(showHome) + content; if (this.screen === "deck") this.decorateDeckRows(); this.syncMusic(); },
+    musicTrack() {
+      if (this.screen !== "battle" || !this.battle) return "menu";
+      if (this.battle.state.ended) return null;
+      const mode = this.battle.enemyConfig?.mode;
+      return mode === "arena" ? "arena" : mode === "trial" ? "trial" : "adventure";
+    },
+    syncMusic() { CF.Music?.setTrack(this.musicTrack()); },
     decorateDeckRows() {
       app.querySelectorAll(".deck-row").forEach(row => {
         const cardId = row.querySelector("[data-card]")?.dataset.card;
@@ -215,7 +222,12 @@
       attackArrowLayer.classList.add("visible");
     },
     syncAttackArrow() { this.updateAttackArrow(Number.NaN, Number.NaN); },
-    toast(message, kind = "") {
+    sfx(name, delay = 0) {
+      if (delay) setTimeout(() => CF.SoundFX?.play(name), delay);
+      else CF.SoundFX?.play(name);
+    },
+    toast(message, kind = "", { quiet = false } = {}) {
+      if (kind === "bad" && !quiet) this.sfx("error");
       const toast = document.createElement("div");
       toast.className = `toast ${kind}`;
       toast.textContent = message;
@@ -247,6 +259,7 @@
       const activeSlot = CF.SaveSystem.activeSlot ? CF.SaveSystem.slotSummary(CF.SaveSystem.activeSlot) : null;
       const canContinue = Boolean(activeSlot && !activeSlot.empty);
       const hasSaves = CF.SaveSystem.listSlots().some(slot => !slot.empty);
+      this.syncMusic();
       app.innerHTML = `<section class="cover-screen" aria-label="裂隙征途游戏封面">
         <div class="cover-shade"></div>
         ${CF.I18n.selectorHTML("cover-language")}
@@ -333,6 +346,7 @@
       CF.SaveSystem.newGame(slot, hero.id);
       this.closeModal();
       this.toast(`${hero.name}已加入远征，进度将保存到栏位${slot}。`, "good");
+      this.sfx("newGame");
       this.startNewRun();
     },
     slotLoad(slot) {
@@ -347,6 +361,7 @@
       if (!CF.SaveSystem.loadSlot(slot)) return this.toast("存档读取失败。", "bad");
       this.closeModal();
       this.toast(`已读取栏位${slot}。`, "good");
+      this.sfx("save");
       this.renderMenu();
     },
     slotSave(slot) {
@@ -361,6 +376,7 @@
       CF.SaveSystem.saveToSlot(slot);
       this.closeModal();
       this.toast(`已保存到栏位${slot}。`, "good");
+      this.sfx("save");
       this.renderSaveSlots("manage");
     },
     slotDelete(slot) {
@@ -537,6 +553,8 @@
       const upgraded = CF.SaveSystem.addCardXp(id, 2);
       this.refreshCardTraining(type, id);
       this.toast(`${card.name}获得2点卡牌经验${upgraded ? `，升至Lv${upgraded.to}` : ""}。`, "good");
+      this.sfx("coins");
+      this.sfx(upgraded ? "cardLevelUp" : "train", 260);
     },
 
     rescueInjured() {
@@ -550,6 +568,7 @@
       const rescued = CF.SaveSystem.rescueInjuredCards();
       if (run) run.hp = run.maxHp;
       CF.SaveSystem.save();
+      this.sfx("rescue");
       this.toast(`${rescued.length ? `已救治${rescued.length}名伤员` : "伤员名单为空"}${run ? "，英雄也已恢复满生命。" : "。"}`, "good");
       if (this.screen === "training") this.renderTraining(); else this.renderMenu();
     },
@@ -673,9 +692,15 @@
       this.screen = "settings";
       const sound = CF.SoundFX;
       const soundVolume = Math.round((sound?.volume ?? 0.58) * 100);
+      const music = CF.Music;
+      const musicVolume = Math.round((music?.volume ?? 0.5) * 100);
       this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">系统</span><h2>设置</h2></div></div>
         <div class="settings-stack">
           <div class="panel language-settings"><div><h3>语言</h3><p>切换游戏界面显示的语言。</p></div>${CF.I18n.selectorHTML()}</div>
+          <div class="panel sound-settings"><div><h3>背景音乐</h3><p>主界面、冒险战斗、竞技场与统领试炼各有一首原创程序化配乐。</p></div>
+            <div class="sound-actions"><button class="secondary-btn" data-action="music-toggle">${music?.muted ? "开启音乐" : "关闭音乐"}</button></div>
+            <label class="sound-volume"><span>音量 <output data-music-output>${musicVolume}%</output></span><input type="range" min="0" max="100" value="${musicVolume}" data-music-volume ${music?.muted ? "disabled" : ""}></label>
+          </div>
           <div class="panel sound-settings"><div><h3>战斗音效</h3><p>近战、远程、法术、死亡和Boss技能均使用不同的原创程序化音效。</p></div>
             <div class="sound-actions"><button class="secondary-btn" data-action="sound-toggle">${sound?.muted ? "开启音效" : "关闭音效"}</button><button class="mini-btn" data-action="sound-preview" ${sound?.muted ? "disabled" : ""}>试听</button></div>
             <label class="sound-volume"><span>音量 <output data-sound-output>${soundVolume}%</output></span><input type="range" min="0" max="100" value="${soundVolume}" data-sound-volume ${sound?.muted ? "disabled" : ""}></label>
@@ -765,6 +790,8 @@
       const trial = CF.Trials.byId(id);
       const result = CF.SaveSystem.completeCommanderTrial(id);
       this.battle = null;
+      this.sfx("trialClear");
+      if (result.firstClear) this.sfx("manaUp", 1300);
       this.modal(`<span class="eyebrow">统领试炼完成</span><h2>${trial.title}的认可</h2><div class="trial-result"><img src="${trial.portrait}" alt="${trial.name}"><div><strong>${trial.name}</strong><p>${result.firstClear ? `首次通关，最大法力永久提高至 ${result.maxMana}。` : "你再次完成了这项试炼；首次通关奖励已经领取。"}</p></div></div><button class="primary-btn" data-modal-action="trial-continue">返回训练场</button>`);
     },
     handleTrialDefeat(battle, id) {
@@ -779,7 +806,7 @@
       if (selectedChapter === 4 && CF.SaveSystem.data.completedRuns < 3) return this.toast("请先击败丰穗战母解锁第四关。", "bad");
       if (selectedChapter === 5 && CF.SaveSystem.data.completedRuns < 4) return this.toast("请先击败碧露大贤者解锁第五关。", "bad");
       if (!this.validateDeck()) return;
-      CF.Adventure.activate(selectedChapter); this.renderMap();
+      CF.Adventure.activate(selectedChapter); this.sfx("march"); this.renderMap();
     },
     startSelectedChapter() {
       const chapter = this.pendingChapter;
@@ -883,6 +910,9 @@
       const xpText = result.skillXp?.amount
         ? `<p class="arena-skill-reward">${trainedSkill.icon} 当前装备的「${trainedSkill.name}」获得<strong>2点英雄技能经验</strong>${levelUpText}。</p>`
         : `<p class="arena-skill-reward">${trainedSkill.icon} 「${trainedSkill.name}」已达到最高Lv3，本场不再累积经验。</p>`;
+      this.sfx(result.champion ? "arenaChampion" : "arenaWin");
+      if (result.skillXp?.to > result.skillXp?.from) this.sfx("heroLevelUp", result.champion ? 2000 : 1300);
+      else if (result.unlockedSkill && !result.alreadyUnlocked) this.sfx("cardLevelUp", 2000);
       const inheritText = result.unlockedSkill
         ? `<p class="arena-skill-inherit">🏆 冠军传承：${result.unlockedSkill.icon} <strong>${result.unlockedSkill.name}</strong>${result.alreadyUnlocked ? "（已拥有）" : "已加入英雄技能收藏，可在英雄档案装备。"}</p>`
         : "";
@@ -1022,6 +1052,7 @@
       const id = ids[Math.floor(Math.random() * ids.length)];
       const upgraded = CF.SaveSystem.addCardXp(id, amount);
       if (upgraded) { CF.Adventure.current().cardsLeveled += 1; this.toast(`${CF.CARD_LIBRARY[id].name}升级至 Lv${upgraded.to}！`, "good"); }
+      this.sfx(upgraded ? "cardLevelUp" : "train");
       return { id, upgraded };
     },
 
@@ -1039,12 +1070,19 @@
       run.earnedCoins += baseGold; run.earnedXp += baseXp;
       const levelUp = CF.SaveSystem.addHeroXp(baseXp);
       const used = [...new Set(battle.state.usedCards)].sort(() => Math.random() - .5).slice(0, 3);
+      let cardUpgraded = false;
       used.forEach(id => {
         const upgraded = CF.SaveSystem.addCardXp(id, 1);
-        if (upgraded) { run.cardsLeveled += 1; this.toast(`${CF.CARD_LIBRARY[id].name}升级至 Lv${upgraded.to}！`, "good"); }
+        if (upgraded) { cardUpgraded = true; run.cardsLeveled += 1; this.toast(`${CF.CARD_LIBRARY[id].name}升级至 Lv${upgraded.to}！`, "good"); }
       });
       CF.Adventure.syncHeroGrowth();
       if (levelUp) this.toast(`英雄升级！Lv${levelUp.from} → Lv${levelUp.to}`, "good");
+      // 胜利结算音效：首领战先奏凯歌，普通战斗是金币声；随后依次是英雄升级与卡牌升级。
+      const bossFight = type === "boss";
+      const fanfare = bossFight ? 1300 : 350;
+      this.sfx(bossFight ? "bossVictory" : "coins");
+      if (levelUp) this.sfx("heroLevelUp", fanfare);
+      if (cardUpgraded) this.sfx("cardLevelUp", fanfare + (levelUp ? 1100 : 0));
       CF.SaveSystem.save();
       const bossCardReward = CF.Adventure.claimActiveWeaponReward() || CF.Adventure.claimActiveChapterTwoCardReward() || CF.Adventure.claimActiveChapterThreeCardReward() || CF.Adventure.claimActiveChapterFourCardReward() || CF.Adventure.claimActiveChapterFiveCardReward();
       const questItemReward = CF.Adventure.claimActiveQueenBloodWaterReward();
@@ -1085,6 +1123,7 @@
       if (reward.type === "heal") run.hp = Math.min(run.maxHp, run.hp + reward.value);
       if (reward.type === "cardXp") this.grantRandomCardXp(reward.value);
       if (reward.type === "newCard") CF.SaveSystem.addCardToCollection(reward.cardId, 1);
+      if (reward.type !== "cardXp") this.sfx({ gold: "coins", heal: "heal", newCard: "cardAdd" }[reward.type] || "reward");
       CF.Adventure.syncHeroGrowth();
       CF.SaveSystem.save();
     },
@@ -1105,6 +1144,7 @@
       if (chapterFive) CF.SaveSystem.data.qianzhiGarrisonUnlocked = true;
       CF.SaveSystem.data.completedRuns = Math.max(CF.SaveSystem.data.completedRuns, run.chapter);
       CF.SaveSystem.save();
+      this.sfx("chapterClear", 150);
       const summaryTitle = chapterFive ? "千枝城的旗帜重新升起" : chapterFour ? "梦幻森林归于寂静" : chapterThree ? "金麦农场的战事落幕" : chapterTwo ? "哥布林王庭陷落" : "密林重见曙光";
       const summaryText = chapterFive ? "你击败银灰狼女猎手后，五位魅魔军官没有继续退避。她们救下狼族首领，以20点攻击的力量击溃小队，并决定在千枝城废墟建立魔族据点、重建这座千年前的共居之城。第五关奖励照常结算，英雄等级上限提升至25级；废墟地图上已经开放可反复挑战的魔族驻军。" : chapterFour ? "你击败了碧露大贤者·涅芙莉，迫使史莱姆族群退回森林深处，并将英雄等级上限提升至20级。" : chapterThree ? "你击败了丰穗战母·布蕾娅，完成第三关并解锁东部梦幻森林与英雄20级上限。" : chapterTwo ? "你击败了翠影女王，完成第二关的二十场首领战，并解锁王城南部的金麦农场与英雄15级上限。" : "你击败了森林狼王，并解锁第二关与英雄10级上限。最大法力只在统领试炼中提升。";
       this.modal(`<span class="eyebrow">冒险总结</span><h2>${summaryTitle}</h2><p>${summaryText}所有永久成长均已保存。</p><div class="summary-list">
@@ -1127,7 +1167,7 @@
     },
     campChoice(choice) {
       const run = CF.Adventure.current();
-      if (choice === "rest") { const before = run.hp; run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * .3)); this.toast(`恢复${run.hp - before}点生命。`, "good"); }
+      if (choice === "rest") { const before = run.hp; run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * .3)); this.toast(`恢复${run.hp - before}点生命。`, "good"); this.sfx("heal"); }
       else this.grantRandomCardXp(2);
       CF.Adventure.finishNode("camp"); this.renderMap();
     },
@@ -1142,17 +1182,17 @@
     eventChoice(index) {
       const choice = this.activeEvent?.choices[index]; const run = CF.Adventure.current();
       if (!choice || !run) return;
-      if (choice.effect === "heal") run.hp = Math.min(run.maxHp, run.hp + choice.value);
-      if (choice.effect === "card") CF.SaveSystem.addCardToCollection(choice.cardId);
+      if (choice.effect === "heal") { run.hp = Math.min(run.maxHp, run.hp + choice.value); this.sfx("heal"); }
+      if (choice.effect === "card") { CF.SaveSystem.addCardToCollection(choice.cardId); this.sfx("cardAdd"); }
       if (choice.effect === "gamble") {
-        if (Math.random() < .5) { CF.SaveSystem.data.coins += 30; run.earnedCoins += 30; this.toast("你找到30金币！", "good"); }
-        else { run.hp = Math.max(1, run.hp - 5); this.toast("埋伏！你受到5点伤害。", "bad"); }
+        if (Math.random() < .5) { CF.SaveSystem.data.coins += 30; run.earnedCoins += 30; this.toast("你找到30金币！", "good"); this.sfx("coins"); }
+        else { run.hp = Math.max(1, run.hp - 5); this.toast("埋伏！你受到5点伤害。", "bad", { quiet: true }); this.sfx("heroHit"); }
       }
       if (choice.effect === "train_paid") {
         if (CF.SaveSystem.data.coins < choice.cost) return this.toast("金币不足。", "bad");
         CF.SaveSystem.data.coins -= choice.cost; this.grantRandomCardXp(2, "unit");
       }
-      if (choice.effect === "crystal_study") { run.hp = Math.max(1, run.hp - 5); this.grantRandomCardXp(choice.value, "spell"); }
+      if (choice.effect === "crystal_study") { this.sfx("heroHit"); run.hp = Math.max(1, run.hp - 5); this.grantRandomCardXp(choice.value, "spell"); }
       if (choice.effect === "spell_xp") this.grantRandomCardXp(choice.value, "spell");
       CF.SaveSystem.save(); CF.Adventure.finishNode("event"); this.renderMap();
     },
@@ -1175,6 +1215,7 @@
       if (item.type === "card") CF.SaveSystem.addCardToCollection(item.cardId);
       if (item.type === "heal") run.hp = Math.min(run.maxHp, run.hp + item.value);
       if (item.type === "xp") this.grantRandomCardXp(item.value);
+      this.sfx("purchase");
       CF.SaveSystem.save(); this.toast("购买成功。", "good"); this.renderShop();
     },
 
@@ -1216,9 +1257,14 @@
     }
   };
 
+  // 没有专属音效的按钮统一发出轻微的点击声。
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "claim-reward", "claim-boss-reward", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
+
   app.addEventListener("click", event => {
     const el = event.target.closest("[data-action]");
     const action = el?.dataset.action;
+    clickSound(el);
     if (UI.battle && action === "player-portrait") return UI.battle.clickPlayerPortrait();
     if (UI.battle && action === "emote") return UI.battle.playerEmote(el.dataset.emote);
     if (UI.battle?.state.emoteMenuOpen) UI.battle.closeEmoteMenu();
@@ -1265,7 +1311,7 @@
     if (action === "arena-battle") UI.startArenaBattle();
     if (action === "hero-page") UI.renderHero();
     if (action === "hero-skill-equip") {
-      if (CF.SaveSystem.equipHeroSkill(el.dataset.skill)) UI.toast(`已装备「${CF.HERO_SKILLS[el.dataset.skill].name}」。`, "good");
+      if (CF.SaveSystem.equipHeroSkill(el.dataset.skill)) { UI.toast(`已装备「${CF.HERO_SKILLS[el.dataset.skill].name}」。`, "good"); UI.sfx("equip"); }
       UI.renderHero();
     }
     if (action === "deck-page") UI.renderDeck();
@@ -1275,6 +1321,7 @@
     if (action === "open-card-training") UI.openCardTraining(el.dataset.cardType);
     if (action === "rescue-injured") UI.rescueInjured();
     if (action === "sound-toggle") { CF.SoundFX?.toggleMuted(); UI.renderSettings(); }
+    if (action === "music-toggle") { CF.Music?.toggleMuted(); UI.renderSettings(UI.settingsReturnScreen); }
     if (action === "sound-preview") {
       CF.SoundFX?.play("melee");
       setTimeout(() => CF.SoundFX?.play("ranged"), 330);
@@ -1282,8 +1329,8 @@
     }
     if (action === "new-run") UI.requestNewRun();
     if (action === "continue-run") UI.renderMap();
-    if (action === "deck-remove") { const index = CF.SaveSystem.data.deck.lastIndexOf(el.dataset.card); if (index >= 0) CF.SaveSystem.data.deck.splice(index,1); CF.SaveSystem.save(); UI.renderDeck(); }
-    if (action === "deck-add" && CF.SaveSystem.data.deck.length < CF.SaveSystem.deckLimit() && !CF.SaveSystem.data.deck.includes(el.dataset.card)) { CF.SaveSystem.data.deck.push(el.dataset.card); CF.SaveSystem.save(); UI.renderDeck(); }
+    if (action === "deck-remove") { const index = CF.SaveSystem.data.deck.lastIndexOf(el.dataset.card); if (index >= 0) { CF.SaveSystem.data.deck.splice(index,1); UI.sfx("cardRemove"); } CF.SaveSystem.save(); UI.renderDeck(); }
+    if (action === "deck-add" && CF.SaveSystem.data.deck.length < CF.SaveSystem.deckLimit() && !CF.SaveSystem.data.deck.includes(el.dataset.card)) { CF.SaveSystem.data.deck.push(el.dataset.card); UI.sfx("cardAdd"); CF.SaveSystem.save(); UI.renderDeck(); }
     if (action === "node") UI.enterNode(Number(el.dataset.choice));
     if (action === "farm-npc") UI.renderFarmNpc();
     if (action === "abandon-run") { UI.modal(`<h2>退出当前关卡？</h2><p>已击败的节点、路线解锁和本轮奖励都会保留。之后点击“继续游戏”即可从当前进度继续。</p><div class="menu-actions"><button class="primary-btn" data-modal-action="confirm-pause-run">保存并退出</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`); return; }
@@ -1332,6 +1379,13 @@
   app.addEventListener("pointercancel", endLevelDrag);
 
   app.addEventListener("input", event => {
+    const musicInput = event.target.closest?.("[data-music-volume]");
+    if (musicInput) {
+      CF.Music?.setVolume(Number(musicInput.value) / 100);
+      const musicOutput = app.querySelector("[data-music-output]");
+      if (musicOutput) musicOutput.textContent = `${musicInput.value}%`;
+      return;
+    }
     const input = event.target.closest?.("[data-sound-volume]");
     if (!input) return;
     const value = Number(input.value);
@@ -1352,6 +1406,7 @@
     if (event.target.classList.contains("card-inspect-modal")) { UI.closeModal(); return; }
     const el = event.target.closest("[data-modal-action]"); if (!el) return;
     const action = el.dataset.modalAction;
+    clickSound(el);
     if (action === "close") {
       const closingTraining = Boolean(modalRoot.querySelector("[data-training-panel]"));
       UI.closeModal();
