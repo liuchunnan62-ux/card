@@ -1376,7 +1376,7 @@
       "遭遇{0}「{1}」。击穿任意一路即可攻击敌方英雄。": "Encontrado {0} \"{1}\". Abre cualquier carril para atacar al héroe enemigo.",
       "对一个敌方前排随从造成{0}点伤害。": "Causa {0} de daño a un esbirro de primera fila enemigo.",
       "{0}牌库耗尽，受到{1}点疲劳伤害，剩余{2}点生命。": "El mazo de {0} está vacío: recibe {1} de daño de agotamiento, {2} de Salud restante.",
-      "{0}的": "{0} 's",
+      "{0}的": "de {0}",
       "{0}手牌已满，{1}被弃掉。": "La mano de {0} está llena; {1} fue descartado.",
       "{0}抽取{1}张牌{2}（手牌{3}/10，牌库{4}）。": "{0} roba {1} cartas{2} (mano {3}/10, mazo {4}).",
       "，替换了{0}": ", reemplazando {0}",
