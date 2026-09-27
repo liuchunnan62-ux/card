@@ -2319,7 +2319,11 @@
       "游走于王都暗巷的刺客，只在一击必杀时才会拔出猩红短刃，而一击之后往往还有下一击。": "Uma assassina dos becos da capital que só saca sua adaga carmesim para um golpe fatal — e a um golpe costuma seguir-se outro.",
       "猩红连刃": "Lâmina carmesim encadeada",
       "对一个敌方前排随从造成{0}点伤害；若击杀目标，返还法力且本回合可以再次使用。": "Causa {0} de dano a um lacaio inimigo da linha de frente; se ele morrer, recupera a mana e esta habilidade pode ser usada de novo neste turno.",
-      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} matou {1}: {2} de mana devolvido, e pode ser usada de novo neste turno."
+      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} matou {1}: {2} de mana devolvido, e pode ser usada de novo neste turno.",
+      "返回主菜单？": "Voltar ao menu principal?",
+      "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Esta batalha será abandonada e precisará ser refeita; nós derrotados, sua coleção e todo o resto do progresso são mantidos.",
+      "放弃战斗并返回": "Abandonar batalha e voltar",
+      "继续战斗": "Continuar lutando"
     },
     "joiners": {
       "": " ",

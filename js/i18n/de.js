@@ -2319,7 +2319,11 @@
       "游走于王都暗巷的刺客，只在一击必杀时才会拔出猩红短刃，而一击之后往往还有下一击。": "Eine Assassinin aus den Gassen der Hauptstadt, die ihren purpurnen Dolch nur für einen tödlichen Stoß zieht – und auf einen Stoß folgt oft der nächste.",
       "猩红连刃": "Purpurne Klingenkette",
       "对一个敌方前排随从造成{0}点伤害；若击杀目标，返还法力且本回合可以再次使用。": "Fügt einem feindlichen Diener der vorderen Reihe {0} Schaden zu; stirbt er, erhältst du das Mana zurück und kannst die Fähigkeit in diesem Zug erneut einsetzen.",
-      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} hat {1} getötet: {2} Mana zurückerstattet, in diesem Zug erneut einsetzbar."
+      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} hat {1} getötet: {2} Mana zurückerstattet, in diesem Zug erneut einsetzbar.",
+      "返回主菜单？": "Zum Hauptmenü zurückkehren?",
+      "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Dieser Kampf wird abgebrochen und muss erneut bestritten werden; besiegte Knoten, deine Sammlung und aller übrige Fortschritt bleiben erhalten.",
+      "放弃战斗并返回": "Kampf abbrechen & zurück",
+      "继续战斗": "Weiterkämpfen"
     },
     "joiners": {
       "": " ",

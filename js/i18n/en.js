@@ -2319,7 +2319,11 @@
       "游走于王都暗巷的刺客，只在一击必杀时才会拔出猩红短刃，而一击之后往往还有下一击。": "An assassin of the capital's back alleys who draws her crimson dagger only for a killing blow—and one kill is often followed by another.",
       "猩红连刃": "Crimson Chain",
       "对一个敌方前排随从造成{0}点伤害；若击杀目标，返还法力且本回合可以再次使用。": "Deal {0} damage to an enemy front-row minion; if it dies, refund the mana and this skill can be used again this turn.",
-      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} killed {1}: {2} mana refunded, and it can be used again this turn."
+      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} killed {1}: {2} mana refunded, and it can be used again this turn.",
+      "返回主菜单？": "Return to the main menu?",
+      "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "This battle will be abandoned and must be fought again; defeated nodes, your collection and all other progress are kept.",
+      "放弃战斗并返回": "Abandon Battle & Return",
+      "继续战斗": "Keep Fighting"
     },
     "joiners": {
       "": " ",
