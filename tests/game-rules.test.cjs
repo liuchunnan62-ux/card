@@ -1227,7 +1227,11 @@ console.log("✓ 63名竞技场英雄独立技能、双端施放与未收集技�
   const Emotes = CF.Emotes;
   const ids = Emotes.list.map(emote => emote.id);
   assert.equal(ids.join(","), "greet,well_played,thanks,wow,sorry,threaten", "表情菜单应提供问候、称赞、感谢、惊叹、抱歉与嘲讽");
-  const sets = [...Object.values(Emotes.CHAPTER_REPLIES), ...Object.values(Emotes.BOSS_REPLIES), Emotes.PLAYER_LINES];
+  const sets = [...Object.values(Emotes.CHAPTER_REPLIES), ...Object.values(Emotes.BOSS_REPLIES), ...Object.values(Emotes.HERO_LINES)];
+  CF.selectableHeroes().forEach(hero => assert.ok(Emotes.HERO_LINES[hero.id], `${hero.name}应拥有专属表情台词`));
+  const heroGreets = CF.selectableHeroes().map(hero => Emotes.HERO_LINES[hero.id].greet.join("|"));
+  assert.equal(new Set(heroGreets).size, heroGreets.length, "每名英雄的问候台词应各不相同");
+  assert.ok(Emotes.HERO_LINES.crimson_hood.threaten.includes(Emotes.playerLine("threaten", Math.random, "crimson_hood")), "应按当前英雄选择表情台词");
   sets.forEach(set => ids.forEach(id => assert.ok(set[id] && [].concat(set[id]).every(Boolean), `每套表情回应都应包含${id}`)));
   assert.equal(Emotes.replySetFor({ ...CF.enemies.goblin_queen, chapter: 2 }), Emotes.BOSS_REPLIES.goblin_queen, "翠影女王应使用专属表情回应");
   assert.equal(Emotes.replySetFor({ id: "chapter3-2", chapter: 3 }), Emotes.CHAPTER_REPLIES[3], "普通关卡应使用所在章节族群的回应");

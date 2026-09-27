@@ -203,7 +203,7 @@
     }
     playerEmote(emoteId) {
       const Emotes = CF.Emotes;
-      const text = Emotes?.playerLine(emoteId);
+      const text = Emotes?.playerLine(emoteId, Math.random, CF.currentHero?.()?.id);
       this.state.emoteMenuOpen = false;
       if (!text || this.state.ended) return this.render();
       const now = Date.now();
