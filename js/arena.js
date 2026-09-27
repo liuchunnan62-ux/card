@@ -287,7 +287,7 @@
     advanceNames: ADVANCE_NAMES,
     rewards: REWARDS,
     participant(id) {
-      if (id === PLAYER_ID) return { id: PLAYER_ID, name: "护卫队长", portrait: "assets/hero/novice-swordsman.png", player: true, skill: HERO_SKILLS[CF.SaveSystem.data.hero.equippedSkill || "slash"] || HERO_SKILLS.slash };
+      if (id === PLAYER_ID) return { id: PLAYER_ID, name: CF.currentHero?.().name || "护卫队长", portrait: CF.currentHero?.().portrait || "assets/hero/novice-swordsman.png", player: true, skill: HERO_SKILLS[CF.SaveSystem.data.hero.equippedSkill || "slash"] || HERO_SKILLS.slash };
       return this.heroes.find(hero => hero.id === id) || null;
     },
     preferredFinalist() {

@@ -3,6 +3,13 @@
 
   const CF = window.CardForge;
   const HERO_PORTRAIT = "assets/hero/novice-swordsman.png";
+  const heroProfile = () => CF.currentHero?.() || { id: "captain", name: "护卫队长", title: "边境剑士", portrait: HERO_PORTRAIT, skill: "slash", bio: "出身边境守军的年轻剑士，善于寻找防线中最薄弱的一环。" };
+  const pad2 = value => String(value).padStart(2, "0");
+  const formatSavedAt = time => {
+    if (!time) return "";
+    const date = new Date(time);
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  };
   const COIN_ICON = '<img class="coin-icon" src="assets/ui/gold-coin.png" alt="金币">';
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
@@ -115,7 +122,7 @@
       return `<header class="topbar">
         <div class="brand"><div class="brand-mark"><span>⚔</span></div><div><h1>裂隙征途</h1><small>RIFT EXPEDITION</small></div></div>
         <div class="top-resources">
-          <span class="resource-chip hero-resource"><img class="resource-avatar" src="${HERO_PORTRAIT}" alt="护卫队长"><strong>Lv${data.hero.level}</strong></span>
+          <span class="resource-chip hero-resource"><img class="resource-avatar" src="${heroProfile().portrait}" alt="${heroProfile().name}"><strong>Lv${data.hero.level}</strong></span>
           <span class="resource-chip">${COIN_ICON}<strong data-resource-coins>${data.coins}</strong></span>
           <span class="resource-chip">✦ <strong>${data.hero.maxMana}</strong> 最大法力</span>
         </div>
@@ -215,7 +222,9 @@
     renderCover() {
       this.screen = "cover"; this.battle = null; this.activeNode = null;
       this.hideAttackArrow();
-      const hasRun = Boolean(CF.SaveSystem.data.run);
+      const activeSlot = CF.SaveSystem.activeSlot ? CF.SaveSystem.slotSummary(CF.SaveSystem.activeSlot) : null;
+      const canContinue = Boolean(activeSlot && !activeSlot.empty);
+      const hasSaves = CF.SaveSystem.listSlots().some(slot => !slot.empty);
       app.innerHTML = `<section class="cover-screen" aria-label="裂隙征途游戏封面">
         <div class="cover-shade"></div>
         ${CF.I18n.selectorHTML("cover-language")}
@@ -224,12 +233,118 @@
           <h1>裂隙征途</h1>
           <p>护卫队长与王国远征军已经整装待发。</p>
           <div class="cover-actions">
-            <button class="cover-button cover-new" data-action="new-run"><span>新游戏</span><small>踏上新的远征</small></button>
-            <button class="cover-button" data-action="continue-run" ${hasRun ? "" : "disabled"}><span>继续游戏</span><small>${hasRun ? "返回当前远征" : "暂无进行中的远征"}</small></button>
+            <button class="cover-button cover-new" data-action="hero-select"><span>新游戏</span><small>选择英雄，踏上新的远征</small></button>
+            <button class="cover-button" data-action="cover-continue" ${canContinue ? "" : "disabled"}><span>继续游戏</span><small>${canContinue ? `栏位${activeSlot.slot} · ${activeSlot.heroName} Lv${activeSlot.level}` : "暂无进行中的存档"}</small></button>
+            <button class="cover-button" data-action="load-slots" ${hasSaves ? "" : "disabled"}><span>读取存档</span><small>${hasSaves ? `共${CF.SAVE_SLOT_COUNT}个存档栏位` : "暂无存档"}</small></button>
             <button class="cover-button" data-action="settings-page"><span>游戏设置</span><small>音效与本地存档</small></button>
           </div>
         </div>
       </section>`;
+    },
+
+    bare(content) { this.hideAttackArrow(); app.innerHTML = content; },
+
+    renderHeroSelect() {
+      this.screen = "hero-select"; this.battle = null; this.activeNode = null;
+      const selectable = CF.selectableHeroes?.() || [];
+      if (!selectable.some(hero => hero.id === this.heroSelectId)) this.heroSelectId = "captain";
+      const chosen = CF.heroById(this.heroSelectId);
+      const skill = CF.HERO_SKILLS[chosen.skill] || CF.HERO_SKILLS.slash;
+      const cards = CF.HEROES.map(hero => hero.locked
+        ? `<button class="hero-pick locked" disabled aria-label="成就英雄，尚未开放"><span class="hero-pick-art"><img src="${hero.portrait}" alt=""></span><strong>？？？</strong><small>🔒 达成特殊成就后解锁</small></button>`
+        : `<button class="hero-pick ${hero.id === chosen.id ? "selected" : ""}" data-action="hero-pick" data-hero="${hero.id}" aria-pressed="${hero.id === chosen.id}"><span class="hero-pick-art"><img src="${hero.portrait}" alt="${hero.name}"></span><strong>${hero.name}</strong><small>${hero.title}</small></button>`).join("");
+      const levels = [1, 2, 3].map(level => `<li><b>Lv${level}</b> ${skill.playerDescription(level)}</li>`).join("");
+      this.bare(`<section class="screen hero-select-screen">
+        <div class="page-heading"><div><span class="eyebrow">新游戏</span><h2>选择英雄</h2></div><p>除护卫队长外还有8名英雄可选，每人拥有独特的英雄技能。</p><button class="secondary-btn back" data-action="cover">返回封面</button></div>
+        <div class="hero-select-layout">
+          <div class="hero-select-grid">${cards}</div>
+          <aside class="panel hero-select-detail">
+            <div class="hero-select-portrait"><img src="${chosen.portrait}" alt="${chosen.name}"></div>
+            <span class="eyebrow">${chosen.title}</span><h3>${chosen.name}</h3><p>${chosen.bio}</p>
+            <div class="hero-select-skill"><strong>${skill.icon} 英雄技能：${skill.name} · ${skill.cost}费</strong><ul>${levels}</ul><small>每回合可使用一次。技能最高3级，可在竞技场中培养。</small></div>
+            <button class="primary-btn" data-action="hero-select-confirm">选择存档栏位</button>
+          </aside>
+        </div>
+      </section>`);
+    },
+
+    renderSaveSlots(mode = "manage") {
+      this.screen = "save-slots"; this.battle = null; this.activeNode = null;
+      this.slotMode = mode;
+      const slots = CF.SaveSystem.listSlots();
+      const chosen = mode === "new" ? CF.heroById(this.heroSelectId) : null;
+      const cards = slots.map(slot => {
+        const label = `栏位 ${pad2(slot.slot)}`;
+        const body = slot.empty
+          ? `<div class="save-slot-empty">空栏位</div>`
+          : `<img src="${slot.portrait}" alt="${slot.heroName}"><div class="save-slot-info"><strong>${slot.heroName} · Lv${slot.level}</strong><small>第${slot.chapter}关 · 节点${slot.chapterCompleted}/${slot.chapterTotal} · 通关${slot.completedRuns}次</small><small>${COIN_ICON} ${slot.coins}${slot.savedAt ? ` · ${formatSavedAt(slot.savedAt)}` : ""}</small></div>`;
+        let actions = "";
+        if (mode === "new") actions = `<button class="mini-btn" data-action="slot-new" data-slot="${slot.slot}">${slot.empty ? "在此开始" : "覆盖并开始"}</button>`;
+        if (mode === "load") actions = `<button class="mini-btn" data-action="slot-load" data-slot="${slot.slot}" ${slot.empty ? "disabled" : ""}>读取</button>`;
+        if (mode === "manage") actions = `<button class="mini-btn" data-action="slot-load" data-slot="${slot.slot}" ${slot.empty || slot.active ? "disabled" : ""}>读取</button><button class="mini-btn" data-action="slot-save" data-slot="${slot.slot}">保存到此</button><button class="mini-btn danger" data-action="slot-delete" data-slot="${slot.slot}" ${slot.empty ? "disabled" : ""}>删除</button>`;
+        return `<article class="save-slot ${slot.empty ? "empty" : ""} ${slot.active ? "active" : ""}"><header><span>${label}</span>${slot.active ? "<em>当前存档</em>" : ""}</header><div class="save-slot-body">${body}</div><div class="save-slot-actions">${actions}</div></article>`;
+      }).join("");
+      const heading = mode === "new" ? "选择存档栏位" : mode === "load" ? "读取存档" : "存档管理";
+      const note = mode === "new"
+        ? `新英雄「${chosen.name}」将从头开始远征。之后的进度会自动保存到所选栏位。`
+        : mode === "load" ? "读取后，之后的进度会自动保存到该栏位。"
+        : `当前进度会自动保存到当前栏位；“保存到此”会把当前进度另存到所选栏位，并以它作为之后的自动保存栏位。`;
+      const back = mode === "new" ? "hero-select" : mode === "load" ? "cover" : "home";
+      const html = `<section class="screen save-slots-screen">
+        <div class="page-heading"><div><span class="eyebrow">${CF.SAVE_SLOT_COUNT}个存档栏位</span><h2>${heading}</h2></div><p>${note}</p>${mode === "manage" ? "" : `<button class="secondary-btn back" data-action="${back}">返回</button>`}</div>
+        <div class="save-slot-grid">${cards}</div>
+      </section>`;
+      if (mode === "manage") this.frame(html);
+      else this.bare(html);
+    },
+
+    slotNew(slot) {
+      const summary = CF.SaveSystem.slotSummary(slot);
+      if (!summary.empty) {
+        this.modal(`<h2>覆盖栏位${slot}？</h2><p>栏位${slot}中${summary.heroName} Lv${summary.level}的存档将被永久删除，并以新英雄重新开始。</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-slot-new" data-slot="${slot}">覆盖并开始</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`);
+        return;
+      }
+      this.startNewGame(slot);
+    },
+    startNewGame(slot) {
+      const hero = CF.heroById(this.heroSelectId);
+      CF.SaveSystem.newGame(slot, hero.id);
+      this.closeModal();
+      this.toast(`${hero.name}已加入远征，进度将保存到栏位${slot}。`, "good");
+      this.startNewRun();
+    },
+    slotLoad(slot) {
+      if (CF.SaveSystem.slotSummary(slot).empty) return;
+      if (!CF.SaveSystem.activeSlot && this.screen === "save-slots" && this.slotMode === "manage") {
+        this.modal(`<h2>读取栏位${slot}？</h2><p>当前进度还没有保存到任何栏位，读取后将会丢失。</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-slot-load" data-slot="${slot}">读取</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`);
+        return;
+      }
+      this.finishSlotLoad(slot);
+    },
+    finishSlotLoad(slot) {
+      if (!CF.SaveSystem.loadSlot(slot)) return this.toast("存档读取失败。", "bad");
+      this.closeModal();
+      this.toast(`已读取栏位${slot}。`, "good");
+      this.renderMenu();
+    },
+    slotSave(slot) {
+      const summary = CF.SaveSystem.slotSummary(slot);
+      if (!summary.empty && !summary.active) {
+        this.modal(`<h2>覆盖栏位${slot}？</h2><p>栏位${slot}中${summary.heroName} Lv${summary.level}的存档将被当前进度覆盖。</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-slot-save" data-slot="${slot}">覆盖保存</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`);
+        return;
+      }
+      this.finishSlotSave(slot);
+    },
+    finishSlotSave(slot) {
+      CF.SaveSystem.saveToSlot(slot);
+      this.closeModal();
+      this.toast(`已保存到栏位${slot}。`, "good");
+      this.renderSaveSlots("manage");
+    },
+    slotDelete(slot) {
+      const summary = CF.SaveSystem.slotSummary(slot);
+      if (summary.empty) return;
+      this.modal(`<h2>删除栏位${slot}？</h2><p>${summary.heroName} Lv${summary.level}的存档将被永久删除。${summary.active ? "这是当前存档：删除后当前进度不会再自动保存到任何栏位。" : ""}</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-slot-delete" data-slot="${slot}">永久删除</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`);
     },
 
     renderMenu() {
@@ -249,7 +364,7 @@
       const chapterDescription = chapter === 5 ? "第五关位于翡翠城南方的古城废墟。灰狼与其他野兽凭借速度和突袭扩张领地，最终迎战银灰狼女猎手。" : chapter === 4 ? "第四关拥有二十个史莱姆首领节点。她们生命厚重、攻击较低并会不断再生；沿发光溪流深入森林，最终面对碧露大贤者·涅芙莉。" : chapter === 3 ? "第三关拥有二十个熊族首领节点与一处农舍。沿农田支路调查被占领的村庄，最终面对丰穗战母·布蕾娅。" : chapter === 2 ? "第二关拥有二十个首领节点。沿着哥布林军团的防线一路推进，最终迎战拥有200生命的翠影女王。" : "在四条前后排战线上部署军队，撕开一路缺口，穿越十三个迷雾森林节点。每一次胜利，都会化为下一次远征的力量。";
       this.frame(`<section class="screen">
         <div class="hero-banner">
-          <div class="hero-portrait" data-label="护卫队长"><div class="crest hero-image"><img src="${HERO_PORTRAIT}" alt="护卫队长"></div></div>
+          <div class="hero-portrait" data-label="${heroProfile().name}"><div class="crest hero-image"><img src="${heroProfile().portrait}" alt="${heroProfile().name}"></div></div>
           <div class="hero-copy"><span class="eyebrow">单机卡牌闯关冒险</span><h2>${chapterHeading}</h2>
             <p>${chapterDescription}</p>
             <div class="menu-actions">
@@ -258,6 +373,7 @@
               ${activeRun ? '<button class="secondary-btn" data-action="new-run">重新开始本关</button>' : ""}
               <button class="secondary-btn" data-action="hero-page">英雄档案</button>
               <button class="secondary-btn" data-action="deck-page">卡组编辑</button>
+              <button class="secondary-btn" data-action="save-slots">存档</button>
               <button class="secondary-btn" data-action="settings-page">设置</button>
             </div>
           </div>
@@ -354,7 +470,9 @@
     renderHero() {
       this.screen = "hero";
       const hero = CF.SaveSystem.data.hero;
-      const unlockedSkills = Object.values(CF.HERO_SKILLS).filter(skill => hero.skillProgress?.[skill.id]?.unlocked);
+      const profile = heroProfile();
+      const obtainableSkills = Object.values(CF.HERO_SKILLS).filter(skill => !CF.isSignatureSkill?.(skill.id) || skill.id === profile.skill);
+      const unlockedSkills = obtainableSkills.filter(skill => hero.skillProgress?.[skill.id]?.unlocked);
       const equippedSkill = CF.HERO_SKILLS[hero.equippedSkill] || CF.HERO_SKILLS.slash;
       const skillCards = unlockedSkills.map(skill => {
         const progress = hero.skillProgress[skill.id];
@@ -376,15 +494,15 @@
       const pct = hero.level >= levelCap ? 100 : Math.max(0, Math.min(100, ((hero.xp - currentFloor) / (next.xp - currentFloor)) * 100));
       this.frame(`<section class="screen">
         <div class="page-heading"><div><span class="eyebrow">永久成长</span><h2>英雄档案</h2></div><p>战斗经验、法力和技能成长会跨冒险保存。</p></div>
-        <div class="panel hero-sheet"><div class="big-crest hero-image"><img src="${HERO_PORTRAIT}" alt="护卫队长"></div><div>
-          <h2>护卫队长 <small>Lv${hero.level}</small></h2><p>出身边境守军的年轻剑士，善于寻找防线中最薄弱的一环。</p>
+        <div class="panel hero-sheet"><div class="big-crest hero-image"><img src="${profile.portrait}" alt="${profile.name}"></div><div>
+          <h2>${profile.name} <small>${profile.title} · Lv${hero.level}</small></h2><p>${profile.bio}</p>
           <div class="stat-grid">
             <div class="stat-box"><small>生命上限</small><strong>♥ ${hero.maxHealth}</strong></div>
             <div class="stat-box"><small>最大法力</small><strong>✦ ${hero.maxMana}</strong></div>
             <div class="stat-box"><small>统领试炼</small><strong>⚔ ${CF.SaveSystem.data.commanderTrials.completed.length}/7</strong></div>
             <div class="stat-box"><small>英雄经验</small><strong>${hero.xp}</strong></div>
             <div class="stat-box"><small>牌组上限</small><strong>${CF.SaveSystem.deckLimit()}张</strong></div>
-            <div class="stat-box"><small>已获技能</small><strong>${unlockedSkills.length}/${Object.keys(CF.HERO_SKILLS).length}</strong></div>
+            <div class="stat-box"><small>已获技能</small><strong>${unlockedSkills.length}/${obtainableSkills.length}</strong></div>
             <div class="stat-box"><small>冒险通关</small><strong>${CF.SaveSystem.data.completedRuns}</strong></div>
           </div>
           <p>${hero.level >= levelCap ? `当前已达到第${levelCap >= 25 ? "五" : levelCap >= 20 ? "四" : levelCap >= 15 ? "三" : levelCap >= 10 ? "二" : "一"}关等级上限 Lv${levelCap}。` : `距离 Lv${hero.level + 1} 还需 ${next.xp - hero.xp} 经验`}</p><div class="progress"><span style="width:${pct}%"></span></div>
@@ -1029,6 +1147,17 @@
       else if (UI.screen === "settings" && UI.settingsReturnScreen === "cover") UI.renderCover();
       else UI.renderMenu();
     }
+    if (action === "cover") UI.renderCover();
+    if (action === "hero-select") UI.renderHeroSelect();
+    if (action === "hero-pick") { UI.heroSelectId = el.dataset.hero; UI.renderHeroSelect(); }
+    if (action === "hero-select-confirm") UI.renderSaveSlots("new");
+    if (action === "load-slots") UI.renderSaveSlots("load");
+    if (action === "save-slots") UI.renderSaveSlots("manage");
+    if (action === "slot-new") UI.slotNew(Number(el.dataset.slot));
+    if (action === "slot-load") UI.slotLoad(Number(el.dataset.slot));
+    if (action === "slot-save") UI.slotSave(Number(el.dataset.slot));
+    if (action === "slot-delete") UI.slotDelete(Number(el.dataset.slot));
+    if (action === "cover-continue") { if (CF.Adventure.current()) UI.renderMap(); else UI.renderMenu(); }
     if (action === "level-select") UI.renderLevelSelect();
     if (action === "toggle-level-layout") UI.beginLevelLayoutEdit();
     if (action === "save-level-layout") UI.saveLevelLayout();
@@ -1139,6 +1268,10 @@
     }
     if (action === "tutorial-done") { CF.SaveSystem.data.tutorialSeen = true; CF.SaveSystem.save(); UI.closeModal(); }
     if (action === "confirm-new-run") UI.startNewRun();
+    if (action === "confirm-slot-new") UI.startNewGame(Number(el.dataset.slot));
+    if (action === "confirm-slot-load") UI.finishSlotLoad(Number(el.dataset.slot));
+    if (action === "confirm-slot-save") UI.finishSlotSave(Number(el.dataset.slot));
+    if (action === "confirm-slot-delete") { CF.SaveSystem.deleteSlot(Number(el.dataset.slot)); UI.closeModal(); UI.toast("存档已删除。", "good"); UI.renderSaveSlots(UI.slotMode || "manage"); }
     if (action === "confirm-pause-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); return; }
     if (action === "confirm-abandon") { CF.Adventure.abandon(); UI.closeModal(); UI.renderMenu(); }
     if (action === "claim-reward") { UI.applyReward(UI.pendingRewards[Number(el.dataset.index)]); UI.finishCombatNode(UI.activeNode.type); }

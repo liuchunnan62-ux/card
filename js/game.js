@@ -50,6 +50,7 @@
       const save = CF.SaveSystem.data;
       const run = CF.Adventure.current();
       const availablePlayerDeck = CF.SaveSystem.availableDeck();
+      const heroProfile = CF.currentHero?.() || { name: "护卫队长", portrait: HERO_PORTRAIT };
       this.state = {
         phase: "player",
         busy: false,
@@ -67,7 +68,7 @@
         bossDialogueShown: {},
         rescueEpilogue: null,
         player: {
-          name: "护卫队长", icon: "🧑‍⚔️", portrait: HERO_PORTRAIT,
+          name: heroProfile.name, icon: "🧑‍⚔️", portrait: heroProfile.portrait,
           hp: enemy.mode === "trial" ? save.hero.maxHealth : (run?.hp ?? save.hero.maxHealth),
           maxHp: enemy.mode === "trial" ? save.hero.maxHealth : (run?.maxHp ?? save.hero.maxHealth),
           mana: save.hero.maxMana, maxMana: save.hero.maxMana, board: emptyBoard(), hand: [], weapon: null,
@@ -269,6 +270,11 @@
       if (skill.effect === "front_aoe" && !this.state.enemy.board.front.some(Boolean) && !this.skillValue(skill, "heroDamage")) return this.toast("敌方前排没有目标。", "bad");
       if (skill.effect === "hero_heal" && player.hp >= player.maxHp && !this.skillValue(skill, "draw")) return this.toast("英雄生命值已经全满。", "bad");
       if (skill.effect === "draw" && player.hp <= this.skillValue(skill, "selfDamage")) return this.toast("生命值过低，无法发动这个技能。", "bad");
+      if (skill.target === "enemy-any" && !enemyUnits.length) return this.toast("敌方战场上没有随从。", "bad");
+      if (skill.effect === "blood_frenzy" && player.hp <= this.skillValue(skill, "selfDamage")) return this.toast("生命值过低，无法发动这个技能。", "bad");
+      if (skill.effect === "dawn_revival" && player.hp >= player.maxHp && !friendlyUnits.some(unit => unit.health < unit.maxHealth)) return this.toast("我方英雄与随从都已是满生命。", "bad");
+      if (["forest_ambush", "sapling"].includes(skill.effect) && this.allSlotsFull(player.board)) return this.toast("我方战场已经没有空位。", "bad");
+      if (skill.effect === "aegis_wall" && !player.board.front.some(Boolean) && this.allSlotsFull(player.board)) return this.toast("我方战场已经没有空位。", "bad");
       this.state.selected = { type: "skill", skillId: skill.id };
       if (skill.target === "auto") return this.castSkill("auto", -1);
       this.render();
@@ -360,7 +366,7 @@
       healer.healUsed = true;
       this.state.selected = null;
       this.sound("heal");
-      this.addLog(`${healer.name}为${targetRow === "hero" ? "护卫队长" : target.name}恢复${after - before}点生命（治疗力${amount}），本回合不能再次治疗。`, "player");
+      this.addLog(`${healer.name}为${targetRow === "hero" ? this.state.player.name : target.name}恢复${after - before}点生命（治疗力${amount}），本回合不能再次治疗。`, "player");
       this.render();
     }
 
@@ -834,6 +840,7 @@
       if (this.state.selected?.type !== "skill" || this.state.selected.skillId !== skill.id) return;
       if (skill.target === "enemy-front" && (row !== "front" || !this.state.enemy.board.front[column])) return this.toast(`${skill.name}只能选择敌方前排随从。`, "bad");
       if (skill.target === "friendly-unit" && !this.state.player.board[row]?.[column]) return this.toast("请选择一个我方随从。", "bad");
+      if (skill.target === "enemy-any" && !this.state.enemy.board[row]?.[column]) return this.toast("请选择一个敌方随从。", "bad");
       this.state.player.mana -= skill.cost;
       this.state.player.skillCooldown = 1;
       this.state.selected = null;
@@ -936,6 +943,8 @@
           this.damageUnit("enemy", enemyUnits[0].row, enemyUnits[0].column, amount + bonus, skill.name, true, "player");
         } else this.state.enemy.hp -= amount;
         this.sound("melee");
+      } else if (this.castSignatureSkill(skill, level, row, column, enemyUnits, playerUnits)) {
+        // 选人英雄的独特技能，逻辑见 castSignatureSkill。
       } else if (skill.effect === "heal_all") {
         this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + heal);
         playerUnits.forEach(({ unit }) => {
@@ -949,6 +958,112 @@
       this.checkOutcome();
       this.render();
     }
+
+    castSignatureSkill(skill, level, row, column, enemyUnits, playerUnits) {
+      const player = this.state.player;
+      const enemy = this.state.enemy;
+      const value = key => this.skillValue(skill, key, level);
+      const healHero = amount => { const before = player.hp; player.hp = Math.min(player.maxHp, player.hp + amount); return player.hp - before; };
+      if (skill.effect === "piercing_arrow") {
+        const target = enemy.board[row][column];
+        this.damageUnit("enemy", row, column, value("amount"), skill.name, true, "player");
+        if (target && !enemy.board[row][column]) {
+          this.addLog(`${skill.name}击杀了${target.name}，你抽1张牌。`, "player");
+          this.draw("player", 1);
+        }
+        this.sound("ranged");
+        return true;
+      }
+      if (skill.effect === "arcane_missiles") {
+        const missiles = Math.max(1, value("count"));
+        const hits = {};
+        for (let index = 0; index < missiles; index += 1) {
+          const targets = [{ hero: true }];
+          ["front", "back"].forEach(targetRow => enemy.board[targetRow].forEach((unit, targetColumn) => {
+            if (unit && unit.health > 0) targets.push({ row: targetRow, column: targetColumn, unit });
+          }));
+          const target = targets[Math.floor(Math.random() * targets.length)];
+          const name = target.hero ? this.enemyConfig.name : target.unit.name;
+          if (target.hero) enemy.hp -= 1;
+          else this.damageUnit("enemy", target.row, target.column, 1, skill.name, false, "player");
+          hits[name] = (hits[name] || 0) + 1;
+        }
+        this.addLog(`${missiles}枚奥术飞弹命中：${Object.entries(hits).map(([name, count]) => `${name}×${count}`).join("、")}。`, "player");
+        this.sound("darkSpell");
+        return true;
+      }
+      if (skill.effect === "dawn_revival") {
+        let restored = 0;
+        playerUnits.forEach(({ unit }) => { restored += Math.max(0, unit.maxHealth - unit.health); unit.health = unit.maxHealth; });
+        const healed = healHero(value("heal"));
+        this.addLog(`晨曦照亮战线：随从共恢复${restored}点生命，英雄恢复${healed}点生命。`, "player");
+        this.sound("heal");
+        return true;
+      }
+      if (skill.effect === "blood_frenzy") {
+        const target = player.board[row][column];
+        player.hp -= value("selfDamage");
+        target.tempAttack = (target.tempAttack || 0) + value("attack");
+        if (target.role !== "healer") { target.ready = true; target.justSummoned = false; }
+        this.addLog(`${target.name}陷入血怒，本回合攻击力提升至${this.currentAttack(target)}${target.role !== "healer" ? "，可以立即攻击" : ""}。`, "player");
+        this.sound("buff");
+        return true;
+      }
+      if (skill.effect === "crimson_chain") {
+        const target = enemy.board[row][column];
+        this.damageUnit("enemy", row, column, value("amount"), skill.name, true, "player");
+        if (target && !enemy.board[row][column]) {
+          player.mana = Math.min(player.maxMana, player.mana + skill.cost);
+          player.skillCooldown = 0;
+          this.addLog(`${skill.name}击杀了${target.name}：返还${skill.cost}点法力，本回合可以再次使用。`, "player");
+        }
+        this.sound("melee");
+        return true;
+      }
+      if (skill.effect === "forest_ambush") {
+        this.placeSignatureToken({ name: "林影弓手", icon: "🏹", attack: value("attack"), health: value("health"), combatStyle: "ranged", keywords: ["远程"], ready: true, preferBack: true, skillId: skill.id });
+        this.sound("summon");
+        return true;
+      }
+      if (skill.effect === "aegis_wall") {
+        const frontUnits = player.board.front.filter(Boolean);
+        if (frontUnits.length) {
+          const bonus = value("health");
+          frontUnits.forEach(unit => { unit.health += bonus; unit.maxHealth += bonus; });
+          this.addLog(`圣盾壁垒加固前排：${frontUnits.length}个随从永久获得+${bonus}生命。`, "player");
+        } else {
+          this.placeSignatureToken({ name: "圣盾卫士", icon: "🛡️", attack: 0, health: value("guard"), keywords: ["守卫"], skillId: skill.id });
+        }
+        this.sound("buff");
+        return true;
+      }
+      if (skill.effect === "sapling") {
+        this.placeSignatureToken({ name: "古树幼苗", icon: "🌱", attack: value("attack"), health: value("health"), keywords: ["生长"], growth: 1, skillId: skill.id });
+        this.sound("summon");
+        return true;
+      }
+      return false;
+    }
+
+    placeSignatureToken(options) {
+      const board = this.state.player.board;
+      const rows = options.preferBack ? ["back", "front"] : ["front", "back"];
+      for (const row of rows) {
+        const column = board[row].findIndex(slot => !slot);
+        if (column < 0) continue;
+        board[row][column] = {
+          uid: `hero-skill-token-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          cardId: `hero_skill_${options.skillId}`, name: options.name, icon: options.icon, image: "assets/cards/recruit.png",
+          attack: options.attack, health: options.health, maxHealth: options.health, level: 1, keywords: [...(options.keywords || [])],
+          combatStyle: options.combatStyle || "melee", role: "", growth: options.growth || 0,
+          ready: Boolean(options.ready), justSummoned: true, tempAttack: 0, healUsed: false
+        };
+        this.addLog(`${options.name}（${options.attack}/${options.health}）加入第${column + 1}路${row === "front" ? "前排" : "后排"}。`, "player");
+        return true;
+      }
+      return false;
+    }
+
 
     summonPlayerSkillToken(name, attack, health, skillId, options = {}) {
       const board = this.state.player.board;
@@ -1038,7 +1153,7 @@
       weapon.durability -= 1;
       const killed = target.health <= 0;
       this.sound(ranged ? "ranged" : "melee");
-      this.addLog(`${attackerSide === "player" ? "护卫队长" : this.enemyConfig.name}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${ranged ? "且不受反击" : `并受到${counter}点反击`}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
+      this.addLog(`${attackerSide === "player" ? this.state.player.name : this.enemyConfig.name}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${ranged ? "且不受反击" : `并受到${counter}点反击`}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
       this.applyWeaponAfterAttack(attackerSide, targetSide, killed);
       this.cleanDead();
       this.finishWeaponUse(attackerSide);
@@ -1056,7 +1171,7 @@
       weapon.durability -= 1;
       this.sound(weapon.combatStyle === "ranged" ? "ranged" : "melee");
       this.sound("heroHit");
-      this.addLog(`${attackerSide === "player" ? "护卫队长" : this.enemyConfig.name}使用${weapon.name}突破战线，对${targetSide === "enemy" ? this.enemyConfig.name : "我方英雄"}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
+      this.addLog(`${attackerSide === "player" ? this.state.player.name : this.enemyConfig.name}使用${weapon.name}突破战线，对${targetSide === "enemy" ? this.enemyConfig.name : "我方英雄"}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
       this.applyWeaponAfterAttack(attackerSide, targetSide, false);
       this.finishWeaponUse(attackerSide);
       this.checkOutcome();
@@ -1962,6 +2077,9 @@
       let regeneratedHealth = 0;
       regeneratingAllies.forEach(unit => { const before = unit.health; unit.health = Math.min(unit.maxHealth, unit.health + 2); regeneratedHealth += unit.health - before; });
       if (regeneratedHealth) this.addLog(`${regeneratingAllies.length}个再生随从在回合开始时共恢复${regeneratedHealth}点生命。`, "player");
+      const growingAllies = [...player.board.front, ...player.board.back].filter(unit => unit?.growth > 0);
+      growingAllies.forEach(unit => { unit.attack += unit.growth; unit.health += unit.growth; unit.maxHealth += unit.growth; });
+      if (growingAllies.length) this.addLog(`${growingAllies.length}株古树幼苗在回合开始时生长，获得+1/+1。`, "player");
       if (!initial && this.state.trial?.id !== 3) this.draw("player", 1);
       CF.Trials?.onPlayerTurn(this);
       this.addLog(`我方第${this.state.round}回合开始：法力恢复为${player.mana}/${player.maxMana}，场上${[...player.board.front, ...player.board.back].filter(Boolean).length}个随从，手牌${player.hand.length}张。`, "player");
@@ -2026,6 +2144,7 @@
       if (selected.type === "skill") {
         const target = this.playerSkill().target;
         if (target === "friendly-unit") return side === "player";
+        if (target === "enemy-any") return side === "enemy";
         return target === "enemy-front" && side === "enemy" && row === "front";
       }
       if (selected.type === "card") {
@@ -2087,7 +2206,12 @@
       if (selected.type === "attacker") return "选择发光的敌方目标；若有突破路线，也可以点击敌方英雄。";
       if (selected.type === "weapon") return "武器已举起：选择敌方随从；若有突破路线，也可以攻击敌方英雄。";
       if (selected.type === "healer") return "选择一个我方随从或你的英雄进行治疗。";
-      if (selected.type === "skill") return this.playerSkill().target === "friendly-unit" ? "选择一个我方随从强化。" : `选择一个敌方前排随从施放${this.playerSkill().name}。`;
+      if (selected.type === "skill") {
+        const skill = this.playerSkill();
+        if (skill.target === "friendly-unit") return "选择一个我方随从强化。";
+        if (skill.target === "enemy-any") return `选择任意一个敌方随从施放${skill.name}。`;
+        return `选择一个敌方前排随从施放${skill.name}。`;
+      }
       const card = this.selectedCard();
       if (card?.type === "unit") return "选择任意绿色空格部署随从。";
       if (["damage", "chain_damage", "execute_draw", "poison", "banish"].includes(card?.effect)) return "选择一个敌方随从。";
