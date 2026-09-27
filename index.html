@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#15110f">
+  <title>裂隙征途 · 卡牌冒险</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div id="app" class="app-shell" aria-live="polite"></div>
+  <div id="toast-root" class="toast-root" aria-live="assertive"></div>
+  <div id="modal-root"></div>
+  <div id="debug-root"></div>
+  <svg id="attack-arrow-layer" class="attack-arrow-layer" aria-hidden="true">
+    <defs>
+      <marker id="attack-arrowhead-shadow" markerWidth="34" markerHeight="30" refX="28" refY="15" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M2,2 L30,15 L2,28 Z" fill="#190807" stroke="#090303" stroke-width="3" />
+      </marker>
+      <marker id="attack-arrowhead" markerWidth="28" markerHeight="24" refX="24" refY="12" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M2,2 L25,12 L2,22 L7,12 Z" fill="#d94f38" stroke="#f0b45d" stroke-width="2" />
+      </marker>
+      <marker id="spell-arrowhead" markerWidth="28" markerHeight="24" refX="24" refY="12" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M2,2 L25,12 L2,22 L7,12 Z" fill="#2d9cff" stroke="#9eefff" stroke-width="2" />
+      </marker>
+      <marker id="skill-arrowhead" markerWidth="28" markerHeight="24" refX="24" refY="12" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M2,2 L25,12 L2,22 L7,12 Z" fill="#f2b84b" stroke="#fff1a8" stroke-width="2" />
+      </marker>
+    </defs>
+    <path id="attack-arrow-shadow" class="attack-arrow-shadow"></path>
+    <path id="attack-arrow" class="attack-arrow"></path>
+  </svg>
+
+  <script src="js/cards.js" defer></script>
+  <script src="js/enemies.js" defer></script>
+  <script src="js/boss-dialogues.js" defer></script>
+  <script src="js/save.js" defer></script>
+  <script src="js/adventure.js" defer></script>
+  <script src="js/trials.js" defer></script>
+  <script src="js/arena.js" defer></script>
+  <script src="js/sound.js" defer></script>
+  <script src="js/game.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

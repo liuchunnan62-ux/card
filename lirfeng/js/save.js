@@ -1,0 +1,323 @@
+(function () {
+  "use strict";
+
+  const KEY = "rift-expedition-save-v1";
+  const CF = window.CardForge;
+  const CHAPTER_IDS = [1, 2, 3, 4, 5];
+  const CHAPTER_NODE_COUNTS = { 1: 13, 2: 20, 3: 20, 4: 20, 5: 20 };
+  const CHAPTER_FIVE_FINALE_PRESET_VERSION = "qianzhi-direct-finale-v1";
+  const HERO_LEVELS = {
+    1: { xp: 0, maxHealth: 30 },
+    2: { xp: 20, maxHealth: 31 },
+    3: { xp: 50, maxHealth: 32 },
+    4: { xp: 90, maxHealth: 33 },
+    5: { xp: 140, maxHealth: 34 },
+    6: { xp: 205, maxHealth: 35 },
+    7: { xp: 285, maxHealth: 36 },
+    8: { xp: 380, maxHealth: 37 },
+    9: { xp: 490, maxHealth: 38 },
+    10: { xp: 620, maxHealth: 39 },
+    11: { xp: 770, maxHealth: 40 },
+    12: { xp: 940, maxHealth: 41 },
+    13: { xp: 1130, maxHealth: 42 },
+    14: { xp: 1340, maxHealth: 43 },
+    15: { xp: 1570, maxHealth: 44 },
+    16: { xp: 1820, maxHealth: 45 },
+    17: { xp: 2090, maxHealth: 46 },
+    18: { xp: 2380, maxHealth: 47 },
+    19: { xp: 2690, maxHealth: 48 },
+    20: { xp: 3020, maxHealth: 49 },
+    21: { xp: 3370, maxHealth: 50 },
+    22: { xp: 3740, maxHealth: 51 },
+    23: { xp: 4130, maxHealth: 52 },
+    24: { xp: 4540, maxHealth: 53 },
+    25: { xp: 4970, maxHealth: 54 }
+  };
+
+  function starterCollection() {
+    return CF.STARTER_IDS.reduce((acc, id) => {
+      acc[id] = CF.STARTER_DECK.filter(cardId => cardId === id).length;
+      return acc;
+    }, {});
+  }
+
+  function initialProgress() {
+    return Object.keys(CF.CARD_LIBRARY).reduce((acc, id) => {
+      acc[id] = { level: 1, xp: 0 };
+      return acc;
+    }, {});
+  }
+
+  function freshSave() {
+    return {
+      version: 2,
+      hero: {
+        level: 1, xp: 0, maxHealth: 30, maxMana: 3,
+        equippedSkill: "slash",
+        skillProgress: { slash: { level: 1, xp: 0, unlocked: true } }
+      },
+      coins: 50,
+      collection: starterCollection(),
+      cardProgress: initialProgress(),
+      deck: [...CF.STARTER_DECK],
+      injuredCards: [],
+      tutorialSeen: false,
+      totalVictories: 0,
+      completedRuns: 0,
+      qianzhiGarrisonUnlocked: false,
+      chapterFiveFinalePreset: CHAPTER_FIVE_FINALE_PRESET_VERSION,
+      weaponBossRewards: {},
+      chapterTwoBossRewards: {},
+      chapterThreeBossRewards: {},
+      chapterFourBossRewards: {},
+      chapterFiveBossRewards: {},
+      questItemRewards: {},
+      items: { queenBloodRiverWater: false },
+      commanderTrials: { completed: [] },
+      levelMapLayout: {},
+      activeChapter: 1,
+      chapterRuns: { 1: null, 2: null, 3: null, 4: null, 5: null },
+      run: null,
+      arena: null
+    };
+  }
+
+  function normalizeRun(source, chapter, heroMaxHealth) {
+    if (!source || typeof source !== "object") return null;
+    const chapterId = CHAPTER_IDS.includes(Number(chapter)) ? Number(chapter) : 1;
+    const nodeCount = CHAPTER_NODE_COUNTS[chapterId];
+    const seen = new Set();
+    const completed = (Array.isArray(source.completed) ? source.completed : []).reduce((entries, entry) => {
+      const stage = Number(entry?.stage);
+      if (!Number.isInteger(stage) || stage < 0 || stage >= nodeCount || seen.has(stage)) return entries;
+      seen.add(stage);
+      entries.push({ stage, type: entry?.type || "normal" });
+      return entries;
+    }, []);
+    const maxHp = Math.max(Number(heroMaxHealth) || 30, Number(source.maxHp) || 0);
+    const savedHp = Number(source.hp);
+    const hp = Number.isFinite(savedHp) && savedHp > 0 ? Math.min(maxHp, savedHp) : maxHp;
+    const cleanCounter = value => Object.fromEntries(Object.entries(value && typeof value === "object" ? value : {})
+      .map(([key, count]) => [String(Number(key)), Math.max(0, Number(count) || 0)])
+      .filter(([key]) => Number.isInteger(Number(key)) && Number(key) >= 0 && Number(key) < nodeCount));
+    return {
+      ...source,
+      chapter: chapterId,
+      stage: Math.max(0, Math.min(nodeCount, Number(source.stage) || completed.length)),
+      hp,
+      maxHp,
+      completed,
+      chosen: source.chosen && typeof source.chosen === "object" ? { ...source.chosen } : {},
+      earnedCoins: Math.max(0, Number(source.earnedCoins) || 0),
+      earnedXp: Math.max(0, Number(source.earnedXp) || 0),
+      cardsLeveled: Math.max(0, Number(source.cardsLeveled) || 0),
+      activeNode: null,
+      attempts: cleanCounter(source.attempts),
+      failures: cleanCounter(source.failures),
+      cleared: source.cleared === true || completed.length >= nodeCount,
+      startedAt: Number(source.startedAt) || Date.now(),
+      lastPlayedAt: Number(source.lastPlayedAt) || Number(source.startedAt) || Date.now(),
+      shopPurchased: source.shopPurchased && typeof source.shopPurchased === "object" ? { ...source.shopPurchased } : {}
+    };
+  }
+
+  function normalize(raw) {
+    const base = freshSave();
+    if (!raw || typeof raw !== "object") return base;
+    const cleanDeck = Array.isArray(raw.deck) ? raw.deck.filter(id => CF.CARD_LIBRARY[id]).filter((id, index, list) => list.indexOf(id) === index) : [...base.deck];
+    if (cleanDeck.length < 24) {
+      base.deck.forEach(id => { if (cleanDeck.length < 24 && !cleanDeck.includes(id)) cleanDeck.push(id); });
+    }
+    const legacySkillLevel = Math.max(1, Math.min(3, raw.hero?.skillLevel || 1));
+    const rawSkillProgress = raw.hero?.skillProgress || {};
+    const result = {
+      ...base, ...raw,
+      chapterFiveFinalePreset: typeof raw.chapterFiveFinalePreset === "string" ? raw.chapterFiveFinalePreset : null,
+      hero: {
+        ...base.hero, ...(raw.hero || {}),
+        equippedSkill: raw.hero?.equippedSkill || "slash",
+        skillProgress: {
+          ...base.hero.skillProgress,
+          ...rawSkillProgress,
+          slash: { level: legacySkillLevel, xp: 0, unlocked: true, ...(rawSkillProgress.slash || {}) }
+        }
+      },
+      collection: { ...base.collection, ...(raw.collection || {}) },
+      weaponBossRewards: { ...base.weaponBossRewards, ...(raw.weaponBossRewards || {}) },
+      chapterTwoBossRewards: { ...base.chapterTwoBossRewards, ...(raw.chapterTwoBossRewards || {}) },
+      chapterThreeBossRewards: { ...base.chapterThreeBossRewards, ...(raw.chapterThreeBossRewards || {}) },
+      chapterFourBossRewards: { ...base.chapterFourBossRewards, ...(raw.chapterFourBossRewards || {}) },
+      chapterFiveBossRewards: { ...base.chapterFiveBossRewards, ...(raw.chapterFiveBossRewards || {}) },
+      questItemRewards: { ...base.questItemRewards, ...(raw.questItemRewards || {}) },
+      items: { ...base.items, ...(raw.items || {}) },
+      levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
+      commanderTrials: {
+        ...base.commanderTrials,
+        ...(raw.commanderTrials || {}),
+        completed: [...new Set((raw.commanderTrials?.completed || []).map(Number).filter(id => id >= 1 && id <= 7))]
+      },
+      cardProgress: { ...base.cardProgress, ...(raw.cardProgress || {}) },
+      deck: cleanDeck,
+      injuredCards: [...new Set((Array.isArray(raw.injuredCards) ? raw.injuredCards : []).filter(id => CF.CARD_LIBRARY[id]?.type === "unit"))]
+    };
+    Object.keys(CF.CARD_LIBRARY).forEach(id => {
+      result.cardProgress[id] = { level: 1, xp: 0, ...(result.cardProgress[id] || {}) };
+    });
+    Object.keys(result.collection).forEach(id => {
+      result.collection[id] = result.collection[id] > 0 ? 1 : 0;
+    });
+    Object.keys(result.hero.skillProgress).forEach(id => {
+      const progress = result.hero.skillProgress[id] || {};
+      progress.level = Math.max(1, Math.min(3, Number(progress.level) || 1));
+      progress.xp = Math.max(0, Number(progress.xp) || 0);
+      while (progress.level < 3 && progress.xp >= progress.level * 3) {
+        progress.xp -= progress.level * 3;
+        progress.level += 1;
+      }
+      if (progress.level >= 3) progress.xp = 0;
+      progress.unlocked = progress.unlocked !== false;
+      result.hero.skillProgress[id] = progress;
+    });
+    if (!result.hero.skillProgress[result.hero.equippedSkill]?.unlocked) result.hero.equippedSkill = "slash";
+    if (Number(result.completedRuns) >= 1) {
+      result.items.queenBloodRiverWater = true;
+      result.questItemRewards.queenBloodRiverWater = true;
+    }
+    const legacyRun = raw.run && typeof raw.run === "object" ? raw.run : null;
+    const storedRuns = raw.chapterRuns && typeof raw.chapterRuns === "object" ? raw.chapterRuns : {};
+    result.chapterRuns = { 1: null, 2: null, 3: null, 4: null, 5: null };
+    CHAPTER_IDS.forEach(chapter => {
+      const source = storedRuns[chapter] || (Number(legacyRun?.chapter) === chapter ? legacyRun : null);
+      result.chapterRuns[chapter] = normalizeRun(source, chapter, result.hero.maxHealth);
+    });
+    result.qianzhiGarrisonUnlocked = raw.qianzhiGarrisonUnlocked === true || result.chapterRuns[5]?.cleared === true || Number(result.completedRuns) >= 5;
+    const fallbackChapter = Number(legacyRun?.chapter) || (Number(result.completedRuns) >= 4 ? 5 : Number(result.completedRuns) >= 3 ? 4 : Number(result.completedRuns) >= 2 ? 3 : Number(result.completedRuns) >= 1 ? 2 : 1);
+    result.activeChapter = CHAPTER_IDS.includes(Number(raw.activeChapter)) ? Number(raw.activeChapter) : fallbackChapter;
+    result.run = result.chapterRuns[result.activeChapter] || null;
+    result.version = 2;
+    delete result.hero.skillLevel;
+    delete result.hero.manaShards;
+    return result;
+  }
+
+  const SaveSystem = {
+    data: null,
+    levelCap() { return this.data?.completedRuns >= 4 ? 25 : this.data?.completedRuns >= 3 ? 20 : this.data?.completedRuns >= 2 ? 15 : this.data?.completedRuns >= 1 ? 10 : 5; },
+    deckLimit() { return 24 + Math.max(0, (this.data?.hero?.level || 1) - 5); },
+    load() {
+      try { this.data = normalize(JSON.parse(localStorage.getItem(KEY))); }
+      catch (error) { this.data = freshSave(); }
+      this.save(false);
+      return this.data;
+    },
+    save(notify = true) {
+      try { localStorage.setItem(KEY, JSON.stringify(this.data)); }
+      catch (error) { console.warn("存档写入失败", error); }
+      if (notify) window.dispatchEvent(new CustomEvent("savechange", { detail: this.data }));
+    },
+    reset() {
+      this.data = freshSave();
+      this.save();
+      return this.data;
+    },
+    addHeroXp(amount) {
+      const hero = this.data.hero;
+      const before = hero.level;
+      hero.xp += Math.max(0, amount);
+      for (let level = this.levelCap(); level >= 1; level -= 1) {
+        if (hero.xp >= HERO_LEVELS[level].xp) { hero.level = level; break; }
+      }
+      const spec = HERO_LEVELS[hero.level];
+      hero.maxHealth += Math.max(0, hero.level - before);
+      this.save();
+      return hero.level > before ? { from: before, to: hero.level, spec } : null;
+    },
+    addCardXp(id, amount) {
+      const progress = this.data.cardProgress[id] || (this.data.cardProgress[id] = { level: 1, xp: 0 });
+      const from = progress.level;
+      progress.xp += Math.max(0, amount);
+      while (progress.level < 5) {
+        const needed = progress.level * 3;
+        if (progress.xp < needed) break;
+        progress.xp -= needed;
+        progress.level += 1;
+      }
+      this.save();
+      return progress.level > from ? { id, from, to: progress.level } : null;
+    },
+    completeCommanderTrial(id) {
+      const trialId = Number(id);
+      if (trialId < 1 || trialId > 7) return null;
+      const progress = this.data.commanderTrials || (this.data.commanderTrials = { completed: [] });
+      if (progress.completed.includes(trialId)) return { id: trialId, firstClear: false, maxMana: this.data.hero.maxMana };
+      progress.completed.push(trialId);
+      progress.completed.sort((a, b) => a - b);
+      this.data.hero.maxMana += 1;
+      this.save();
+      return { id: trialId, firstClear: true, maxMana: this.data.hero.maxMana };
+    },
+    addCardToCollection(id, amount = 1) {
+      if (!CF.CARD_LIBRARY[id]) return;
+      this.data.collection[id] = 1;
+      this.save();
+    },
+    isCardInjured(id) {
+      return this.data.injuredCards?.includes(id) || false;
+    },
+    availableDeck() {
+      const injured = new Set(this.data.injuredCards || []);
+      return this.data.deck.filter(id => !injured.has(id));
+    },
+    injureCard(id) {
+      if (CF.CARD_LIBRARY[id]?.type !== "unit" || !this.data.collection[id]) return false;
+      const injured = this.data.injuredCards || (this.data.injuredCards = []);
+      if (injured.includes(id)) return false;
+      injured.push(id);
+      this.save();
+      return true;
+    },
+    rescueInjuredCards() {
+      const rescued = [...(this.data.injuredCards || [])];
+      this.data.injuredCards = [];
+      this.save();
+      return rescued;
+    },
+    heroSkillProgress(id = this.data.hero.equippedSkill || "slash") {
+      const skills = this.data.hero.skillProgress || (this.data.hero.skillProgress = {});
+      return skills[id] || null;
+    },
+    addHeroSkillXp(amount, id = this.data.hero.equippedSkill || "slash") {
+      const progress = this.heroSkillProgress(id);
+      if (!progress?.unlocked) return null;
+      const from = progress.level;
+      const gained = progress.level >= 3 ? 0 : Math.max(0, amount);
+      progress.xp += gained;
+      while (progress.level < 3) {
+        const needed = progress.level * 3;
+        if (progress.xp < needed) break;
+        progress.xp -= needed;
+        progress.level += 1;
+      }
+      if (progress.level >= 3) progress.xp = 0;
+      this.save();
+      return { id, amount: gained, from, to: progress.level, xp: progress.xp };
+    },
+    unlockHeroSkill(id) {
+      if (!id) return null;
+      const skills = this.data.hero.skillProgress || (this.data.hero.skillProgress = {});
+      const alreadyUnlocked = Boolean(skills[id]?.unlocked);
+      skills[id] = { level: 1, xp: 0, ...(skills[id] || {}), unlocked: true };
+      this.save();
+      return { id, alreadyUnlocked };
+    },
+    equipHeroSkill(id) {
+      if (!this.heroSkillProgress(id)?.unlocked) return false;
+      this.data.hero.equippedSkill = id;
+      this.save();
+      return true;
+    }
+  };
+
+  window.CardForge = window.CardForge || {};
+  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION });
+})();
