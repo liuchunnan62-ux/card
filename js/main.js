@@ -3,7 +3,7 @@
 
   const CF = window.CardForge;
   const HERO_PORTRAIT = "assets/hero/novice-swordsman.png";
-  const heroProfile = () => CF.currentHero?.() || { id: "captain", name: "护卫队长", title: "边境剑士", portrait: HERO_PORTRAIT, skill: "slash", bio: "出身边境守军的年轻剑士，善于寻找防线中最薄弱的一环。" };
+  const heroProfile = () => CF.currentHero?.() || { id: "captain", name: "罗兰·维克", title: "前王都护卫队长", portrait: HERO_PORTRAIT, skill: "slash", bio: "曾任王都护卫队长。野兽接连觉醒后，他认为只守住一座王都远远不够，于是离开王都、集结自己的小队，奔赴各地平定乱局。" };
   const pad2 = value => String(value).padStart(2, "0");
   const formatSavedAt = time => {
     if (!time) return "";
@@ -253,7 +253,7 @@
         <div class="cover-menu">
           <span class="cover-kicker">RIFT EXPEDITION</span>
           <h1>裂隙征途</h1>
-          <p>护卫队长与王国远征军已经整装待发。</p>
+          <p>前王都护卫队长罗兰与他的小队已经整装待发。</p>
           <div class="cover-actions">
             <button class="cover-button cover-new" data-action="hero-select"><span>新游戏</span><small>选择英雄，踏上新的远征</small></button>
             <button class="cover-button" data-action="cover-continue" ${canContinue ? "" : "disabled"}><span>继续游戏</span><small>${canContinue ? `栏位${activeSlot.slot} · ${activeSlot.heroName} Lv${activeSlot.level}` : "暂无进行中的存档"}</small></button>
@@ -277,7 +277,7 @@
         : `<button class="hero-pick ${hero.id === chosen.id ? "selected" : ""}" data-action="hero-pick" data-hero="${hero.id}" aria-pressed="${hero.id === chosen.id}"><span class="hero-pick-art"><img src="${hero.portrait}" alt="${hero.name}"></span><strong>${hero.name}</strong><small>${hero.title}</small></button>`).join("");
       const levels = [1, 2, 3].map(level => `<li><b>Lv${level}</b> ${skill.playerDescription(level)}</li>`).join("");
       this.bare(`<section class="screen hero-select-screen">
-        <div class="page-heading"><div><span class="eyebrow">新游戏</span><h2>选择英雄</h2></div><p>除护卫队长外还有8名英雄可选，每人拥有独特的英雄技能。</p><button class="secondary-btn back" data-action="cover">返回封面</button></div>
+        <div class="page-heading"><div><span class="eyebrow">新游戏</span><h2>选择英雄</h2></div><p>除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。</p><button class="secondary-btn back" data-action="cover">返回封面</button></div>
         <div class="hero-select-layout">
           <div class="hero-select-grid">${cards}</div>
           <aside class="panel hero-select-detail">

@@ -238,7 +238,7 @@
       return { exclusive: false };
     }
     if (trial.id === 6) {
-      const targets = [{ type: "hero", name: "护卫队长" }];
+      const targets = [{ type: "hero", name: battle.state.player.name }];
       ["front", "back"].forEach(row => battle.state.player.board[row].forEach((unit, column) => {
         if (unit) targets.push({ type: "unit", row, column, unit, name: unit.name });
       }));

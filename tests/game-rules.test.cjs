@@ -135,8 +135,10 @@ assert.equal(new Set(Array.from(CF.CHAPTER_FIVE_STAGES, nodes => nodes[0].portra
 Array.from(CF.CHAPTER_FIVE_STAGES, nodes => nodes[0].portrait).forEach(portrait => assert.ok(fs.existsSync(path.join(root, portrait)), `${portrait}应存在于第五关素材中`));
 assert.match(battleCss, /\.boss-map-board\.chapter-five-map\s*\{[^}]*ancient-city-expedition\.png/s, "第五关应使用古城废墟地图");
 assert.match(battleCss, /\.battlefield\.ancient-city-ruins\s*\{[^}]*ancient-city-ruins\.png/s, "第五关战斗应使用新古城废墟背景");
-assert.match(gameJs, /name:\s*"护卫队长"/, "战斗英雄名称应为护卫队长");
-assert.match(mainSource, /护卫队长/, "英雄档案与头像替代文本应使用护卫队长");
+assert.match(gameJs, /name:\s*"罗兰·维克"/, "默认战斗英雄名称应为罗兰·维克");
+assert.equal(CF.heroById("captain").name, "罗兰·维克", "默认英雄应名为罗兰·维克");
+assert.equal(CF.heroById("captain").title, "前王都护卫队长", "罗兰的称号应为前王都护卫队长");
+assert.match(mainSource, /罗兰·维克/, "英雄档案应使用罗兰·维克");
 assert.match(cardsSource, /royal_medic:\s*C\("royal_medic",\s*"王庭医师"[\s\S]*role:\s*"healer"/, "王庭医师应改为治疗随从");
 assert.match(battleCss, /\.battle-screen\s*\{[^}]*animation:\s*none/, "战斗重绘不应触发整屏入场动画");
 assert.doesNotMatch(battleCss, /hitShake/, "受击抖动动画应完全移除");

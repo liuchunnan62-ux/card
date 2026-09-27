@@ -271,7 +271,7 @@
         empty: false,
         active: this.activeSlot === Number(slot),
         heroId: hero?.id || "captain",
-        heroName: hero?.name || "护卫队长",
+        heroName: hero?.name || "罗兰·维克",
         heroTitle: hero?.title || "",
         portrait: hero?.portrait || "assets/hero/novice-swordsman.png",
         level: Math.max(1, Number(raw.hero?.level) || 1),

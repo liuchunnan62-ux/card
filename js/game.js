@@ -53,7 +53,7 @@
       const save = CF.SaveSystem.data;
       const run = CF.Adventure.current();
       const availablePlayerDeck = CF.SaveSystem.availableDeck();
-      const heroProfile = CF.currentHero?.() || { name: "护卫队长", portrait: HERO_PORTRAIT };
+      const heroProfile = CF.currentHero?.() || { name: "罗兰·维克", portrait: HERO_PORTRAIT };
       this.state = {
         phase: "player",
         busy: false,
