@@ -895,6 +895,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .language-select { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #6e5433; border-radius: 8px; background: rgba(28, 19, 16, .86); color: #f3e2bd; }
 .language-select select { min-width: 132px; padding: 6px 8px; border: 1px solid #6e5433; border-radius: 6px; background: #1c1310; color: #f3e2bd; font: inherit; cursor: pointer; }
 .cover-language { position: absolute; top: 18px; right: 18px; z-index: 3; }
+/* 非中文界面：标题本身已是英文副标题的译文，隐藏重复的副标题；拉丁/韩文卡名较长，缩小字号。 */
+html:not(:lang(zh)) .brand small, html:not(:lang(zh)) .cover-kicker { display: none; }
+html:lang(en) .game-card .card-name, html:lang(ko) .game-card .card-name { font-size: 9.5px; letter-spacing: 0; }
+html:lang(en) .game-card:not(.spell) .card-name, html:lang(ko) .game-card:not(.spell) .card-name { margin-left: 6px; margin-right: 6px; }
 .turn-badge { padding: 9px; text-align: center; border-radius: 8px; background: #2f231c; border: 1px solid var(--line); color: var(--gold-bright); }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(4,4,4,.78); display: grid; place-items: center; padding: 20px; backdrop-filter: blur(5px); }

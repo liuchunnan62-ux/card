@@ -3,15 +3,17 @@
 
   // 多语言翻译层：游戏代码照常输出简体中文，本模块在文字显示到页面前将其替换为所选语言。
   // 每种语言的词典位于 js/i18n/<语言代码>.js，通过 CF.I18n.register() 注册：
-  //   exact    —— 完整中文文本 → 译文
-  //   patterns —— 含变量的句式，例如 ["对{0}造成{1}点伤害", "Deal {1} damage to {0}"]
+  //   exact    —— 中文原文 → 译文；原文含 {0}、{value} 等占位符时按句式匹配，
+  //               例如 "对{0}造成{1}点伤害" → "Deal {1} damage to {0}"
+  //   patterns —— （可选）[原文, 译文] 形式的句式列表
   //   chars    —— （可选）逐字替换表，用于繁体中文兜底
   // 变量部分会被递归翻译，因此卡牌名、数字等都能正确显示。
 
   const CF = window.CardForge = window.CardForge || {};
   const STORAGE_KEY = "rift-expedition-language-v1";
   const SOURCE_LANG = "zh-CN";
-  const HAN = /[㐀-鿿]/;
+  const HAN = /[\u3400-\u9fff]/;
+  const SLOT = /\{\w+\}/;
   const LANGUAGES = [
     { code: "zh-CN", label: "简体中文" },
     { code: "zh-TW", label: "繁體中文" },
@@ -43,16 +45,19 @@
   function escapeRegExp(text) { return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
   function compileDictionary(raw) {
-    const exact = new Map(Object.entries(raw.exact || {}));
-    const patterns = (raw.patterns || []).map(([source, target]) => {
+    // 含 {0}、{value} 等占位符的条目按句式处理，其余按完整文本匹配。
+    const entries = Object.entries(raw.exact || {});
+    const exact = new Map(entries.filter(([source]) => !SLOT.test(source)));
+    const patternEntries = entries.filter(([source]) => SLOT.test(source)).concat(raw.patterns || []);
+    const patterns = patternEntries.map(([source, target]) => {
       const order = [];
-      const body = source.split(/(\{\d+\})/).map(part => {
-        const slot = part.match(/^\{(\d+)\}$/);
+      const body = source.split(/(\{\w+\})/).map(part => {
+        const slot = part.match(/^\{(\w+)\}$/);
         if (!slot) return escapeRegExp(part);
-        order.push(Number(slot[1]));
+        order.push(slot[1]);
         return "([\\s\\S]*?)";
       }).join("");
-      return { regex: new RegExp(`^${body}$`), order, target, weight: source.replace(/\{\d+\}/g, "").length };
+      return { regex: new RegExp(`^${body}$`), order, target, weight: source.replace(/\{\w+\}/g, "").length };
     }).sort((a, b) => b.weight - a.weight);
     return {
       exact,
@@ -60,6 +65,7 @@
       chars: raw.chars ? new Map(Object.entries(raw.chars)) : null,
       joiners: raw.joiners || {},
       cache: new Map(),
+      coreCache: new Map(),
       outputs: new Set()
     };
   }
@@ -69,7 +75,8 @@
     { regex: / · /, joinKey: " · " },
     { regex: /、/, joinKey: "、" },
     { regex: /；/, joinKey: "；" },
-    { regex: /，/, joinKey: "，" }
+    { regex: /，/, joinKey: "，" },
+    { regex: /｜/, joinKey: "｜" }
   ];
 
   const I18n = {
@@ -114,8 +121,8 @@
       if (!HAN.test(text) || dict.outputs.has(text)) return text;
       const cached = dict.cache.get(text);
       if (cached !== undefined) return cached;
-      const lead = text.match(/^\s*/)[0];
-      const tail = text.slice(lead.length).match(/\s*$/)[0];
+      const lead = text.match(/^[\s·]*/)[0];
+      const tail = text.slice(lead.length).match(/[\s·]*$/)[0];
       const core = text.slice(lead.length, text.length - tail.length).replace(/\s+/g, " ");
       let result = this.translateCore(dict, core, depth);
       if (result === null) result = dict.chars ? this.convertChars(dict, core) : core;
@@ -125,19 +132,31 @@
       return result;
     },
 
+    // 返回译文；无法完整翻译时返回 null。
     translateCore(dict, text, depth) {
       if (!HAN.test(text)) return text;
       if (dict.exact.has(text)) return dict.exact.get(text);
       if (depth > 6) return null;
+      if (dict.coreCache.has(text)) return dict.coreCache.get(text);
+      const result = this.matchPatterns(dict, text, depth);
+      dict.coreCache.set(text, result);
+      return result;
+    },
+
+    matchPatterns(dict, text, depth) {
       for (const pattern of dict.patterns) {
         const match = pattern.regex.exec(text);
         if (!match) continue;
+        // 变量里的中文也必须能翻译，否则说明句式匹配错位，继续尝试下一个句式。
         const values = {};
-        pattern.order.forEach((slot, index) => {
+        const complete = pattern.order.every((slot, index) => {
           const value = match[index + 1];
-          values[slot] = HAN.test(value) ? this.translateWith(dict, value, depth + 1) : value;
+          values[slot] = HAN.test(value) ? this.translatePart(dict, value.trim(), depth + 1) : value;
+          return values[slot] !== null;
         });
-        return pattern.target.replace(/\{(\d+)\}/g, (_, slot) => values[slot] ?? "");
+        if (!complete) continue;
+        return pattern.target.replace(/\{(\w+)\}/g, (_, slot) => values[slot] ?? "")
+          .replace(/ {2,}/g, " ").replace(/ +([.,;:!?)）])/g, "$1").trim();
       }
       for (const splitter of SPLITTERS) {
         const parts = text.split(splitter.regex);
@@ -145,13 +164,19 @@
         const translated = parts.map(part => {
           const trimmed = part.trim();
           if (!trimmed) return "";
-          return this.translateCore(dict, trimmed, depth + 1);
+          return this.translatePart(dict, trimmed, depth + 1);
         });
         if (translated.some(part => part === null)) continue;
         const joiner = dict.joiners[splitter.joinKey] ?? splitter.joinKey;
         return translated.filter(part => part !== "").join(joiner);
       }
       return null;
+    },
+
+    // 翻译句子的一部分；有逐字转换表（繁体中文）时总能得到结果。
+    translatePart(dict, text, depth) {
+      const result = this.translateCore(dict, text, depth);
+      return result === null && dict.chars ? this.convertChars(dict, text) : result;
     },
 
     convertChars(dict, text) {
