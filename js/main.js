@@ -212,7 +212,12 @@
     },
     closeModal() { modalRoot.innerHTML = ""; },
 
+    confirmLeaveBattle() {
+      if (!this.battle || this.battle.state.ended) return this.leaveCurrentRun();
+      this.modal(`<h2>返回主菜单？</h2><p>当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-leave-battle">放弃战斗并返回</button><button class="secondary-btn" data-modal-action="close">继续战斗</button></div>`);
+    },
     leaveCurrentRun() {
+      this.battle?.abandon();
       if (this.screen === "battle" && CF.Adventure.current()) CF.Adventure.pause();
       this.battle = null;
       this.activeNode = null;
@@ -666,7 +671,7 @@
       if (!trial || !CF.Trials.isUnlocked(id)) return this.toast("这项试炼尚未解锁。", "bad");
       this.screen = "battle";
       this.battle = new CF.Battle(CF.Trials.enemy(id), {
-        onRender: battle => { this.frame(battle.html(), false); this.syncAttackArrow(); },
+        onRender: battle => { this.frame(battle.html()); this.syncAttackArrow(); },
         onToast: (message, kind) => this.toast(message, kind),
         onVictory: battle => this.handleTrialVictory(battle, id),
         onDefeat: battle => this.handleTrialDefeat(battle, id)
@@ -780,7 +785,7 @@
       if (!enemy || !this.validateDeck()) return;
       this.screen = "battle";
       this.battle = new CF.Battle(enemy, {
-        onRender: battle => { this.frame(battle.html(), false); this.syncAttackArrow(); },
+        onRender: battle => { this.frame(battle.html()); this.syncAttackArrow(); },
         onToast: (message, kind) => this.toast(message, kind),
         onVictory: battle => this.handleArenaVictory(battle),
         onDefeat: battle => this.handleArenaDefeat(battle)
@@ -883,7 +888,7 @@
       const enemy = CF.Adventure.encounterFor(type);
       this.activeNode = { ...(this.activeNode || {}), type };
       this.battle = new CF.Battle(enemy, {
-        onRender: battle => { this.frame(battle.html(), false); this.syncAttackArrow(); },
+        onRender: battle => { this.frame(battle.html()); this.syncAttackArrow(); },
         onToast: (message, kind) => this.toast(message, kind),
         onVictory: battle => this.handleVictory(battle, type),
         onDefeat: battle => this.handleDefeat(battle)
@@ -899,7 +904,7 @@
       this.activeNode = { type: "postgame" };
       const injuredBeforeChallenge = [...(CF.SaveSystem.data.injuredCards || [])];
       this.battle = new CF.Battle(CF.enemies.qianzhi_demon_garrison, {
-        onRender: battle => { this.frame(battle.html(), false); this.syncAttackArrow(); },
+        onRender: battle => { this.frame(battle.html()); this.syncAttackArrow(); },
         onToast: (message, kind) => this.toast(message, kind),
         onVictory: () => {
           CF.SaveSystem.data.coins += 500;
@@ -1143,7 +1148,7 @@
       return;
     }
     if (action === "home") {
-      if (UI.screen === "battle" && CF.Adventure.current()) UI.leaveCurrentRun();
+      if (UI.screen === "battle") UI.confirmLeaveBattle();
       else if (UI.screen === "settings" && UI.settingsReturnScreen === "cover") UI.renderCover();
       else UI.renderMenu();
     }
@@ -1268,6 +1273,7 @@
     }
     if (action === "tutorial-done") { CF.SaveSystem.data.tutorialSeen = true; CF.SaveSystem.save(); UI.closeModal(); }
     if (action === "confirm-new-run") UI.startNewRun();
+    if (action === "confirm-leave-battle") { UI.closeModal(); UI.leaveCurrentRun(); }
     if (action === "confirm-slot-new") UI.startNewGame(Number(el.dataset.slot));
     if (action === "confirm-slot-load") UI.finishSlotLoad(Number(el.dataset.slot));
     if (action === "confirm-slot-save") UI.finishSlotSave(Number(el.dataset.slot));

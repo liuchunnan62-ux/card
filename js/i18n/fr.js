@@ -2319,7 +2319,11 @@
       "游走于王都暗巷的刺客，只在一击必杀时才会拔出猩红短刃，而一击之后往往还有下一击。": "Une assassin des ruelles de la capitale qui ne tire sa dague écarlate que pour un coup fatal — et un coup en appelle souvent un autre.",
       "猩红连刃": "Lames écarlates en chaîne",
       "对一个敌方前排随从造成{0}点伤害；若击杀目标，返还法力且本回合可以再次使用。": "Inflige {0} dégâts à un serviteur ennemi de première ligne ; s'il meurt, le mana est rendu et la compétence peut être réutilisée ce tour.",
-      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} a tué {1} : {2} mana rendu, utilisable de nouveau ce tour."
+      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} a tué {1} : {2} mana rendu, utilisable de nouveau ce tour.",
+      "返回主菜单？": "Revenir au menu principal ?",
+      "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Ce combat sera abandonné et devra être rejoué ; les nœuds vaincus, votre collection et le reste de la progression sont conservés.",
+      "放弃战斗并返回": "Abandonner et revenir",
+      "继续战斗": "Continuer le combat"
     },
     "joiners": {
       "": " ",

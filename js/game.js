@@ -183,7 +183,9 @@
     }
     toast(message, kind = "") { this.callbacks.onToast?.(message, kind); }
     sound(name) { CF.SoundFX?.play(name); }
-    render() { this.callbacks.onRender?.(this); }
+    render() { if (!this.abandoned) this.callbacks.onRender?.(this); }
+    // 玩家中途返回主菜单：停止渲染并忽略之后到期的胜负回调。
+    abandon() { this.abandoned = true; this.state.ended = true; this.state.selected = null; }
 
     draw(side, count = 1) {
       const actor = this.state[side];
@@ -2041,7 +2043,7 @@
       this.addLog("四位魅魔军官击溃了小队，但银灰狼女猎手已经被击败：第五关剧情完成，全部战利品与通关奖励照常结算。", "system");
       this.sound("defeat");
       this.render();
-      setTimeout(() => this.callbacks.onVictory?.(this), BOSS_DEFEAT_DIALOGUE_DELAY);
+      setTimeout(() => { if (!this.abandoned) this.callbacks.onVictory?.(this); }, BOSS_DEFEAT_DIALOGUE_DELAY);
       return true;
     }
 
@@ -2057,7 +2059,7 @@
       this.addLog(`两回合已过，四位魅魔军官一同跃入裂隙，带着${this.enemyConfig.name}撤离战场。`, "system");
       this.sound("victory");
       this.render();
-      setTimeout(() => this.callbacks.onVictory?.(this), BOSS_DEFEAT_DIALOGUE_DELAY);
+      setTimeout(() => { if (!this.abandoned) this.callbacks.onVictory?.(this); }, BOSS_DEFEAT_DIALOGUE_DELAY);
       return true;
     }
 
@@ -2104,14 +2106,14 @@
           this.bossSpeak(defeatLine, {}, false);
         }
         this.addLog(`${this.enemyConfig.name}被击败！`);
-        setTimeout(() => this.callbacks.onVictory?.(this), defeatLine ? BOSS_DEFEAT_DIALOGUE_DELAY : 260);
+        setTimeout(() => { if (!this.abandoned) this.callbacks.onVictory?.(this); }, defeatLine ? BOSS_DEFEAT_DIALOGUE_DELAY : 260);
         return true;
       }
       if (this.state.player.hp <= 0) {
         this.state.player.hp = 0; this.state.ended = true; this.state.busy = true;
         this.sound("defeat");
         this.addLog("你的英雄倒下了。冒险结束。");
-        setTimeout(() => this.callbacks.onDefeat?.(this), 260);
+        setTimeout(() => { if (!this.abandoned) this.callbacks.onDefeat?.(this); }, 260);
         return true;
       }
       return false;

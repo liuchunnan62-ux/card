@@ -2319,7 +2319,11 @@
       "游走于王都暗巷的刺客，只在一击必杀时才会拔出猩红短刃，而一击之后往往还有下一击。": "Una asesina de los callejones de la capital que solo desenvaina su daga carmesí para un golpe mortal, y a un golpe suele seguirle otro.",
       "猩红连刃": "Filo carmesí encadenado",
       "对一个敌方前排随从造成{0}点伤害；若击杀目标，返还法力且本回合可以再次使用。": "Inflige {0} de daño a un esbirro enemigo de la primera fila; si muere, recuperas el maná y puedes volver a usar esta habilidad este turno.",
-      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} mató a {1}: se devuelven {2} de maná y puede volver a usarse este turno."
+      "{0}击杀了{1}：返还{2}点法力，本回合可以再次使用。": "{0} mató a {1}: se devuelven {2} de maná y puede volver a usarse este turno.",
+      "返回主菜单？": "¿Volver al menú principal?",
+      "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Esta batalla se abandonará y tendrás que repetirla; los nodos derrotados, tu colección y el resto del progreso se conservan.",
+      "放弃战斗并返回": "Abandonar batalla y volver",
+      "继续战斗": "Seguir luchando"
     },
     "joiners": {
       "": " ",
