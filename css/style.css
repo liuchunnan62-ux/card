@@ -501,7 +501,17 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .combat-hero.player-hero { grid-template-columns: minmax(126px, 1fr) minmax(104px, .8fr) 76px 112px minmax(174px, 1.3fr) minmax(126px, 1fr); grid-template-areas: "skill identity portrait weapon bars end"; min-height: 94px; }
 .player-hero .hero-skill { grid-area: skill; align-self: stretch; }
 .player-hero .combat-identity { grid-area: identity; }
-.player-hero .player-portrait-target { grid-area: portrait; justify-self: center; }
+.player-hero .player-portrait-target { grid-area: portrait; justify-self: center; position: relative; cursor: pointer; }
+.combat-hero.player-hero { position: relative; z-index: 13; }
+.player-portrait-target .combat-portrait { transition: box-shadow .15s ease, transform .15s ease; }
+.player-portrait-target:hover .combat-portrait, .player-portrait-target.emote-open .combat-portrait { box-shadow: 0 0 0 2px rgba(244,195,94,.7), 0 0 16px rgba(244,195,94,.45); transform: scale(1.04); }
+.emote-menu { position: absolute; z-index: 30; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); display: grid; grid-template-columns: repeat(2, minmax(78px, 1fr)); gap: 6px; padding: 8px; border: 2px solid rgba(244,195,94,.9); border-radius: 14px; background: linear-gradient(160deg, rgba(38,24,16,.98), rgba(15,17,25,.97)); box-shadow: 0 10px 28px rgba(0,0,0,.8); cursor: default; }
+.emote-option { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 5px 10px; border: 1px solid rgba(211,164,81,.6); border-radius: 999px; color: #fff3d3; background: rgba(70,45,24,.92); font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.emote-option:hover, .emote-option:focus-visible { border-color: #ffd778; background: rgba(120,78,34,.95); }
+.emote-option.emote-threaten { border-color: rgba(214,87,53,.8); background: rgba(92,30,22,.92); }
+.player-emote-bubble { position: absolute; z-index: 29; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); width: max-content; max-width: min(300px, 70vw); padding: 7px 12px; border: 2px solid #d3a451; border-radius: 12px; color: #2b1c10; background: #fff3d3; font-size: 13px; font-weight: 700; line-height: 1.45; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,.6); pointer-events: none; }
+.player-emote-bubble::after { content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); border: 7px solid transparent; border-top-color: #d3a451; }
+.player-portrait-target.emote-open .player-emote-bubble { display: none; }
 .player-hero .hero-bars { grid-area: bars; }
 .player-hero .player-weapon { grid-area: weapon; }
 .player-hero .end-turn { grid-area: end; align-self: stretch; }

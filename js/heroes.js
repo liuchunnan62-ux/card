@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  // 可选英雄：护卫队长 + 8名可选英雄 + 3名成就英雄（魅魔、狼人、吸血鬼；暂未开放，只展示头像）。
+  // 可选英雄：罗兰（前王都护卫队长）+ 8名可选英雄 + 3名成就英雄（魅魔、狼人、吸血鬼；暂未开放，只展示头像）。
   // 数组顺序与原始立绘图一致。
   // 每名可选英雄拥有一个独特的英雄技能，新游戏选择英雄后自动解锁并装备。
   const CF = window.CardForge;
@@ -52,8 +52,8 @@
 
   const HEROES = [
     {
-      id: "captain", name: "护卫队长", title: "边境剑士", portrait: "assets/hero/novice-swordsman.png", skill: "slash",
-      bio: "出身边境守军的年轻剑士，善于寻找防线中最薄弱的一环。"
+      id: "captain", name: "罗兰·维克", title: "前王都护卫队长", portrait: "assets/hero/novice-swordsman.png", skill: "slash",
+      bio: "曾任王都护卫队长。野兽接连觉醒后，他认为只守住一座王都远远不够，于是离开王都、集结自己的小队，奔赴各地平定乱局。"
     },
     {
       id: "elf_archer", name: "莉瑟尔", title: "翠羽射手", portrait: "assets/heroes/elf-archer.webp", skill: "sig_piercing_arrow",

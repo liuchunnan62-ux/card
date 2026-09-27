@@ -7,6 +7,9 @@
   const BOSS_ACTION_DELAY = 1000;
   const DIALOGUE_EXTRA_DURATION = 3000;
   const BOSS_DIALOGUE_DURATION = 4200 + DIALOGUE_EXTRA_DURATION;
+  const PLAYER_EMOTE_DURATION = 2600;
+  const EMOTE_REPLY_DELAY = 900;
+  const EMOTE_COOLDOWN = 2500;
   const BOSS_DIALOGUE_SEQUENCE_GAP = 1300 + DIALOGUE_EXTRA_DURATION;
   const BOSS_DEFEAT_DIALOGUE_DELAY = 1900 + DIALOGUE_EXTRA_DURATION;
   const INITIAL_BATTLE_HAND = 10;
@@ -50,7 +53,7 @@
       const save = CF.SaveSystem.data;
       const run = CF.Adventure.current();
       const availablePlayerDeck = CF.SaveSystem.availableDeck();
-      const heroProfile = CF.currentHero?.() || { name: "护卫队长", portrait: HERO_PORTRAIT };
+      const heroProfile = CF.currentHero?.() || { name: "罗兰·维克", portrait: HERO_PORTRAIT };
       this.state = {
         phase: "player",
         busy: false,
@@ -67,6 +70,10 @@
         bossDialogueSeq: 0,
         bossDialogueShown: {},
         rescueEpilogue: null,
+        emoteMenuOpen: false,
+        playerEmoteNotice: null,
+        emoteSeq: 0,
+        emoteReadyAt: 0,
         player: {
           name: heroProfile.name, icon: "🧑‍⚔️", portrait: heroProfile.portrait,
           hp: enemy.mode === "trial" ? save.hero.maxHealth : (run?.hp ?? save.hero.maxHealth),
@@ -180,6 +187,55 @@
       const notice = this.state.bossDialogueNotice;
       if (!notice) return "";
       return `<aside class="boss-dialogue-frame" aria-live="polite">${notice.portrait ? `<img src="${notice.portrait}" alt="${notice.name}">` : ""}<div><small>${notice.title}</small><strong>${notice.name}</strong><p>“${notice.text}”</p></div></aside>`;
+    }
+    clickPlayerPortrait() {
+      const selected = this.state.selected;
+      const healsHero = selected?.type === "healer" || (selected?.type === "card" && ["heal", "honey_salve", "slime_mend"].includes(this.selectedCard()?.effect));
+      if (healsHero) return this.clickHero("player");
+      if (selected || this.state.ended) return;
+      this.state.emoteMenuOpen = !this.state.emoteMenuOpen;
+      this.render();
+    }
+    closeEmoteMenu() {
+      if (!this.state.emoteMenuOpen) return;
+      this.state.emoteMenuOpen = false;
+      this.render();
+    }
+    playerEmote(emoteId) {
+      const Emotes = CF.Emotes;
+      const text = Emotes?.playerLine(emoteId, Math.random, CF.currentHero?.()?.id);
+      this.state.emoteMenuOpen = false;
+      if (!text || this.state.ended) return this.render();
+      const now = Date.now();
+      if (now < this.state.emoteReadyAt) return this.render();
+      this.state.emoteReadyAt = now + EMOTE_COOLDOWN;
+      const id = ++this.state.emoteSeq;
+      this.state.playerEmoteNotice = { id, text };
+      this.state.log.unshift({ message: `${this.state.player.name}：“${text}”`, kind: "dialogue", round: this.state.round, enemyTurn: this.state.enemyTurns });
+      this.state.log = this.state.log.slice(0, 100);
+      setTimeout(() => {
+        if (this.state.playerEmoteNotice?.id === id) this.state.playerEmoteNotice = null;
+        if (!this.state.ended) this.render();
+      }, PLAYER_EMOTE_DURATION);
+      const rescue = this.state.rescueEpilogue;
+      const reply = Emotes.replyFor(this.enemyConfig, emoteId, { rescueActive: !!rescue });
+      if (reply) {
+        setTimeout(() => {
+          if (this.state.ended) return;
+          const officers = (rescue?.config?.officers || []).slice(1);
+          const speaker = rescue && officers.length ? officers[Math.floor(Math.random() * officers.length)] : {};
+          this.bossSpeak(reply, speaker);
+        }, EMOTE_REPLY_DELAY);
+      }
+      this.render();
+    }
+    emoteHTML() {
+      const s = this.state;
+      const menu = s.emoteMenuOpen && CF.Emotes
+        ? `<div class="emote-menu" role="menu" aria-label="表情">${CF.Emotes.list.map(emote => `<button class="emote-option emote-${emote.id}" role="menuitem" data-action="emote" data-emote="${emote.id}"><span aria-hidden="true">${emote.icon}</span>${emote.label}</button>`).join("")}</div>`
+        : "";
+      const bubble = s.playerEmoteNotice ? `<div class="player-emote-bubble" aria-live="polite">${s.playerEmoteNotice.text}</div>` : "";
+      return menu + bubble;
     }
     toast(message, kind = "") { this.callbacks.onToast?.(message, kind); }
     sound(name) { CF.SoundFX?.play(name); }
@@ -2315,7 +2371,7 @@
             <div class="combat-hero player-hero ${playerHeroTargetable ? "targetable" : ""}" data-action="hero" data-side="player">
               <button class="hero-skill ${s.selected?.type === "skill" ? "selected" : ""}" data-action="skill" ${s.player.skillCooldown || s.player.mana < playerSkill.cost || s.busy ? "disabled" : ""}><strong>${playerSkill.icon} ${playerSkill.name} · ${playerSkill.cost}费</strong><small>Lv${playerSkill.level}｜${playerSkill.playerDescription(playerSkill.level)}</small></button>
               <div class="combat-identity"><h3>${s.player.name}</h3><small>Lv${CF.SaveSystem.data.hero.level} · 固定法力上限</small></div>
-              <div class="player-portrait-target" data-action="hero" data-side="player">${this.portraitHTML(s.player, "player")}</div>
+              <div class="player-portrait-target ${s.emoteMenuOpen ? "emote-open" : ""}" data-action="player-portrait" title="点击头像发送表情">${this.portraitHTML(s.player, "player")}${this.emoteHTML()}</div>
               <div class="hero-bars"><span class="health-pill">♥ ${s.player.hp}/${s.player.maxHp}</span>${this.manaCrystalsHTML(s.player)}</div>
               ${this.weaponHTML(s.player, "player")}
               <button class="end-turn" data-action="end-turn" ${s.busy || s.ended ? "disabled" : ""}>${s.phase === "player" ? "结束回合" : "敌方行动中"}</button>

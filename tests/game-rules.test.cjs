@@ -31,6 +31,7 @@ function load(file) {
 load("js/cards.js");
 load("js/enemies.js");
 load("js/boss-dialogues.js");
+load("js/emotes.js");
 load("js/save.js");
 load("js/adventure.js");
 load("js/trials.js");
@@ -134,8 +135,10 @@ assert.equal(new Set(Array.from(CF.CHAPTER_FIVE_STAGES, nodes => nodes[0].portra
 Array.from(CF.CHAPTER_FIVE_STAGES, nodes => nodes[0].portrait).forEach(portrait => assert.ok(fs.existsSync(path.join(root, portrait)), `${portrait}应存在于第五关素材中`));
 assert.match(battleCss, /\.boss-map-board\.chapter-five-map\s*\{[^}]*ancient-city-expedition\.png/s, "第五关应使用古城废墟地图");
 assert.match(battleCss, /\.battlefield\.ancient-city-ruins\s*\{[^}]*ancient-city-ruins\.png/s, "第五关战斗应使用新古城废墟背景");
-assert.match(gameJs, /name:\s*"护卫队长"/, "战斗英雄名称应为护卫队长");
-assert.match(mainSource, /护卫队长/, "英雄档案与头像替代文本应使用护卫队长");
+assert.match(gameJs, /name:\s*"罗兰·维克"/, "默认战斗英雄名称应为罗兰·维克");
+assert.equal(CF.heroById("captain").name, "罗兰·维克", "默认英雄应名为罗兰·维克");
+assert.equal(CF.heroById("captain").title, "前王都护卫队长", "罗兰的称号应为前王都护卫队长");
+assert.match(mainSource, /罗兰·维克/, "英雄档案应使用罗兰·维克");
 assert.match(cardsSource, /royal_medic:\s*C\("royal_medic",\s*"王庭医师"[\s\S]*role:\s*"healer"/, "王庭医师应改为治疗随从");
 assert.match(battleCss, /\.battle-screen\s*\{[^}]*animation:\s*none/, "战斗重绘不应触发整屏入场动画");
 assert.doesNotMatch(battleCss, /hitShake/, "受击抖动动画应完全移除");
@@ -1221,3 +1224,34 @@ console.log("✓ 7张武器牌、攻击耐久、远近程与第一关Boss掉落�
 console.log("✓ 四大关独立存档、旧档迁移与战败保留进度测试全部通过");
 console.log("✓ 第四关20个史莱姆首领、20张新卡、路线、再生与20级上限测试全部通过");
 console.log("✓ 63名竞技场英雄独立技能、双端施放与未收集技能决赛匹配测试全部通过");
+
+{
+  const Emotes = CF.Emotes;
+  const ids = Emotes.list.map(emote => emote.id);
+  assert.equal(ids.join(","), "greet,well_played,thanks,wow,sorry,threaten", "表情菜单应提供问候、称赞、感谢、惊叹、抱歉与嘲讽");
+  const sets = [...Object.values(Emotes.CHAPTER_REPLIES), ...Object.values(Emotes.BOSS_REPLIES), ...Object.values(Emotes.HERO_LINES)];
+  CF.selectableHeroes().forEach(hero => assert.ok(Emotes.HERO_LINES[hero.id], `${hero.name}应拥有专属表情台词`));
+  const heroGreets = CF.selectableHeroes().map(hero => Emotes.HERO_LINES[hero.id].greet.join("|"));
+  assert.equal(new Set(heroGreets).size, heroGreets.length, "每名英雄的问候台词应各不相同");
+  assert.ok(Emotes.HERO_LINES.crimson_hood.threaten.includes(Emotes.playerLine("threaten", Math.random, "crimson_hood")), "应按当前英雄选择表情台词");
+  sets.forEach(set => ids.forEach(id => assert.ok(set[id] && [].concat(set[id]).every(Boolean), `每套表情回应都应包含${id}`)));
+  assert.equal(Emotes.replySetFor({ ...CF.enemies.goblin_queen, chapter: 2 }), Emotes.BOSS_REPLIES.goblin_queen, "翠影女王应使用专属表情回应");
+  assert.equal(Emotes.replySetFor({ id: "chapter3-2", chapter: 3 }), Emotes.CHAPTER_REPLIES[3], "普通关卡应使用所在章节族群的回应");
+  assert.equal(Emotes.replySetFor(CF.Trials.enemy(7)), Emotes.BOSS_REPLIES.queen_iselanda, "女王低语试炼应由伊瑟兰妲回应");
+  assert.equal(Emotes.replySetFor(CF.enemies.wolf_king, true), Emotes.BOSS_REPLIES.succubus_officers, "魅魔军官救援时应由军官回应");
+  assert.ok(indexSource.indexOf("js/emotes.js") > indexSource.indexOf("js/boss-dialogues.js"), "游戏入口应加载表情配置");
+
+  const emoteBattle = new CF.Battle({ ...CF.enemies.goblin_queen, chapter: 2, dialogue: null });
+  emoteBattle.render = () => {};
+  emoteBattle.clickPlayerPortrait();
+  assert.equal(emoteBattle.state.emoteMenuOpen, true, "点击我方头像应打开表情菜单");
+  assert.match(emoteBattle.html(), /data-action="emote" data-emote="threaten"/, "表情菜单应渲染在我方头像旁");
+  emoteBattle.playerEmote("greet");
+  assert.equal(emoteBattle.state.emoteMenuOpen, false, "发送表情后菜单应关闭");
+  assert.ok(Emotes.PLAYER_LINES.greet.includes(emoteBattle.state.playerEmoteNotice.text), "我方应说出问候台词");
+  const firstNotice = emoteBattle.state.playerEmoteNotice.id;
+  emoteBattle.playerEmote("threaten");
+  assert.equal(emoteBattle.state.playerEmoteNotice.id, firstNotice, "表情冷却期间不应连续刷屏");
+  emoteBattle.state.ended = true;
+}
+console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
