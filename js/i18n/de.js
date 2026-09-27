@@ -500,7 +500,7 @@
       "再守一轮。只要你还在呼吸，阵线就没有失守。": "Halt noch eine Runde. Solange du noch atmest, ist die Linie nicht gefallen.",
       "罗德里克·瓦伦": "Roderick Valen",
       "铁锋教官": "Eisenkante-Ausbilder",
-      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶与战斗怒吼。破阵并一回合斩首。": "Tötungslinie: Du hast nur 1 Leben, einen 1/1-Diener, der angreifen kann, Feuer-Flasche und Kriegsschrei. Brich die Formation und nimm den Kopf in einem Zug.",
+      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶、战斗怒吼与前线突击。破阵并一回合斩首。": "Tötungslinie: Du hast nur 1 Leben, einen angriffsbereiten 1/1-Diener, Feuer-Flasche, Kriegsgeschrei und Frontsturm. Brich die Formation und enthaupte in einem Zug.",
       "固定残局：火焰瓶烧开阵势，战斗怒吼强化1/1；两张牌都用过后，3攻随从可越阵斩首。": "Fixiertes Endspiel: Feuer-Flasche brennt die Formation auf, Kriegsschrei stärkt die 1/1; sobald beide Karten verwendet sind, kann der 3-Angriff-Diener den Kopf an der Formation vorbei schlagen.",
       "一线斩首": "Ein-Linie-Enthauptung",
       "火焰瓶与战斗怒吼都使用后，3攻随从可以无视阵线攻击教官。": "Nach Verwendung von Feuer-Flasche und Kriegsschrei kann ein 3-Angriff-Diener die Linien ignorieren, um den Ausbilder anzugreifen.",
@@ -2323,7 +2323,11 @@
       "返回主菜单？": "Zum Hauptmenü zurückkehren?",
       "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Dieser Kampf wird abgebrochen und muss erneut bestritten werden; besiegte Knoten, deine Sammlung und aller übrige Fortschritt bleiben erhalten.",
       "放弃战斗并返回": "Kampf abbrechen & zurück",
-      "继续战斗": "Weiterkämpfen"
+      "继续战斗": "Weiterkämpfen",
+      "前线突击": "Frontsturm",
+      "对一个敌方前排随从造成3点伤害。": "Fügt einem feindlichen Diener der vorderen Reihe 3 Schaden zu.",
+      "选择一个敌方前排随从。": "Wähle einen feindlichen Diener der vorderen Reihe.",
+      "试炼": "Prüfung"
     },
     "joiners": {
       "": " ",

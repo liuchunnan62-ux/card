@@ -215,7 +215,7 @@
       if (this.effectiveCost(card, "player") > this.state.player.mana) return this.toast("法力不足。", "bad");
       if (card.type === "weapon") return this.equipWeapon("player", index);
       if (card.type === "unit" && this.allSlotsFull(this.state.player.board)) return this.toast("战场已经没有空位。", "bad");
-      if (card.effect === "front_aoe" && !this.state.enemy.board.front.some(Boolean)) return this.toast("敌方前排没有目标。", "bad");
+      if ((card.effect === "front_aoe" || card.frontOnly) && !this.state.enemy.board.front.some(Boolean)) return this.toast("敌方前排没有目标。", "bad");
       if (["damage", "chain_damage", "execute_draw", "poison", "row_blast", "banish", "bear_paw", "bee_swarm", "earth_tremor", "viscous_prison", "forest_engulfment"].includes(card.effect) && ![...this.state.enemy.board.front, ...this.state.enemy.board.back].some(Boolean)) return this.toast("敌方战场上没有目标。", "bad");
       if (["summon_recruits", "goblin_tide", "queen_final", "bear_ambush", "bear_god", "slime_division", "verdant_flood", "all_returns_to_gel"].includes(card.effect) && this.allSlotsFull(this.state.player.board)) return this.toast("战场已经没有空位。", "bad");
       if (card.effect === "rescue" && ![...this.state.player.board.front, ...this.state.player.board.back].some(unit => unit && CF.CARD_LIBRARY[unit.cardId])) return this.toast("没有可以撤回的友方随从。", "bad");
@@ -507,6 +507,7 @@
       const target = row === "hero" ? this.state.player : this.state[side]?.board?.[row]?.[column];
       if (card.effect === "damage") {
         if (side !== "enemy" || !target) return this.toast("请选择一个敌方随从。", "bad");
+        if (card.frontOnly && row !== "front") return this.toast(`${card.name}只能选择敌方前排随从。`, "bad");
         this.spendCard(selected.index);
         this.sound(card.id.includes("fire") ? "fire" : "darkSpell");
         this.addLog(`你施放${card.name}（${card.cost}费，剩余${this.state.player.mana}/${this.state.player.maxMana}法力），目标为第${column + 1}路${row === "front" ? "前排" : "后排"}的${target.name}。`, "player");
@@ -2152,6 +2153,7 @@
       if (selected.type === "card") {
         const card = this.selectedCard();
         if (!card) return false;
+        if (card.frontOnly) return side === "enemy" && row === "front";
         if (["damage", "chain_damage", "execute_draw", "poison", "row_blast", "banish", "bear_paw"].includes(card.effect)) return side === "enemy";
         if (card.effect === "front_aoe") return side === "enemy" && row === "front";
         if (["heal", "buff", "swap_stats", "fortify", "rescue", "honey_salve", "growth_blessing", "slime_mend", "gel_barrier"].includes(card.effect)) return side === "player";
@@ -2216,6 +2218,7 @@
       }
       const card = this.selectedCard();
       if (card?.type === "unit") return "选择任意绿色空格部署随从。";
+      if (card?.frontOnly) return "选择一个敌方前排随从。";
       if (["damage", "chain_damage", "execute_draw", "poison", "banish"].includes(card?.effect)) return "选择一个敌方随从。";
       if (card?.effect === "row_blast") return "选择敌方任意一排上的随从。";
       if (card?.effect === "heal") return "选择友方随从或你的英雄。";

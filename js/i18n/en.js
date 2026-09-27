@@ -492,7 +492,7 @@
       "再守一轮。只要你还在呼吸，阵线就没有失守。": "Hold one more round. As long as you're still breathing, the line hasn't fallen.",
       "罗德里克·瓦伦": "Roderick Valen",
       "铁锋教官": "Ironedge Instructor",
-      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶与战斗怒吼。破阵并一回合斩首。": "Kill Line: you have only 1 Health, a 1/1 minion that can attack, Fire Flask and Battle Cry. Break the formation and take the head in one turn.",
+      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶、战斗怒吼与前线突击。破阵并一回合斩首。": "Kill Line: you have only 1 Health, a 1/1 minion that can attack, Fire Flask, Battle Cry and Frontline Strike. Break the formation and take the head in one turn.",
       "固定残局：火焰瓶烧开阵势，战斗怒吼强化1/1；两张牌都用过后，3攻随从可越阵斩首。": "Fixed endgame: Fire Flask burns open the formation, Battle Cry empowers the 1/1; once both cards are used, the 3-Attack minion can strike the head past the formation.",
       "一线斩首": "One-Line Decapitation",
       "火焰瓶与战斗怒吼都使用后，3攻随从可以无视阵线攻击教官。": "After both Fire Flask and Battle Cry are used, a 3-Attack minion can ignore the lines to attack the instructor.",
@@ -2323,7 +2323,11 @@
       "返回主菜单？": "Return to the main menu?",
       "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "This battle will be abandoned and must be fought again; defeated nodes, your collection and all other progress are kept.",
       "放弃战斗并返回": "Abandon Battle & Return",
-      "继续战斗": "Keep Fighting"
+      "继续战斗": "Keep Fighting",
+      "前线突击": "Frontline Strike",
+      "对一个敌方前排随从造成3点伤害。": "Deal 3 damage to an enemy front-row minion.",
+      "选择一个敌方前排随从。": "Choose an enemy front-row minion.",
+      "试炼": "Trial"
     },
     "joiners": {
       "": " ",

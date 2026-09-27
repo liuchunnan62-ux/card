@@ -500,7 +500,7 @@
       "再守一轮。只要你还在呼吸，阵线就没有失守。": "Tenez un tour de plus. Tant que vous respirez encore, la ligne n'a pas chuté.",
       "罗德里克·瓦伦": "Roderick Valen",
       "铁锋教官": "Instructeur du Tranchant de Fer",
-      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶与战斗怒吼。破阵并一回合斩首。": "Ligne de Mort: vous n'avez que 1 Vie, un serviteur 1/1 qui peut attaquer, un Flacon de Feu et Cri de Bataille. Brisez la formation et prenez la tête en un tour.",
+      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶、战斗怒吼与前线突击。破阵并一回合斩首。": "Ligne de Mort : vous n'avez que 1 PV, un serviteur 1/1 capable d'attaquer, Flasque de Feu, Cri de Guerre et Assaut de front. Brisez la formation et décapitez en un tour.",
       "固定残局：火焰瓶烧开阵势，战斗怒吼强化1/1；两张牌都用过后，3攻随从可越阵斩首。": "Partie finale fixe : Flacon de Feu brûle et ouvre la formation, Cri de Bataille renforce le 1/1 ; une fois que les deux cartes sont utilisées, le serviteur 3-Attaque peut frapper la tête au-delà de la formation.",
       "一线斩首": "Décapitation en Une Ligne",
       "火焰瓶与战斗怒吼都使用后，3攻随从可以无视阵线攻击教官。": "Après que Flacon de Feu et Cri de Bataille soient utilisés, un serviteur 3-Attaque peut ignorer les lignes pour attaquer l'instructeur.",
@@ -2323,7 +2323,11 @@
       "返回主菜单？": "Revenir au menu principal ?",
       "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Ce combat sera abandonné et devra être rejoué ; les nœuds vaincus, votre collection et le reste de la progression sont conservés.",
       "放弃战斗并返回": "Abandonner et revenir",
-      "继续战斗": "Continuer le combat"
+      "继续战斗": "Continuer le combat",
+      "前线突击": "Assaut de front",
+      "对一个敌方前排随从造成3点伤害。": "Inflige 3 dégâts à un serviteur ennemi de première ligne.",
+      "选择一个敌方前排随从。": "Choisissez un serviteur ennemi de première ligne.",
+      "试炼": "Épreuve"
     },
     "joiners": {
       "": " ",

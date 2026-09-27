@@ -500,7 +500,7 @@
       "再守一轮。只要你还在呼吸，阵线就没有失守。": "Aguanta una ronda más. Mientras aún estés respirando, la línea no ha caído.",
       "罗德里克·瓦伦": "Roderick Valen",
       "铁锋教官": "Instructor de Borde de Hierro",
-      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶与战斗怒吼。破阵并一回合斩首。": "Línea de Muerte: solo tienes 1 Salud, un esbirro 1/1 que puede atacar, Frasco de Fuego y Grito de Batalla. Rompe la formación y toma la cabeza en un turno.",
+      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶、战斗怒吼与前线突击。破阵并一回合斩首。": "Línea de Muerte: solo tienes 1 de salud, un esbirro 1/1 que puede atacar, Frasco de Fuego, Grito de Batalla y Asalto frontal. Rompe la formación y decapita en un turno.",
       "固定残局：火焰瓶烧开阵势，战斗怒吼强化1/1；两张牌都用过后，3攻随从可越阵斩首。": "Endgame fijo: el Frasco de Fuego abre la formación, el Grito de Batalla potencia el 1/1; una vez que ambas cartas se usan, el esbirro de 3 Ataques puede golpear la cabeza pasando la formación.",
       "一线斩首": "Decapitación de Una Línea",
       "火焰瓶与战斗怒吼都使用后，3攻随从可以无视阵线攻击教官。": "Después de que se usan el Frasco de Fuego y el Grito de Batalla, un esbirro de 3 Ataques puede ignorar las líneas para atacar al instructor.",
@@ -2323,7 +2323,11 @@
       "返回主菜单？": "¿Volver al menú principal?",
       "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Esta batalla se abandonará y tendrás que repetirla; los nodos derrotados, tu colección y el resto del progreso se conservan.",
       "放弃战斗并返回": "Abandonar batalla y volver",
-      "继续战斗": "Seguir luchando"
+      "继续战斗": "Seguir luchando",
+      "前线突击": "Asalto frontal",
+      "对一个敌方前排随从造成3点伤害。": "Inflige 3 de daño a un esbirro enemigo de la primera fila.",
+      "选择一个敌方前排随从。": "Elige un esbirro enemigo de la primera fila.",
+      "试炼": "Prueba"
     },
     "joiners": {
       "": " ",
