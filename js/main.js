@@ -1218,36 +1218,32 @@
       CF.SaveSystem.save();
       const bossCardReward = CF.Adventure.claimActiveWeaponReward() || CF.Adventure.claimActiveChapterTwoCardReward() || CF.Adventure.claimActiveChapterThreeCardReward() || CF.Adventure.claimActiveChapterFourCardReward() || CF.Adventure.claimActiveChapterFiveCardReward();
       const questItemReward = CF.Adventure.claimActiveQueenBloodWaterReward();
-      const bossLoot = type === "boss" ? CF.Adventure.claimBossLoot() : null;
-      this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward, bossLoot);
+      const loot = CF.Adventure.claimVictoryLoot();
+      this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward, loot);
     },
 
-    showRewards(type, baseGold, baseXp, bossCardReward = null, questItemReward = null, bossLoot = null) {
-      const rewards = CF.Adventure.rewards(type);
-      if (type === "boss") {
-        const bossName = this.battle?.enemyConfig?.name || "Boss";
-        const storyDefeat = this.battle?.state?.storyDefeat;
-        const lootCards = [
-          { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。背包中使用可永久+1最大生命。" },
-          { title: `粗糙武器 ×${bossLoot.gearCount} · 粗糙盔甲 ×${bossLoot.gearCount}`, detail: "白色品质的战场缴获，可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。" },
-          bossLoot.note
-            ? { title: bossLoot.note.title, detail: bossLoot.note.text }
-            : { title: "残页已集齐", detail: `世界观残页已全部收集，额外获得${bossLoot.bonusGold}金币。` }
-        ];
-        this.pendingBossLoot = lootCards;
-        this.modal(`<span class="eyebrow">${storyDefeat ? "第五关剧情完成" : "最终胜利"}</span><h2>${storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`}</h2><p>${storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : ""}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
-          ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong></div>` : ""}
-          ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
-          <p class="boss-loot-hint">翻开三张战利品牌：</p>
-          <div class="boss-loot-grid">${lootCards.map((loot, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${loot.title}</strong><small>${loot.detail}</small></span></button>`).join("")}</div>
-          <div class="menu-actions"><button class="primary-btn" data-modal-action="continue-boss-loot">领取奖励，返回地图</button></div>`);
-      } else {
-        this.pendingRewards = rewards;
-        this.modal(`<span class="eyebrow">战斗胜利</span><h2>选择一项额外奖励</h2><p>已获得：${baseGold}金币 · ${baseXp}英雄经验 · 使用过的卡牌经验。</p>
-          ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong></div>` : ""}
-          ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>已收入行囊，可用于统领试炼第七关。</p></div></div>` : ""}
-          <div class="reward-grid">${rewards.map((r, index) => `<button class="reward-card" data-modal-action="claim-reward" data-index="${index}"><div class="reward-icon">${r.icon}</div><h3>${r.title}</h3><p>${r.detail}</p></button>`).join("")}</div>`);
-      }
+    // 每场战斗（普通/精英/Boss）胜利后都翻开三张固定战利品牌：女王精血、粗糙装备、笔记残页。
+    showRewards(type, baseGold, baseXp, bossCardReward = null, questItemReward = null, loot) {
+      const bossFight = type === "boss";
+      const bossName = this.battle?.enemyConfig?.name || "";
+      const storyDefeat = this.battle?.state?.storyDefeat;
+      const lootCards = [
+        { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。背包中使用可永久+1最大生命。" },
+        { title: `粗糙武器 ×${loot.gearCount} · 粗糙盔甲 ×${loot.gearCount}`, detail: "白色品质的战场缴获，可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。" },
+        loot.note
+          ? { title: loot.note.title, detail: loot.note.text }
+          : { title: "残页已集齐", detail: "世界观残页已全部收集，本次未获得新的残页。" }
+      ];
+      this.pendingBossLoot = lootCards;
+      const eyebrow = bossFight ? (storyDefeat ? "第五关剧情完成" : "最终胜利") : "战斗胜利";
+      const heading = bossFight ? (storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`) : "战斗胜利";
+      const intro = storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : "";
+      this.modal(`<span class="eyebrow">${eyebrow}</span><h2>${heading}</h2><p>${intro}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
+        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong></div>` : ""}
+        ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
+        <p class="boss-loot-hint">翻开三张战利品牌：</p>
+        <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="continue-boss-loot">领取奖励，返回地图</button></div>`);
     },
 
     cardPreview(cardId, compact = false) {
@@ -1257,7 +1253,7 @@
       return `<span class="${className}"><img src="${card.image || ""}" alt="${card.name}" loading="lazy"><span>${card.name}</span></span>`;
     },
 
-    // Boss战翻牌：奖励在 claimBossLoot() 时已写入存档，翻牌只是揭示动画，直接切换DOM上的.flipped类。
+    // 战利品翻牌：奖励在 claimVictoryLoot() 时已写入存档，翻牌只是揭示动画，直接切换DOM上的.flipped类。
     flipBossCard(index) {
       const card = modalRoot.querySelectorAll(".boss-loot-card")[index];
       if (!card || card.classList.contains("flipped")) return;
@@ -1265,22 +1261,9 @@
       this.sfx("cardAdd");
     },
 
-    applyReward(reward) {
-      const run = CF.Adventure.current();
-      if (!reward || !run) return;
-      if (reward.type === "maxHealth") CF.SaveSystem.data.hero.maxHealth += reward.value;
-      if (reward.type === "gold") { CF.SaveSystem.data.coins += reward.value; run.earnedCoins += reward.value; }
-      if (reward.type === "heal") run.hp = Math.min(run.maxHp, run.hp + reward.value);
-      if (reward.type === "cardXp") this.grantRandomCardXp(reward.value);
-      if (reward.type === "newCard") CF.SaveSystem.addCardToCollection(reward.cardId, 1);
-      if (reward.type !== "cardXp") this.sfx({ gold: "coins", heal: "heal", newCard: "cardAdd" }[reward.type] || "reward");
-      CF.Adventure.syncHeroGrowth();
-      CF.SaveSystem.save();
-    },
-
     finishCombatNode(type) {
       CF.Adventure.finishNode(type);
-      this.closeModal(); this.pendingRewards = null; this.battle = null;
+      this.closeModal(); this.pendingBossLoot = null; this.battle = null;
       this.renderMap();
     },
     finishBoss() {
@@ -1408,7 +1391,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "claim-reward", "flip-boss-card", "continue-boss-loot", "forge-item", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1578,9 +1561,11 @@
     if (action === "confirm-slot-delete") { CF.SaveSystem.deleteSlot(Number(el.dataset.slot)); UI.closeModal(); UI.toast("存档已删除。", "good"); UI.renderSaveSlots(UI.slotMode || "manage"); }
     if (action === "confirm-pause-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); return; }
     if (action === "confirm-abandon") { CF.Adventure.abandon(); UI.closeModal(); UI.renderMenu(); }
-    if (action === "claim-reward") { UI.applyReward(UI.pendingRewards[Number(el.dataset.index)]); UI.finishCombatNode(UI.activeNode.type); }
     if (action === "flip-boss-card") UI.flipBossCard(Number(el.dataset.index));
-    if (action === "continue-boss-loot") { UI.pendingBossLoot = null; UI.finishBoss(); }
+    if (action === "continue-boss-loot") {
+      UI.pendingBossLoot = null;
+      if (UI.activeNode?.type === "boss") UI.finishBoss(); else UI.finishCombatNode(UI.activeNode.type);
+    }
     if (action === "forge-item") UI.forgeItemAction(el.dataset.kind, Number(el.dataset.tier));
     if (action === "equip-target") UI.equipTarget(el.dataset.target, el.dataset.slot, Number(el.dataset.tier));
     if (action === "finish-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); }

@@ -638,35 +638,25 @@
       const run = this.current();
       return EVENTS[(run?.stage + run?.completed?.length || 0) % EVENTS.length];
     },
-    rewards(type) {
-      return [
-        { type: "maxHealth", icon: "🩸", title: "女王之血", detail: "英雄最大生命值永久增加1点", value: 1 },
-        { type: "gold", icon: COIN_ICON, title: "讨伐赏金", detail: "获得20金币", value: 20 },
-        { type: "cardXp", icon: "📚", title: "战斗领悟", detail: "随机一张未满级卡牌获得2点经验", value: 2 }
-      ];
-    },
-    // Boss战翻牌战利品：数量随章节难度递增（3~6件），三张牌固定揭示女王精血、粗糙装备与笔记残页。
-    generateBossLoot() {
+    // 战斗胜利翻牌战利品：数量随章节难度递增（3~6件），每场战斗（普通/精英/Boss）胜利后都会翻开
+    // 三张固定战利品牌——女王精血、粗糙装备、笔记残页。残页collect满12篇后，第三张牌不再有奖励。
+    generateVictoryLoot() {
       const run = this.current();
       const gearCount = Math.min(6, (run?.chapter || 1) + 2);
       return { gearCount };
     },
-    claimBossLoot() {
-      const { gearCount } = this.generateBossLoot();
+    claimVictoryLoot() {
+      const { gearCount } = this.generateVictoryLoot();
       CF.SaveSystem.addInventoryItem("queenEssenceBlood", 1);
       CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
       CF.SaveSystem.addInventoryItem("armorT1", gearCount);
       let note = null;
-      let bonusGold = 0;
       if (CF.SaveSystem.data.notesUnlocked < LORE_PAGES.length) {
         note = { ...LORE_PAGES[CF.SaveSystem.data.notesUnlocked], index: CF.SaveSystem.data.notesUnlocked + 1 };
         CF.SaveSystem.data.notesUnlocked += 1;
-      } else {
-        bonusGold = 15;
-        CF.SaveSystem.data.coins += bonusGold;
       }
       CF.SaveSystem.save();
-      return { gearCount, note, bonusGold };
+      return { gearCount, note };
     },
     shopStock() {
       if (this.current()?.chapter === 1) {
