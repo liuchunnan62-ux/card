@@ -19,7 +19,12 @@
     { code: "zh-TW", label: "繁體中文" },
     { code: "en", label: "English" },
     { code: "ja", label: "日本語" },
-    { code: "ko", label: "한국어" }
+    { code: "ko", label: "한국어" },
+    { code: "es", label: "Español" },
+    { code: "pt", label: "Português" },
+    { code: "fr", label: "Français" },
+    { code: "de", label: "Deutsch" },
+    { code: "ru", label: "Русский" }
   ];
   const TRANSLATABLE_ATTRIBUTES = ["alt", "title", "aria-label", "placeholder", "data-label"];
   const dictionaries = {};
@@ -38,6 +43,11 @@
       if (code.startsWith("ja")) return "ja";
       if (code.startsWith("ko")) return "ko";
       if (code.startsWith("en")) return "en";
+      if (code.startsWith("es")) return "es";
+      if (code.startsWith("pt")) return "pt";
+      if (code.startsWith("fr")) return "fr";
+      if (code.startsWith("de")) return "de";
+      if (code.startsWith("ru")) return "ru";
     }
     return SOURCE_LANG;
   }
