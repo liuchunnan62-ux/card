@@ -1325,7 +1325,7 @@
       "{0}/7回合": "{0}/7 turns",
       "{0}/15回合": "{0}/15 turns",
       "{0}/{1}段": "{0}/{1} parts",
-      "第{0}关 · {1}": "Chapter {0} · {1}",
+      "第{0}关 · {1}": "Trial {0} · {1}",
       "有人说{0}永远不可能被人类接纳。可我的军籍、薪饷和选票都是真的。": "Some say {0} could never be accepted by humans. Yet my enlistment, my pay and my vote are all real.",
       "记住报名册上的名字——{0}。我来自{1}，也认同人类建立的{2}；所以我选择加入，他们也接受了我。": "Remember the name on the roster—{0}. I come from {1}, and I believe in the {2} that humans built; so I chose to join, and they accepted me.",
       "记好名字，{0}。{1}。等你退场时，至少知道是谁送你的。": "Remember the name, {0}. {1}. When you leave the ring, at least you'll know who sent you off.",

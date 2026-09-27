@@ -50,14 +50,13 @@
     const exact = new Map(entries.filter(([source]) => !SLOT.test(source)));
     const patternEntries = entries.filter(([source]) => SLOT.test(source)).concat(raw.patterns || []);
     const patterns = patternEntries.map(([source, target]) => {
-      const order = [];
-      const body = source.split(/(\{\w+\})/).map(part => {
+      // parts 交替保存原文片段与占位符名，例如 ["对", {slot: "0"}, "造成", {slot: "1"}, "点伤害"]
+      const parts = source.split(/(\{\w+\})/).filter(part => part !== "").map(part => {
         const slot = part.match(/^\{(\w+)\}$/);
-        if (!slot) return escapeRegExp(part);
-        order.push(slot[1]);
-        return "([\\s\\S]*?)";
-      }).join("");
-      return { regex: new RegExp(`^${body}$`), order, target, weight: source.replace(/\{\w+\}/g, "").length };
+        return slot ? { slot: slot[1] } : part;
+      });
+      const body = parts.map(part => typeof part === "string" ? escapeRegExp(part) : "([\\s\\S]*?)").join("");
+      return { regex: new RegExp(`^${body}$`), parts, target, weight: source.replace(/\{\w+\}/g, "").length };
     }).sort((a, b) => b.weight - a.weight);
     return {
       exact,
@@ -145,16 +144,9 @@
 
     matchPatterns(dict, text, depth) {
       for (const pattern of dict.patterns) {
-        const match = pattern.regex.exec(text);
-        if (!match) continue;
-        // 变量里的中文也必须能翻译，否则说明句式匹配错位，继续尝试下一个句式。
-        const values = {};
-        const complete = pattern.order.every((slot, index) => {
-          const value = match[index + 1];
-          values[slot] = HAN.test(value) ? this.translatePart(dict, value.trim(), depth + 1) : value;
-          return values[slot] !== null;
-        });
-        if (!complete) continue;
+        if (!pattern.regex.test(text)) continue;
+        const values = this.bindSlots(dict, pattern.parts, text, 0, 0, {}, depth);
+        if (!values) continue;
         return pattern.target.replace(/\{(\w+)\}/g, (_, slot) => values[slot] ?? "")
           .replace(/ {2,}/g, " ").replace(/ +([.,;:!?)）])/g, "$1").trim();
       }
@@ -169,6 +161,30 @@
         if (translated.some(part => part === null)) continue;
         const joiner = dict.joiners[splitter.joinKey] ?? splitter.joinKey;
         return translated.filter(part => part !== "").join(joiner);
+      }
+      return null;
+    },
+
+    // 为句式中的占位符寻找切分位置。变量里的中文也必须能翻译，
+    // 否则说明切分错位，继续尝试其他位置或下一个句式。
+    bindSlots(dict, parts, text, index, position, values, depth) {
+      if (index === parts.length) return position === text.length ? values : null;
+      const part = parts[index];
+      if (typeof part === "string") {
+        return text.startsWith(part, position) ? this.bindSlots(dict, parts, text, index + 1, position + part.length, values, depth) : null;
+      }
+      const next = parts[index + 1];
+      const ends = [];
+      if (next === undefined) ends.push(text.length);
+      else if (typeof next === "string") {
+        for (let found = text.indexOf(next, position); found !== -1; found = text.indexOf(next, found + 1)) ends.push(found);
+      } else for (let end = position; end <= text.length; end++) ends.push(end);
+      for (const end of ends) {
+        const raw = text.slice(position, end);
+        const value = HAN.test(raw) ? this.translatePart(dict, raw.trim(), depth + 1) : raw;
+        if (value === null) continue;
+        const bound = this.bindSlots(dict, parts, text, index + 1, end, { ...values, [part.slot]: value }, depth);
+        if (bound) return bound;
       }
       return null;
     },
