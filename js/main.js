@@ -146,7 +146,14 @@
         ${showHome ? '<button class="icon-btn" data-action="home" title="返回主菜单">⌂ 主菜单</button>' : ""}
       </header>`;
     },
-    frame(content, showHome = true) { this.hideAttackArrow(); app.innerHTML = this.topbar(showHome) + content; if (this.screen === "deck") this.decorateDeckRows(); },
+    frame(content, showHome = true) { this.hideAttackArrow(); app.innerHTML = this.topbar(showHome) + content; if (this.screen === "deck") this.decorateDeckRows(); this.syncMusic(); },
+    musicTrack() {
+      if (this.screen !== "battle" || !this.battle) return "menu";
+      if (this.battle.state.ended) return null;
+      const mode = this.battle.enemyConfig?.mode;
+      return mode === "arena" ? "arena" : mode === "trial" ? "trial" : "adventure";
+    },
+    syncMusic() { CF.Music?.setTrack(this.musicTrack()); },
     decorateDeckRows() {
       app.querySelectorAll(".deck-row").forEach(row => {
         const cardId = row.querySelector("[data-card]")?.dataset.card;
@@ -247,6 +254,7 @@
       const activeSlot = CF.SaveSystem.activeSlot ? CF.SaveSystem.slotSummary(CF.SaveSystem.activeSlot) : null;
       const canContinue = Boolean(activeSlot && !activeSlot.empty);
       const hasSaves = CF.SaveSystem.listSlots().some(slot => !slot.empty);
+      this.syncMusic();
       app.innerHTML = `<section class="cover-screen" aria-label="裂隙征途游戏封面">
         <div class="cover-shade"></div>
         ${CF.I18n.selectorHTML("cover-language")}
@@ -673,9 +681,15 @@
       this.screen = "settings";
       const sound = CF.SoundFX;
       const soundVolume = Math.round((sound?.volume ?? 0.58) * 100);
+      const music = CF.Music;
+      const musicVolume = Math.round((music?.volume ?? 0.5) * 100);
       this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">系统</span><h2>设置</h2></div></div>
         <div class="settings-stack">
           <div class="panel language-settings"><div><h3>语言</h3><p>切换游戏界面显示的语言。</p></div>${CF.I18n.selectorHTML()}</div>
+          <div class="panel sound-settings"><div><h3>背景音乐</h3><p>主界面、冒险战斗、竞技场与统领试炼各有一首原创程序化配乐。</p></div>
+            <div class="sound-actions"><button class="secondary-btn" data-action="music-toggle">${music?.muted ? "开启音乐" : "关闭音乐"}</button></div>
+            <label class="sound-volume"><span>音量 <output data-music-output>${musicVolume}%</output></span><input type="range" min="0" max="100" value="${musicVolume}" data-music-volume ${music?.muted ? "disabled" : ""}></label>
+          </div>
           <div class="panel sound-settings"><div><h3>战斗音效</h3><p>近战、远程、法术、死亡和Boss技能均使用不同的原创程序化音效。</p></div>
             <div class="sound-actions"><button class="secondary-btn" data-action="sound-toggle">${sound?.muted ? "开启音效" : "关闭音效"}</button><button class="mini-btn" data-action="sound-preview" ${sound?.muted ? "disabled" : ""}>试听</button></div>
             <label class="sound-volume"><span>音量 <output data-sound-output>${soundVolume}%</output></span><input type="range" min="0" max="100" value="${soundVolume}" data-sound-volume ${sound?.muted ? "disabled" : ""}></label>
@@ -1275,6 +1289,7 @@
     if (action === "open-card-training") UI.openCardTraining(el.dataset.cardType);
     if (action === "rescue-injured") UI.rescueInjured();
     if (action === "sound-toggle") { CF.SoundFX?.toggleMuted(); UI.renderSettings(); }
+    if (action === "music-toggle") { CF.Music?.toggleMuted(); UI.renderSettings(UI.settingsReturnScreen); }
     if (action === "sound-preview") {
       CF.SoundFX?.play("melee");
       setTimeout(() => CF.SoundFX?.play("ranged"), 330);
@@ -1332,6 +1347,13 @@
   app.addEventListener("pointercancel", endLevelDrag);
 
   app.addEventListener("input", event => {
+    const musicInput = event.target.closest?.("[data-music-volume]");
+    if (musicInput) {
+      CF.Music?.setVolume(Number(musicInput.value) / 100);
+      const musicOutput = app.querySelector("[data-music-output]");
+      if (musicOutput) musicOutput.textContent = `${musicInput.value}%`;
+      return;
+    }
     const input = event.target.closest?.("[data-sound-volume]");
     if (!input) return;
     const value = Number(input.value);

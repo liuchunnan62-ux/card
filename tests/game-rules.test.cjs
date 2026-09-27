@@ -38,12 +38,20 @@ load("js/trials.js");
 load("js/arena.js");
 load("js/heroes.js");
 load("js/sound.js");
+load("js/music.js");
 load("js/game.js");
 
 const CF = context.CardForge;
 const board = CF.emptyBoard();
 assert.ok(CF.SoundFX, "程序化战斗音效系统应加载");
 assert.equal(CF.SoundFX.play("melee"), false, "缺少浏览器音频上下文时音效应安全跳过");
+assert.ok(CF.Music, "程序化背景音乐系统应加载");
+assert.deepEqual(Object.keys(CF.Music.tracks).sort(), ["adventure", "arena", "menu", "trial"], "主界面、冒险、竞技场与试炼应各有一首背景音乐");
+Object.entries(CF.Music.tracks).forEach(([name, track]) => {
+  assert.ok(track.melody.length > 0 && track.melody.every(event => Number.isFinite(event.note)), `${name}曲目的旋律音符应全部可解析`);
+  assert.ok(track.melody.every(event => event.step + event.len <= track.chords.length * 16), `${name}曲目的旋律不应超出循环长度`);
+});
+assert.equal(CF.Music.setTrack("arena"), true, "缺少音频上下文时切换曲目也应安全");
 const battleCss = fs.readFileSync(path.join(root, "css/style.css"), "utf8");
 const cardsSource = fs.readFileSync(path.join(root, "js/cards.js"), "utf8");
 const mainSource = fs.readFileSync(path.join(root, "js/main.js"), "utf8");
