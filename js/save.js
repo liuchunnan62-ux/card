@@ -86,6 +86,9 @@
       chapterFiveBossRewards: {},
       questItemRewards: {},
       items: { queenBloodRiverWater: false },
+      inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
+      cardEquipment: {},
+      notesUnlocked: 0,
       commanderTrials: { completed: [] },
       levelMapLayout: {},
       activeChapter: 1,
@@ -163,6 +166,9 @@
       chapterFiveBossRewards: { ...base.chapterFiveBossRewards, ...(raw.chapterFiveBossRewards || {}) },
       questItemRewards: { ...base.questItemRewards, ...(raw.questItemRewards || {}) },
       items: { ...base.items, ...(raw.items || {}) },
+      inventory: { ...base.inventory, ...(raw.inventory || {}) },
+      cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
+      notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {
         ...base.commanderTrials,
@@ -413,6 +419,49 @@
     equipHeroSkill(id) {
       if (!this.heroSkillProgress(id)?.unlocked) return false;
       this.data.hero.equippedSkill = id;
+      this.save();
+      return true;
+    },
+    addInventoryItem(key, amount = 1) {
+      const inventory = this.data.inventory || (this.data.inventory = {});
+      inventory[key] = (inventory[key] || 0) + amount;
+      this.save();
+      return inventory[key];
+    },
+    useQueenEssenceBlood() {
+      const inventory = this.data.inventory || (this.data.inventory = {});
+      if (!(inventory.queenEssenceBlood > 0)) return false;
+      inventory.queenEssenceBlood -= 1;
+      this.data.hero.maxHealth += 1;
+      this.save();
+      return true;
+    },
+    // slot: "weapon"|"armor"；tier: 1-4。装备时把该卡该槽原有品级退回背包，再扣1件新品级。
+    equipCardItem(cardId, slot, tier) {
+      if (!CF.CARD_LIBRARY[cardId] || (slot !== "weapon" && slot !== "armor") || !(tier >= 1 && tier <= 4)) return false;
+      const key = `${slot}T${tier}`;
+      const inventory = this.data.inventory || (this.data.inventory = {});
+      if (!(inventory[key] > 0)) return false;
+      const equipment = this.data.cardEquipment || (this.data.cardEquipment = {});
+      const entry = equipment[cardId] || (equipment[cardId] = { weapon: 0, armor: 0 });
+      const previousTier = entry[slot] || 0;
+      if (previousTier) inventory[`${slot}T${previousTier}`] = (inventory[`${slot}T${previousTier}`] || 0) + 1;
+      inventory[key] -= 1;
+      entry[slot] = tier;
+      this.save();
+      return true;
+    },
+    // 重锻：消耗2件同品级材料与对应金币，合成1件高一品级的装备（品级上限4）。
+    forgeItem(kind, tier) {
+      if ((kind !== "weapon" && kind !== "armor") || !(tier >= 1 && tier <= 3)) return false;
+      const key = `${kind}T${tier}`;
+      const cost = tier * 30;
+      const inventory = this.data.inventory || (this.data.inventory = {});
+      if (!(inventory[key] >= 2) || !(this.data.coins >= cost)) return false;
+      inventory[key] -= 2;
+      this.data.coins -= cost;
+      const nextKey = `${kind}T${tier + 1}`;
+      inventory[nextKey] = (inventory[nextKey] || 0) + 1;
       this.save();
       return true;
     }

@@ -271,14 +271,14 @@ assert.match(mainSource, /data-action="save-level-layout"[\s\S]*data-action="res
 assert.match(mainSource, /levelMapLayout[\s\S]*pointerdown[\s\S]*pointermove/, "关卡布局应支持拖动并保存坐标");
 assert.match(battleCss, /\.level-map-board\.layout-editing[\s\S]*\.level-node\.dragging/, "布局编辑模式应提供拖动视觉反馈");
 assert.match(mainSource, /renderTrials\(\)/, "统领试炼应提供独立七关选择界面");
-assert.match(mainSource, /renderTraining\(\)[\s\S]*<h2>训练广场<\/h2>/, "训练广场应作为独立界面");
-assert.match(mainSource, /data-action="training-page"[\s\S]*<strong>训练广场<\/strong>/, "主界面应提供进入训练广场的入口");
-assert.ok(fs.existsSync(path.join(root, "assets/ui/training-grounds.webp")), "训练广场场景图应位于项目资源目录");
+assert.match(mainSource, /renderTraining\(\)[\s\S]*<h2>队伍营地<\/h2>/, "队伍营地应作为独立界面");
+assert.match(mainSource, /data-action="training-page"[\s\S]*<strong>队伍营地<\/strong>/, "主界面应提供进入队伍营地的入口");
+assert.ok(fs.existsSync(path.join(root, "assets/ui/training-grounds.webp")), "队伍营地场景图应位于项目资源目录");
 assert.match(mainSource, /renderCover\(\)[\s\S]*新游戏[\s\S]*继续游戏[\s\S]*游戏设置/, "启动封面应提供新游戏、继续游戏与游戏设置三个按钮");
 assert.match(mainSource, /UI\.renderCover\(\);\s*\}\)\(\);/, "游戏启动时应首先显示封面");
 assert.ok(fs.existsSync(path.join(root, "assets/ui/game-cover.png")), "游戏封面图片应复制到项目资源目录");
-assert.doesNotMatch(mainSource, /英雄训练|buy-health|buyHealthUpgrade/, "训练广场不应继续出售英雄最大生命值");
-for (const service of ["随从训练", "法术训练", "武器训练", "救治伤员"]) assert.match(mainSource, new RegExp(`TRAINING_NPCS = \\[[\\s\\S]*${service} · 30金币`), `训练广场应提供${service}`);
+assert.doesNotMatch(mainSource, /英雄训练|buy-health|buyHealthUpgrade/, "队伍营地不应继续出售英雄最大生命值");
+for (const service of ["随从训练", "法术训练", "武器训练", "救治伤员"]) assert.match(mainSource, new RegExp(`TRAINING_NPCS = \\[[\\s\\S]*${service} · 30金币`), `队伍营地应提供${service}`);
 assert.match(mainSource, /点击同一张卡即可连续训练[\s\S]*data-training-coins[\s\S]*data-training-card/, "卡牌训练面板应支持保持开启并连续训练同一张卡");
 assert.match(mainSource, /buyCardTraining\(type, id\)[\s\S]*addCardXp\(id, 2\)[\s\S]*refreshCardTraining\(type, id\)/, "每次卡牌训练后应原地刷新金币、等级和经验进度");
 assert.match(mainSource, /buyCardTraining\(type, id\)[\s\S]*save\.coins -= 30;[\s\S]*addCardXp\(id, 2\)/, "卡牌训练应允许选择对应卡牌并以30金币增加2点经验");
@@ -351,7 +351,8 @@ assert.ok(fs.existsSync(path.join(root, "assets/ui/mana-crystals.png")), "mana c
 assert.ok(fs.existsSync(path.join(root, "assets/ui/gold-coin.png")), "custom gold coin icon should exist");
 assert.match(mainSource, /assets\/ui\/gold-coin\.png/, "游戏资源栏应使用自定义金币图标");
 assert.match(mainSource, /cardPreview\(cardId, compact = false\)/, "奖励与商店应提供卡牌预览组件");
-assert.match(mainSource, /claim-boss-reward[\s\S]*<div class="reward-icon">\$\{r\.icon\}/, "Boss奖励应只显示女王之血、金币与经验图标");
+assert.match(mainSource, /claim-reward[\s\S]*<div class="reward-icon">\$\{r\.icon\}/, "普通/精英战斗奖励应只显示女王之血、金币与经验图标");
+assert.match(mainSource, /boss-loot-grid[\s\S]*flip-boss-card/, "Boss奖励应改为翻牌揭示三项固定战利品，而不是三选一");
 assert.match(mainSource, /item\.type === "card" \? this\.cardPreview\(item\.cardId, true\)/, "购买卡牌奖励应显示对应卡面");
 assert.match(cardsSource + fs.readFileSync(path.join(root, "js/adventure.js"), "utf8"), /assets\/ui\/gold-coin\.png/, "金币奖励应使用自定义金币图标");
 assert.ok(fs.existsSync(path.join(root, "assets/enemies/forest-wolf-king.png")), "wolf king portrait should exist");
@@ -482,7 +483,7 @@ assert.deepEqual(Array.from(CF.Adventure.rewards("normal"), reward => reward.typ
 assert.deepEqual(Array.from(CF.Adventure.rewards("boss"), reward => reward.value), [1, 20, 2], "首领三项奖励数值应正确");
 assert.match(mainSource, /claimActiveWeaponReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterTwoCardReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterThreeCardReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterFourCardReward\(\)/, "每个章节原有的首杀固定卡牌奖励应继续发放");
 assert.match(mainSource, /首杀固定奖励[\s\S]*cardPreview\(bossCardReward\.cardId\)/, "首杀卡牌应与额外三选一分开展示");
-assert.match(mainSource, /claim-boss-reward[\s\S]*UI\.applyReward/, "最终Boss奖励也应改为三选一");
+assert.match(mainSource, /continue-boss-loot[\s\S]*UI\.finishBoss/, "翻开三张Boss战利品牌后应可直接领取并返回地图");
 assert.ok(CF.Adventure.shopStock().every(item => item.type !== "skill"), "冒险商店不应出售英雄技能经验或等级");
 assert.deepEqual(Array.from(CF.Adventure.shopStock(), item => `${item.cardId}:${item.cost}`), ["eagle_eye:20", "iron_lancer:20", "royal_medic:20"], "第一关商店应以20金币出售三张指定随从牌");
 assert.equal(CF.Adventure.mapStages().length, 13, "第一关应将事件和商店作为独立路线节点");

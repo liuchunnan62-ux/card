@@ -93,7 +93,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
     linear-gradient(145deg, #513525, #1c1714 55%, #101010);
   box-shadow: var(--shadow);
 }
-.hero-portrait { min-height: 330px; display: grid; place-items: center; position: relative; }
+.hero-portrait { min-height: 330px; display: grid; place-items: center; position: relative; border: 0; background: none; padding: 0; font: inherit; width: 100%; cursor: pointer; }
 .hero-portrait .crest { width: 190px; height: 230px; display: grid; place-items: center; font-size: 92px; border: 2px solid #a98244; border-radius: 50% 50% 46% 46%; background: radial-gradient(circle, #715039, #241711 68%); box-shadow: inset 0 0 50px #000, 0 0 50px rgba(228,183,93,.16); }
 .hero-portrait .crest.hero-image { width: min(300px, 88%); height: 300px; border: 0; border-radius: 0; background: transparent; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
 .hero-image img { width: 100%; height: 100%; display: block; object-fit: contain; }
@@ -173,7 +173,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .camp-service[data-action="rescue-injured"] .camp-service-badge { border-color: #b44135; background: rgba(120,40,34,.6); color: #ffb4a6; }
 .menu-tile .menu-tile-dot { top: 10px; left: auto; right: 10px; }
 
-/* 训练广场独立界面：场景图 + 四位教官热点 + 服务卡片 */
+/* 队伍营地独立界面：场景图 + 四位教官热点 + 服务卡片 */
 .training-scene { position: relative; width: 100%; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: #15110f center / cover no-repeat; box-shadow: var(--shadow); }
 .training-scene::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, rgba(10,8,7,.35), transparent 30%); }
 .training-hotspot { position: absolute; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 45% 45% 30% 30%; }
@@ -200,6 +200,48 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 @keyframes trainingRing { 50% { box-shadow: 0 0 28px rgba(255,217,139,.7), inset 0 0 16px rgba(255,217,139,.5); } }
 @keyframes campPing { 70% { box-shadow: 0 0 0 9px rgba(224,72,58,0); } 100% { box-shadow: 0 0 0 0 rgba(224,72,58,0); } }
 @media (prefers-reduced-motion: reduce) { .camp-service.ready::after, .menu-tile-dot, .training-hotspot.ready .training-hotspot-plate::after, .training-hotspot.ready::before { animation: none; } }
+
+/* 城镇商店：未启用的店铺淡化显示，热点铭牌标注"敬请期待" */
+.training-hotspot.locked, .training-npc-card.locked { filter: grayscale(.75); opacity: .68; }
+.training-hotspot.locked { cursor: not-allowed; }
+.training-hotspot-plate small { display: block; color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+
+/* 装备品级配色：白/绿/蓝/紫 */
+.quality-1 { color: #e7e2d8; }
+.quality-2 { color: #7fd97f; }
+.quality-3 { color: #79b8ff; }
+.quality-4 { color: #d29bff; }
+
+/* Boss战翻牌：三张固定战利品牌，点击翻面揭示 */
+.boss-loot-hint { margin: 10px 0 6px; color: var(--muted); }
+.boss-loot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; perspective: 1200px; }
+.boss-loot-card { position: relative; min-height: 150px; padding: 0; border: 0; background: none; cursor: pointer; transform-style: preserve-3d; transition: transform .55s cubic-bezier(.2,.8,.3,1); }
+.boss-loot-card.flipped { transform: rotateY(180deg); cursor: default; }
+.boss-loot-face { position: absolute; inset: 0; display: grid; place-items: center; gap: 6px; padding: 16px; border-radius: 10px; backface-visibility: hidden; text-align: center; }
+.boss-loot-front { border: 1px solid #87663d; background: linear-gradient(145deg, #4a3527, #201714); font-size: 40px; color: var(--gold-bright); }
+.boss-loot-back { transform: rotateY(180deg); border: 1px solid #f1c65f; background: radial-gradient(circle at center, rgba(103,68,19,.68), rgba(22,15,12,.9)); }
+.boss-loot-back strong { color: #ffe6a5; }
+.boss-loot-back small { color: var(--muted); line-height: 1.5; }
+
+/* 背包页 */
+.backpack-section { margin-top: 18px; }
+.backpack-section h3 { margin: 0 0 8px; color: var(--gold-bright); }
+.backpack-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.2); }
+.backpack-item strong { flex: 0 0 auto; }
+.backpack-item small { flex: 1; color: var(--muted); }
+.empty-hint { color: var(--muted); font-style: italic; }
+
+/* 装备店重锻 */
+.forge-section { margin-top: 16px; }
+.forge-section h3 { margin: 0 0 6px; color: var(--gold-bright); }
+
+/* 笔记残页 */
+.note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+.note-entry { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.2); }
+.note-entry strong { display: block; color: var(--gold-bright); margin-bottom: 6px; }
+.note-entry p { margin: 0; color: var(--muted); line-height: 1.6; }
+.note-entry.locked { opacity: .5; text-align: center; }
+.note-entry.locked strong { color: var(--muted); }
 .primary-btn, .secondary-btn, .danger-btn, .choice-btn {
   min-height: 44px; border-radius: 8px; border: 1px solid #8f6a35; padding: 10px 22px; cursor: pointer; transition: .18s ease;
 }
@@ -1162,6 +1204,8 @@ html:not(:lang(zh)):not(:lang(ja)) .game-card:not(.spell) .card-name { margin-le
   .sound-settings { grid-template-columns: 1fr; }
   .sound-actions { justify-content: flex-start; }
   .reward-grid { grid-template-columns: 1fr; }
+  .boss-loot-grid { grid-template-columns: 1fr; }
+  .note-grid { grid-template-columns: 1fr; }
   .battle-sidebar { grid-template-columns: 1fr; }
   .arena-lobby { grid-template-columns: 1fr; }
   .arena-roster { grid-template-columns: repeat(7,minmax(0,1fr)); }
