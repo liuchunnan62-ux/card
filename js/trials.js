@@ -42,7 +42,7 @@
     },
     {
       id: 3, name: "罗德里克·瓦伦", title: "铁锋教官", portrait: "assets/trials/roderick-valen.png", health: 3, mana: 0,
-      objective: "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶与战斗怒吼。破阵并一回合斩首。",
+      objective: "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶、战斗怒吼与前线突击。破阵并一回合斩首。",
       summary: "固定残局：火焰瓶烧开阵势，战斗怒吼强化1/1；两张牌都用过后，3攻随从可越阵斩首。", noCards: true,
       deck: [], skills: [{ icon: "⚔️", name: "一线斩首", every: 1, description: "火焰瓶与战斗怒吼都使用后，3攻随从可以无视阵线攻击教官。" }],
       dialogue: [
@@ -121,6 +121,14 @@
     justSummoned: false, tempAttack: 0, healUsed: false
   });
 
+  // 仅在第三场试炼（斩杀线）中出现的专属法术，不加入卡牌库，因此不会出现在奖励、商店或卡组编辑中。
+  const frontlineStrike = () => ({
+    ...CF.getCard("fire_flask", { level: 1 }),
+    id: "frontline_strike", name: "前线突击", icon: "⚔️", image: "assets/cards/spells/frontline-strike.webp",
+    cost: 1, value: 3, frontOnly: true, rarity: "试炼", description: "对一个敌方前排随从造成3点伤害。",
+    instanceId: `frontline_strike-${Math.random().toString(36).slice(2, 7)}`
+  });
+
   function enemy(id) {
     const trial = byId(id);
     if (!trial) return null;
@@ -160,6 +168,7 @@
       battle.state.player.hand[0].cost = 2;
       battle.state.player.hand[1].cost = 2;
       battle.state.player.hand[1].value = 2;
+      battle.state.player.hand.push(frontlineStrike());
       battle.state.player.board.back[0] = trialUnit("最后的学兵", 1, 1, "assets/cards/recruit-archer.png", { combatStyle: "ranged", keywords: ["远程"] });
       for (let column = 0; column < 4; column += 1) {
         battle.state.enemy.board.front[column] = trialUnit("铁锋盾列", 1, 3, "assets/cards/enemies/goblin-guard.png", { ready: false });

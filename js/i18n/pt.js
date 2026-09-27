@@ -500,7 +500,7 @@
       "再守一轮。只要你还在呼吸，阵线就没有失守。": "Aguarde mais uma rodada. Enquanto você ainda estiver respirando, a linha não caiu.",
       "罗德里克·瓦伦": "Roderick Valen",
       "铁锋教官": "Instrutor Ironedge",
-      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶与战斗怒吼。破阵并一回合斩首。": "Linha de Morte: você tem apenas 1 de Vida, um lacaio 1/1 que pode atacar, Frasco de Fogo e Grito de Batalha. Rompa a formação e pegue a cabeça em um turno.",
+      "斩杀线：你只有1点生命、一个可攻击的1/1随从、火焰瓶、战斗怒吼与前线突击。破阵并一回合斩首。": "Linha de Morte: você tem apenas 1 de vida, um lacaio 1/1 que pode atacar, Frasco de Fogo, Grito de Guerra e Investida frontal. Rompa a formação e decapite em um turno.",
       "固定残局：火焰瓶烧开阵势，战斗怒吼强化1/1；两张牌都用过后，3攻随从可越阵斩首。": "Fim de jogo fixo: Frasco de Fogo queima a formação aberta, Grito de Batalha potencializa o 1/1; uma vez que ambas as cartas são usadas, o lacaio de 3 de Ataque pode atacar a cabeça além da formação.",
       "一线斩首": "Decapitação de Uma Linha",
       "火焰瓶与战斗怒吼都使用后，3攻随从可以无视阵线攻击教官。": "Depois que Frasco de Fogo e Grito de Batalha são usados, um lacaio de 3 de Ataque pode ignorar as linhas para atacar o instrutor.",
@@ -2323,7 +2323,11 @@
       "返回主菜单？": "Voltar ao menu principal?",
       "当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。": "Esta batalha será abandonada e precisará ser refeita; nós derrotados, sua coleção e todo o resto do progresso são mantidos.",
       "放弃战斗并返回": "Abandonar batalha e voltar",
-      "继续战斗": "Continuar lutando"
+      "继续战斗": "Continuar lutando",
+      "前线突击": "Investida frontal",
+      "对一个敌方前排随从造成3点伤害。": "Causa 3 de dano a um lacaio inimigo da linha de frente.",
+      "选择一个敌方前排随从。": "Escolha um lacaio inimigo da linha de frente.",
+      "试炼": "Provação"
     },
     "joiners": {
       "": " ",
