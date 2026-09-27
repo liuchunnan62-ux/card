@@ -387,6 +387,13 @@
         const badge = !unlocked ? `完成${MENU_CHAPTERS[entry.chapter - 2].name}后解锁` : cleared ? "✓ 已通关" : entryProgress.exists ? `存档 ${entryProgress.completed}/${entryProgress.total}` : "尚未开始";
         return `<li class="chapter-emblem ${state}"><span class="chapter-emblem-art"><img src="${entry.boss}" alt="${unlocked ? entry.bossName : ""}">${unlocked ? "" : '<i aria-hidden="true">🔒</i>'}</span><strong>${entry.name}</strong><small>${badge}</small></li>`;
       }).join("");
+      // 训练广场服务：角标显示可训练卡牌数或伤员人数，可用时亮起提示红点。
+      const campService = (action, cardType, title, detail, count, countLabel, available = count > 0) => {
+        const affordable = data.coins >= 30;
+        const ready = affordable && available;
+        const hint = ready ? (action === "rescue-injured" ? "可以救治" : "可以训练") : !available ? (action === "rescue-injured" ? "" : "暂无可训练卡牌") : "金币不足";
+        return `<button class="choice-btn camp-service${ready ? " ready" : ""}" data-action="${action}"${cardType ? ` data-card-type="${cardType}"` : ""} ${ready ? "" : "disabled"}>${count ? `<span class="camp-service-badge" title="${countLabel}">${count}</span>` : ""}<strong>${title}</strong><small>${detail}</small>${hint ? `<em class="camp-service-hint">${hint}</em>` : ""}</button>`;
+      };
       const stat = (icon, label, value, extra = "") => `<div class="menu-stat${extra}"><span class="menu-stat-icon" aria-hidden="true">${icon}</span><strong>${value}</strong><small>${label}</small></div>`;
       this.frame(`<section class="screen menu-screen">
         <div class="hero-banner menu-banner">
@@ -423,7 +430,16 @@
           </div></div>
         </div>
         <div class="dashboard-grid">
-          <div class="dashboard-card shop-card"><h3>训练广场</h3><p>每项卡牌训练或救治服务均需30金币。阵亡的真实随从会进入伤员名单，救治后才能重新出战。</p><div class="shop-actions"><button class="choice-btn" data-action="open-card-training" data-card-type="unit" ${data.coins < 30 || !trainableUnits ? "disabled" : ""}><strong>⚔️ 随从训练 · 30金币</strong><small>选择任意一张未满级随从牌，增加2点经验</small></button><button class="choice-btn" data-action="open-card-training" data-card-type="spell" ${data.coins < 30 || !trainableSpells ? "disabled" : ""}><strong>✨ 法术训练 · 30金币</strong><small>选择任意一张未满级法术牌，增加2点经验</small></button><button class="choice-btn" data-action="open-card-training" data-card-type="weapon" ${data.coins < 30 || !trainableWeapons ? "disabled" : ""}><strong>🗡️ 武器训练 · 30金币</strong><small>选择任意一张未满级武器牌，增加2点经验</small></button><button class="choice-btn" data-action="rescue-injured" ${data.coins < 30 || !needsMedicalCare ? "disabled" : ""}><strong>🩹 救治伤员 · 30金币</strong><small>${injuredCount ? `救治全部${injuredCount}名伤员` : "当前没有伤员"}${activeRun ? ` · 英雄生命 ${activeRun.hp}/${activeRun.maxHp}，同时恢复满生命` : ""}</small></button></div></div>
+          <div class="dashboard-card shop-card camp-card">
+            <div class="camp-heading"><div><span class="eyebrow">营地</span><h3>训练广场</h3></div><span class="resource-chip">${COIN_ICON}<strong>${data.coins}</strong></span></div>
+            <p>每项卡牌训练或救治服务均需30金币。阵亡的真实随从会进入伤员名单，救治后才能重新出战。</p>
+            <div class="shop-actions">
+              ${campService("open-card-training", "unit", "⚔️ 随从训练 · 30金币", "选择任意一张未满级随从牌，增加2点经验", trainableUnits, "可训练卡牌数")}
+              ${campService("open-card-training", "spell", "✨ 法术训练 · 30金币", "选择任意一张未满级法术牌，增加2点经验", trainableSpells, "可训练卡牌数")}
+              ${campService("open-card-training", "weapon", "🗡️ 武器训练 · 30金币", "选择任意一张未满级武器牌，增加2点经验", trainableWeapons, "可训练卡牌数")}
+              ${campService("rescue-injured", "", "🩹 救治伤员 · 30金币", `${injuredCount ? `救治全部${injuredCount}名伤员` : "当前没有伤员"}${activeRun ? ` · 英雄生命 ${activeRun.hp}/${activeRun.maxHp}，同时恢复满生命` : ""}`, injuredCount, "伤员人数", needsMedicalCare)}
+            </div>
+          </div>
         </div>
       </section>`, false);
     },
