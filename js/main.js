@@ -218,6 +218,7 @@
       const hasRun = Boolean(CF.SaveSystem.data.run);
       app.innerHTML = `<section class="cover-screen" aria-label="裂隙征途游戏封面">
         <div class="cover-shade"></div>
+        ${CF.I18n.selectorHTML("cover-language")}
         <div class="cover-menu">
           <span class="cover-kicker">RIFT EXPEDITION</span>
           <h1>裂隙征途</h1>
@@ -248,7 +249,7 @@
       const chapterDescription = chapter === 5 ? "第五关位于翡翠城南方的古城废墟。灰狼与其他野兽凭借速度和突袭扩张领地，最终迎战银灰狼女猎手。" : chapter === 4 ? "第四关拥有二十个史莱姆首领节点。她们生命厚重、攻击较低并会不断再生；沿发光溪流深入森林，最终面对碧露大贤者·涅芙莉。" : chapter === 3 ? "第三关拥有二十个熊族首领节点与一处农舍。沿农田支路调查被占领的村庄，最终面对丰穗战母·布蕾娅。" : chapter === 2 ? "第二关拥有二十个首领节点。沿着哥布林军团的防线一路推进，最终迎战拥有200生命的翠影女王。" : "在四条前后排战线上部署军队，撕开一路缺口，穿越十三个迷雾森林节点。每一次胜利，都会化为下一次远征的力量。";
       this.frame(`<section class="screen">
         <div class="hero-banner">
-          <div class="hero-portrait"><div class="crest hero-image"><img src="${HERO_PORTRAIT}" alt="护卫队长"></div></div>
+          <div class="hero-portrait" data-label="护卫队长"><div class="crest hero-image"><img src="${HERO_PORTRAIT}" alt="护卫队长"></div></div>
           <div class="hero-copy"><span class="eyebrow">单机卡牌闯关冒险</span><h2>${chapterHeading}</h2>
             <p>${chapterDescription}</p>
             <div class="menu-actions">
@@ -469,6 +470,7 @@
       const soundVolume = Math.round((sound?.volume ?? 0.58) * 100);
       this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">系统</span><h2>设置</h2></div></div>
         <div class="settings-stack">
+          <div class="panel language-settings"><div><h3>语言</h3><p>切换游戏界面显示的语言。</p></div>${CF.I18n.selectorHTML()}</div>
           <div class="panel sound-settings"><div><h3>战斗音效</h3><p>近战、远程、法术、死亡和Boss技能均使用不同的原创程序化音效。</p></div>
             <div class="sound-actions"><button class="secondary-btn" data-action="sound-toggle">${sound?.muted ? "开启音效" : "关闭音效"}</button><button class="mini-btn" data-action="sound-preview" ${sound?.muted ? "disabled" : ""}>试听</button></div>
             <label class="sound-volume"><span>音量 <output data-sound-output>${soundVolume}%</output></span><input type="range" min="0" max="100" value="${soundVolume}" data-sound-volume ${sound?.muted ? "disabled" : ""}></label>
@@ -739,7 +741,7 @@
       this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">${progressLabel} · 第${chapter}关独立存档</span><h2>${chapterTitle}</h2></div><p>击败一个节点后，所有相邻的未完成节点都会解锁。战败不会清空本关进度，切换关卡也会分别保存。</p></div>
         <div class="panel map-shell ${chapterFive ? "chapter-five-map-shell" : chapterFour ? "chapter-four-map-shell" : chapterThree ? "chapter-three-map-shell" : chapterTwo ? "chapter-two-map" : ""}"><div class="run-status"><span class="resource-chip">❤️ <strong>${run.hp}/${run.maxHp}</strong></span><span class="resource-chip">${COIN_ICON} 本轮 <strong>+${run.earnedCoins}</strong></span><span class="resource-chip">⭐ 本轮 <strong>+${run.earnedXp}</strong></span><span class="resource-chip">⚔️ 已完成 <strong>${run.completed.length}</strong></span><span class="resource-chip">🛡️ 失败 <strong>${totalFailures}</strong></span></div>
         ${mapRoute}<p class="map-note">${mapNote}</p>
-        <button class="secondary-btn" data-action="abandon-run">放弃本轮冒险</button></div></section>`);
+        <button class="secondary-btn" data-action="abandon-run">退出当前关卡</button></div></section>`);
     },
 
     renderFarmNpc() {
@@ -1116,6 +1118,14 @@
     CF.SoundFX?.setVolume(value / 100);
     const output = app.querySelector("[data-sound-output]");
     if (output) output.textContent = `${value}%`;
+  });
+
+  app.addEventListener("change", event => {
+    const select = event.target.closest?.("[data-language-select]");
+    if (!select) return;
+    CF.I18n.setLanguage(select.value);
+    if (UI.screen === "cover") UI.renderCover();
+    else UI.renderSettings(UI.settingsReturnScreen);
   });
 
   modalRoot.addEventListener("click", event => {

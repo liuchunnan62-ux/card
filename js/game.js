@@ -2049,7 +2049,7 @@
       const classes = ["slot", deployable ? "deployable" : "", targetable ? "targetable" : "", invalid ? "invalid-target" : ""].join(" ");
       return `<div class="${classes}" data-action="slot" data-side="${side}" data-row="${row}" data-column="${column}" data-lane="${column + 1}">
         ${unit ? this.unitHTML(unit, side, attackerSelected) : ""}
-        ${!unit && row === "front" && Rules.isLaneOpen(board, column) ? '<span class="lane-open"></span>' : ""}
+        ${!unit && row === "front" && Rules.isLaneOpen(board, column) ? '<span class="lane-open" data-label="路线已突破"></span>' : ""}
       </div>`;
     }
 
