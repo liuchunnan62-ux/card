@@ -435,7 +435,7 @@
       const card = actor.hand[handIndex];
       const cost = this.effectiveCost(card, side);
       if (!card || card.type !== "unit" || actor.mana < cost || actor.board[row][column]) return false;
-      if (side === "player" && CF.SaveSystem.isCardInjured(card.id)) return this.toast(`${card.name}仍在伤员名单中，需要先在训练广场救治。`, "bad");
+      if (side === "player" && CF.SaveSystem.isCardInjured(card.id)) return this.toast(`${card.name}仍在伤员名单中，需要先在队伍营地救治。`, "bad");
       actor.mana -= cost;
       actor.hand.splice(handIndex, 1);
       const unit = {

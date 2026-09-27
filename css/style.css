@@ -173,7 +173,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .camp-service[data-action="rescue-injured"] .camp-service-badge { border-color: #b44135; background: rgba(120,40,34,.6); color: #ffb4a6; }
 .menu-tile .menu-tile-dot { top: 10px; left: auto; right: 10px; }
 
-/* 训练广场独立界面：场景图 + 四位教官热点 + 服务卡片 */
+/* 队伍营地独立界面：场景图 + 四位教官热点 + 服务卡片 */
 .training-scene { position: relative; width: 100%; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: #15110f center / cover no-repeat; box-shadow: var(--shadow); }
 .training-scene::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, rgba(10,8,7,.35), transparent 30%); }
 .training-hotspot { position: absolute; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 45% 45% 30% 30%; }

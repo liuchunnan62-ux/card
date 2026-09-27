@@ -74,7 +74,7 @@
     { chapter: 4, name: "第四关", background: "assets/battle/dream-slime-forest.png", boss: "assets/enemies/chapter4/bosses/slime-boss-20.png", bossName: "碧露大贤者·涅芙莉" },
     { chapter: 5, name: "第五关", background: "assets/battle/ancient-city-ruins.png", boss: "assets/enemies/chapter5/bosses/wolf-matriarch.png", bossName: "银灰狼女猎手" }
   ];
-  // 训练广场：场景图中四位教官的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。
+  // 队伍营地：场景图中四位教官的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。
   const TRAINING_GROUNDS_ART = "assets/ui/training-grounds.webp";
   const TRAINING_ART_SIZE = [1408, 768];
   const TRAINING_NPCS = [
@@ -433,7 +433,7 @@
           <button class="menu-tile" data-action="level-select"><span class="menu-tile-art" style="background-image: url('assets/maps/world-map.png')" aria-hidden="true"></span><strong>关卡选择</strong><small>远征世界</small></button>
           <button class="menu-tile" data-action="hero-page"><span class="menu-tile-art" style="background-image: url('${heroProfile().portrait}')" aria-hidden="true"></span><strong>英雄档案</strong><small>${heroProfile().name} · Lv${data.hero.level}</small></button>
           <button class="menu-tile" data-action="deck-page"><span class="menu-tile-art" style="background-image: url('assets/cards/kingdom-knight.png')" aria-hidden="true"></span><strong>卡组编辑</strong><small>收藏 ${collected} 张</small></button>
-          <button class="menu-tile" data-action="training-page"><span class="menu-tile-art" style="background-image: url('${TRAINING_GROUNDS_ART}')" aria-hidden="true"></span>${trainingReady ? '<span class="menu-tile-dot" aria-hidden="true"></span>' : ""}<strong>训练广场</strong><small>${injuredCount ? `伤员 ${injuredCount} 名` : "营地"}</small></button>
+          <button class="menu-tile" data-action="training-page"><span class="menu-tile-art" style="background-image: url('${TRAINING_GROUNDS_ART}')" aria-hidden="true"></span>${trainingReady ? '<span class="menu-tile-dot" aria-hidden="true"></span>' : ""}<strong>队伍营地</strong><small>${injuredCount ? `伤员 ${injuredCount} 名` : "营地"}</small></button>
         </div>
         <div class="menu-overview">
           <div class="dashboard-card"><h3>远征进度</h3><ol class="chapter-emblems">${emblems}</ol></div>
@@ -447,7 +447,7 @@
       </section>`, false);
     },
 
-    // 训练广场四项服务的当前状态：角标数量、是否可用、提示文字。
+    // 队伍营地四项服务的当前状态：角标数量、是否可用、提示文字。
     trainingServices() {
       const data = CF.SaveSystem.data;
       const run = CF.Adventure.current();
@@ -481,7 +481,7 @@
       }).join("");
       const cards = services.map(service => `<button class="choice-btn camp-service training-npc-card${service.ready ? " ready" : ""}" ${actionAttrs(service)}>${avatar(service)}<span class="training-npc-copy"><span class="training-npc-name">${service.name}</span><q>${service.line}</q><strong>${service.title}</strong><small>${service.detail}</small><em class="camp-service-hint">${service.hint}</em></span>${badge(service)}</button>`).join("");
       this.frame(`<section class="screen training-screen">
-        <div class="page-heading"><div><span class="eyebrow">营地</span><h2>训练广场</h2></div><p>每项卡牌训练或救治服务均需30金币。阵亡的真实随从会进入伤员名单，救治后才能重新出战。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">营地</span><h2>队伍营地</h2></div><p>每项卡牌训练或救治服务均需30金币。阵亡的真实随从会进入伤员名单，救治后才能重新出战。</p></div>
         <div class="training-scene" style="background-image: url('${TRAINING_GROUNDS_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
           ${hotspots}
         </div>
@@ -511,7 +511,7 @@
         const pct = Math.min(100, Math.round(progress.xp / needed * 100));
         return `<button class="choice-btn training-card-choice" data-modal-action="train-card" data-training-card="${id}" data-card="${id}" data-card-type="${type}">${this.cardPreview(id, true)}<strong data-training-stars>${"★".repeat(progress.level)}${"☆".repeat(5 - progress.level)}</strong><small data-training-xp>当前经验 ${progress.xp}/${needed}</small><span class="card-xp-progress training-xp-progress"><span data-training-xp-bar style="width:${pct}%"></span></span><em data-training-status>点击训练 · +2经验</em></button>`;
       }).join("");
-      this.modal(`<div class="training-modal-heading" data-training-panel="${type}"><div><span class="eyebrow">训练广场 · 每次30金币</span><h2>${labels[type]}</h2></div><span class="training-coin">${COIN_ICON}<strong data-training-coins>${CF.SaveSystem.data.coins}</strong></span></div><p>点击同一张卡即可连续训练。面板不会关闭，每次增加2点经验并立即更新等级和进度。</p><div class="choice-grid training-card-grid">${choices}</div><div class="menu-actions"><button class="secondary-btn" data-modal-action="close">完成训练</button></div>`, "training-modal");
+      this.modal(`<div class="training-modal-heading" data-training-panel="${type}"><div><span class="eyebrow">队伍营地 · 每次30金币</span><h2>${labels[type]}</h2></div><span class="training-coin">${COIN_ICON}<strong data-training-coins>${CF.SaveSystem.data.coins}</strong></span></div><p>点击同一张卡即可连续训练。面板不会关闭，每次增加2点经验并立即更新等级和进度。</p><div class="choice-grid training-card-grid">${choices}</div><div class="menu-actions"><button class="secondary-btn" data-modal-action="close">完成训练</button></div>`, "training-modal");
     },
 
     refreshCardTraining(type, id) {
@@ -1153,7 +1153,7 @@
     },
     handleDefeat(battle) {
       const run = CF.Adventure.recordDefeat();
-      this.modal(`<span class="eyebrow">本次挑战失败</span><h2>队伍退回本关营地</h2><p>第${run.chapter}关的独立存档没有回退：已击败节点、路线和奖励全部保留，英雄已恢复满生命。本战阵亡的随从仍需在训练广场救治。</p><div class="summary-list">
+      this.modal(`<span class="eyebrow">本次挑战失败</span><h2>队伍退回本关营地</h2><p>第${run.chapter}关的独立存档没有回退：已击败节点、路线和奖励全部保留，英雄已恢复满生命。本战阵亡的随从仍需在队伍营地救治。</p><div class="summary-list">
         <div><span>本轮金币</span><strong>+${run.earnedCoins}</strong></div><div><span>英雄经验</span><strong>+${run.earnedXp}</strong></div><div><span>完成节点</span><strong>${run.completed.length}</strong></div></div>
         <div class="menu-actions"><button class="primary-btn" data-modal-action="failed-run">返回本关地图</button><button class="secondary-btn" data-modal-action="failed-run-menu">返回主菜单</button></div>`);
     },
