@@ -1218,8 +1218,11 @@
 
   app.addEventListener("click", event => {
     const el = event.target.closest("[data-action]");
+    const action = el?.dataset.action;
+    if (UI.battle && action === "player-portrait") return UI.battle.clickPlayerPortrait();
+    if (UI.battle && action === "emote") return UI.battle.playerEmote(el.dataset.emote);
+    if (UI.battle?.state.emoteMenuOpen) UI.battle.closeEmoteMenu();
     if (!el) return;
-    const action = el.dataset.action;
     if (UI.battle && ["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn"].includes(action)) {
       if (action === "slot") UI.battle.clickSlot(el.dataset.side, el.dataset.row, Number(el.dataset.column));
       if (action === "hero") UI.battle.clickHero(el.dataset.side);
