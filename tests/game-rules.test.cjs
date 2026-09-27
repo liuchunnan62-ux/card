@@ -249,12 +249,14 @@ assert.match(mainSource, /data-action="save-level-layout"[\s\S]*data-action="res
 assert.match(mainSource, /levelMapLayout[\s\S]*pointerdown[\s\S]*pointermove/, "关卡布局应支持拖动并保存坐标");
 assert.match(battleCss, /\.level-map-board\.layout-editing[\s\S]*\.level-node\.dragging/, "布局编辑模式应提供拖动视觉反馈");
 assert.match(mainSource, /renderTrials\(\)/, "统领试炼应提供独立七关选择界面");
-assert.match(mainSource, /<h3>训练广场<\/h3>/, "主界面永久商店应改名为训练广场");
+assert.match(mainSource, /renderTraining\(\)[\s\S]*<h2>训练广场<\/h2>/, "训练广场应作为独立界面");
+assert.match(mainSource, /data-action="training-page"[\s\S]*<strong>训练广场<\/strong>/, "主界面应提供进入训练广场的入口");
+assert.ok(fs.existsSync(path.join(root, "assets/ui/training-grounds.webp")), "训练广场场景图应位于项目资源目录");
 assert.match(mainSource, /renderCover\(\)[\s\S]*新游戏[\s\S]*继续游戏[\s\S]*游戏设置/, "启动封面应提供新游戏、继续游戏与游戏设置三个按钮");
 assert.match(mainSource, /UI\.renderCover\(\);\s*\}\)\(\);/, "游戏启动时应首先显示封面");
 assert.ok(fs.existsSync(path.join(root, "assets/ui/game-cover.png")), "游戏封面图片应复制到项目资源目录");
 assert.doesNotMatch(mainSource, /英雄训练|buy-health|buyHealthUpgrade/, "训练广场不应继续出售英雄最大生命值");
-assert.match(mainSource, /随从训练[\s\S]*法术训练[\s\S]*武器训练[\s\S]*救治伤员/, "训练广场应保留三种卡牌训练并加入救治伤员");
+for (const service of ["随从训练", "法术训练", "武器训练", "救治伤员"]) assert.match(mainSource, new RegExp(`TRAINING_NPCS = \\[[\\s\\S]*${service} · 30金币`), `训练广场应提供${service}`);
 assert.match(mainSource, /点击同一张卡即可连续训练[\s\S]*data-training-coins[\s\S]*data-training-card/, "卡牌训练面板应支持保持开启并连续训练同一张卡");
 assert.match(mainSource, /buyCardTraining\(type, id\)[\s\S]*addCardXp\(id, 2\)[\s\S]*refreshCardTraining\(type, id\)/, "每次卡牌训练后应原地刷新金币、等级和经验进度");
 assert.match(mainSource, /buyCardTraining\(type, id\)[\s\S]*save\.coins -= 30;[\s\S]*addCardXp\(id, 2\)/, "卡牌训练应允许选择对应卡牌并以30金币增加2点经验");
