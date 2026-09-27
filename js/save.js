@@ -2,6 +2,9 @@
   "use strict";
 
   const KEY = "rift-expedition-save-v1";
+  const SLOT_COUNT = 15;
+  const SLOT_PREFIX = "rift-expedition-slot-";
+  const ACTIVE_SLOT_KEY = "rift-expedition-active-slot";
   const CF = window.CardForge;
   const CHAPTER_IDS = [1, 2, 3, 4, 5];
   const CHAPTER_NODE_COUNTS = { 1: 13, 2: 20, 3: 20, 4: 20, 5: 20 };
@@ -48,13 +51,23 @@
     }, {});
   }
 
-  function freshSave() {
+  function signatureSkillOf(heroId) {
+    const hero = typeof CF.heroById === "function" ? CF.heroById(heroId) : null;
+    return hero?.skill || "slash";
+  }
+
+  function freshSave(heroId = "captain") {
+    const hero = typeof CF.heroById === "function" ? CF.heroById(heroId) : null;
+    const signature = hero?.skill || "slash";
+    const skillProgress = { slash: { level: 1, xp: 0, unlocked: true } };
+    skillProgress[signature] = { level: 1, xp: 0, unlocked: true };
     return {
       version: 2,
       hero: {
+        heroId: hero?.id || "captain",
         level: 1, xp: 0, maxHealth: 30, maxMana: 3,
-        equippedSkill: "slash",
-        skillProgress: { slash: { level: 1, xp: 0, unlocked: true } }
+        equippedSkill: signature,
+        skillProgress
       },
       coins: 50,
       collection: starterCollection(),
@@ -122,7 +135,7 @@
   }
 
   function normalize(raw) {
-    const base = freshSave();
+    const base = freshSave(raw?.hero?.heroId);
     if (!raw || typeof raw !== "object") return base;
     const cleanDeck = Array.isArray(raw.deck) ? raw.deck.filter(id => CF.CARD_LIBRARY[id]).filter((id, index, list) => list.indexOf(id) === index) : [...base.deck];
     if (cleanDeck.length < 24) {
@@ -178,7 +191,10 @@
       progress.unlocked = progress.unlocked !== false;
       result.hero.skillProgress[id] = progress;
     });
-    if (!result.hero.skillProgress[result.hero.equippedSkill]?.unlocked) result.hero.equippedSkill = "slash";
+    result.hero.heroId = base.hero.heroId;
+    const signature = signatureSkillOf(result.hero.heroId);
+    if (!result.hero.skillProgress[signature]?.unlocked) result.hero.skillProgress[signature] = { level: 1, xp: 0, unlocked: true };
+    if (!result.hero.skillProgress[result.hero.equippedSkill]?.unlocked) result.hero.equippedSkill = signature;
     if (Number(result.completedRuns) >= 1) {
       result.items.queenBloodRiverWater = true;
       result.questItemRewards.queenBloodRiverWater = true;
@@ -200,25 +216,109 @@
     return result;
   }
 
+  const slotKey = slot => `${SLOT_PREFIX}${slot}`;
+  const validSlot = slot => Number.isInteger(Number(slot)) && Number(slot) >= 1 && Number(slot) <= SLOT_COUNT;
+  function readJSON(key) {
+    try { const text = localStorage.getItem(key); return text ? JSON.parse(text) : null; }
+    catch (error) { return null; }
+  }
+  function writeRaw(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch (error) { console.warn("存档写入失败", error); return false; }
+  }
+
   const SaveSystem = {
     data: null,
+    activeSlot: null,
+    slotCount: SLOT_COUNT,
     levelCap() { return this.data?.completedRuns >= 4 ? 25 : this.data?.completedRuns >= 3 ? 20 : this.data?.completedRuns >= 2 ? 15 : this.data?.completedRuns >= 1 ? 10 : 5; },
     deckLimit() { return 24 + Math.max(0, (this.data?.hero?.level || 1) - 5); },
     load() {
-      try { this.data = normalize(JSON.parse(localStorage.getItem(KEY))); }
+      const raw = readJSON(KEY);
+      try { this.data = normalize(raw); }
       catch (error) { this.data = freshSave(); }
+      const storedSlot = Number(readJSON(ACTIVE_SLOT_KEY));
+      this.activeSlot = validSlot(storedSlot) && readJSON(slotKey(storedSlot)) ? storedSlot : null;
+      // 旧版只有一个自动存档：首次升级时把已有进度迁移到1号栏位，避免新游戏覆盖老玩家的进度。
+      if (!this.activeSlot && raw && typeof raw === "object" && this.listSlots().every(slot => slot.empty)) this.activeSlot = 1;
       this.save(false);
       return this.data;
     },
     save(notify = true) {
-      try { localStorage.setItem(KEY, JSON.stringify(this.data)); }
-      catch (error) { console.warn("存档写入失败", error); }
+      const text = JSON.stringify(this.data);
+      writeRaw(KEY, text);
+      if (this.activeSlot) {
+        writeRaw(slotKey(this.activeSlot), JSON.stringify({ ...this.data, savedAt: Date.now() }));
+        writeRaw(ACTIVE_SLOT_KEY, String(this.activeSlot));
+      } else {
+        try { localStorage.removeItem(ACTIVE_SLOT_KEY); } catch (error) { /* 可选 */ }
+      }
       if (notify) window.dispatchEvent(new CustomEvent("savechange", { detail: this.data }));
     },
     reset() {
-      this.data = freshSave();
+      this.data = freshSave(this.data?.hero?.heroId);
       this.save();
       return this.data;
+    },
+    slotSummary(slot) {
+      const raw = validSlot(slot) ? readJSON(slotKey(slot)) : null;
+      if (!raw || typeof raw !== "object") return { slot: Number(slot), empty: true, active: this.activeSlot === Number(slot) };
+      const hero = typeof CF.heroById === "function" ? CF.heroById(raw.hero?.heroId) : null;
+      const chapter = CHAPTER_IDS.includes(Number(raw.activeChapter)) ? Number(raw.activeChapter) : 1;
+      const run = raw.chapterRuns?.[chapter] || null;
+      return {
+        slot: Number(slot),
+        empty: false,
+        active: this.activeSlot === Number(slot),
+        heroId: hero?.id || "captain",
+        heroName: hero?.name || "护卫队长",
+        heroTitle: hero?.title || "",
+        portrait: hero?.portrait || "assets/hero/novice-swordsman.png",
+        level: Math.max(1, Number(raw.hero?.level) || 1),
+        coins: Math.max(0, Number(raw.coins) || 0),
+        completedRuns: Math.max(0, Number(raw.completedRuns) || 0),
+        chapter,
+        chapterCompleted: Array.isArray(run?.completed) ? run.completed.length : 0,
+        chapterTotal: CHAPTER_NODE_COUNTS[chapter],
+        savedAt: Number(raw.savedAt) || 0
+      };
+    },
+    listSlots() {
+      return Array.from({ length: SLOT_COUNT }, (_, index) => this.slotSummary(index + 1));
+    },
+    hasSlot(slot) { return !this.slotSummary(slot).empty; },
+    // 新游戏：在指定栏位以所选英雄建立全新存档，并成为当前自动保存的栏位。
+    newGame(slot, heroId) {
+      if (!validSlot(slot)) return null;
+      this.data = freshSave(heroId);
+      this.activeSlot = Number(slot);
+      this.save();
+      return this.data;
+    },
+    loadSlot(slot) {
+      const raw = validSlot(slot) ? readJSON(slotKey(slot)) : null;
+      if (!raw) return null;
+      delete raw.savedAt;
+      this.data = normalize(raw);
+      this.activeSlot = Number(slot);
+      this.save();
+      return this.data;
+    },
+    // 另存为：把当前进度写入指定栏位，之后的自动保存也会写入该栏位。
+    saveToSlot(slot) {
+      if (!validSlot(slot)) return false;
+      this.activeSlot = Number(slot);
+      this.save();
+      return true;
+    },
+    deleteSlot(slot) {
+      if (!validSlot(slot)) return false;
+      try { localStorage.removeItem(slotKey(slot)); } catch (error) { return false; }
+      if (this.activeSlot === Number(slot)) {
+        this.activeSlot = null;
+        this.save(false);
+      }
+      return true;
     },
     addHeroXp(amount) {
       const hero = this.data.hero;
@@ -319,5 +419,5 @@
   };
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION });
+  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT });
 })();

@@ -35,6 +35,7 @@ load("js/save.js");
 load("js/adventure.js");
 load("js/trials.js");
 load("js/arena.js");
+load("js/heroes.js");
 load("js/sound.js");
 load("js/game.js");
 
@@ -223,7 +224,7 @@ assert.ok(CF.Arena.heroes.every(hero => hero.dialogue?.intro && hero.dialogue?.t
 assert.equal(new Set(CF.Arena.heroes.map(hero => hero.dialogue.intro)).size, 63, "每名竞技场对手都应拥有独立赛前宣言");
 assert.ok(CF.Arena.heroes.filter(hero => hero.persona === "citizen").length >= 20, "竞技场应有多名认可人类进步并被王国接纳的异族选手");
 assert.ok(CF.Arena.heroes.filter(hero => hero.persona === "trash").length >= 10, "竞技场应有多名擅长挑衅和垃圾话的选手");
-assert.equal(Object.keys(CF.HERO_SKILLS).length, 64, "玩家应可收集斩击与63种竞技场英雄技能");
+assert.equal(Object.keys(CF.HERO_SKILLS).length, 72, "玩家应可收集斩击、63种竞技场英雄技能，另有8名可选英雄的独特技能");
 assert.ok(Object.values(CF.HERO_SKILLS).every(skill => typeof skill.playerDescription === "function"), "每种英雄技能都应有随等级变化的玩家版效果");
 const arenaSkillSignatures = CF.Arena.heroes.map(hero => JSON.stringify({
   effect: hero.skill.effect, target: hero.skill.target, cost: hero.skill.cost,
@@ -1082,6 +1083,114 @@ for (const arenaHero of CF.Arena.heroes) {
 }
 assert.match(mainSource, /获得<strong>2点英雄技能经验<\/strong>/, "竞技场胜利界面应显示每场获得2点技能经验");
 
+// —— 选人英雄与15个存档栏位 ——
+assert.equal(CF.HEROES.length, 12, "选人界面应展示队长、8名可选英雄与3名成就英雄");
+assert.equal(CF.selectableHeroes().length, 9, "除队长外应有8名可选英雄");
+assert.equal(CF.HEROES.filter(hero => hero.locked).length, 3, "两名吸血鬼与狼人应作为未开放的成就英雄");
+assert.ok(CF.HEROES.filter(hero => hero.locked).every(hero => !hero.name && !hero.skill), "成就英雄暂时只保留头像，不含内容");
+assert.equal(new Set(CF.selectableHeroes().map(hero => hero.skill)).size, 9, "每名可选英雄都应拥有独特的英雄技能");
+CF.HEROES.forEach(hero => assert.ok(fs.existsSync(path.join(root, hero.portrait)), `${hero.id}头像文件应存在`));
+assert.equal(CF.heroById("locked_count").id, "captain", "未解锁英雄不能被选用");
+assert.match(indexSource, /js\/heroes\.js/, "游戏入口应加载英雄配置");
+
+storage.clear();
+CF.SaveSystem.load();
+assert.equal(CF.SaveSystem.activeSlot, null, "首次进入游戏时不应占用存档栏位");
+assert.equal(CF.SaveSystem.listSlots().length, 15, "应提供15个存档栏位");
+assert.ok(CF.SaveSystem.listSlots().every(slot => slot.empty), "首次进入时所有栏位为空");
+CF.SaveSystem.newGame(3, "violet_witch");
+assert.equal(CF.SaveSystem.activeSlot, 3, "新游戏应绑定所选栏位");
+assert.equal(CF.SaveSystem.data.hero.heroId, "violet_witch", "新游戏应记录所选英雄");
+assert.equal(CF.SaveSystem.data.hero.equippedSkill, "sig_arcane_missiles", "新游戏应自动装备英雄的独特技能");
+assert.equal(CF.currentHero().name, "薇奥菈", "当前英雄应为所选英雄");
+CF.SaveSystem.data.coins = 777;
+CF.SaveSystem.save();
+assert.equal(CF.SaveSystem.slotSummary(3).coins, 777, "进度应自动保存到当前栏位");
+assert.equal(CF.SaveSystem.slotSummary(3).heroName, "薇奥菈", "栏位摘要应显示英雄名");
+CF.SaveSystem.saveToSlot(7);
+assert.equal(CF.SaveSystem.activeSlot, 7, "另存为后应切换到新栏位");
+CF.SaveSystem.data.coins = 5;
+CF.SaveSystem.save();
+assert.equal(CF.SaveSystem.slotSummary(3).coins, 777, "另存为后旧栏位应保持快照");
+CF.SaveSystem.loadSlot(3);
+assert.equal(CF.SaveSystem.data.coins, 777, "读取栏位应恢复该栏位进度");
+assert.equal(CF.SaveSystem.activeSlot, 3, "读取后应以该栏位自动保存");
+CF.SaveSystem.load();
+assert.equal(CF.SaveSystem.activeSlot, 3, "重新打开游戏后应记住当前栏位");
+assert.equal(CF.SaveSystem.data.hero.heroId, "violet_witch", "重新打开游戏后应保留所选英雄");
+CF.SaveSystem.deleteSlot(7);
+assert.ok(CF.SaveSystem.slotSummary(7).empty, "删除后栏位应为空");
+assert.ok(!CF.SaveSystem.loadSlot(7), "空栏位不能读取");
+
+storage.clear();
+storage.set("rift-expedition-save-v1", JSON.stringify({ coins: 321, hero: { level: 4, xp: 100, maxHealth: 33, maxMana: 5 } }));
+CF.SaveSystem.load();
+assert.equal(CF.SaveSystem.activeSlot, 1, "旧版单一存档应自动迁移到1号栏位");
+assert.equal(CF.SaveSystem.slotSummary(1).coins, 321, "迁移后的1号栏位应保留旧进度");
+assert.equal(CF.SaveSystem.data.hero.heroId, "captain", "旧存档默认为护卫队长");
+assert.equal(CF.SaveSystem.data.hero.equippedSkill, "slash", "旧存档保留原技能");
+
+const signatureBattle = (heroId, setup) => {
+  CF.SaveSystem.newGame(15, heroId);
+  const test = new CF.Battle({ ...CF.enemies.goblin_warband, id: `signature-${heroId}`, health: 999 }, {});
+  Object.assign(test.state, { phase: "player", busy: false });
+  Object.assign(test.state.player, { skillCooldown: 0, maxMana: 99, mana: 20, maxHp: 60, hp: 30 });
+  test.state.player.board = CF.emptyBoard();
+  test.state.enemy.board = CF.emptyBoard();
+  setup?.(test);
+  return test;
+};
+let sig = signatureBattle("elf_archer", test => {
+  test.state.enemy.board.front[0] = combatUnit("goblin_guard", { attack: 2, health: 10, maxHealth: 10, keywords: [] });
+  test.state.enemy.board.back[0] = combatUnit("goblin_archer", { attack: 2, health: 2, maxHealth: 2, keywords: [] });
+});
+assert.equal(sig.state.player.name, "莉瑟尔", "战斗中应显示所选英雄");
+const handBefore = sig.state.player.hand.length;
+sig.selectSkill(); sig.castSkill("back", 0);
+assert.equal(sig.state.enemy.board.back[0], null, "穿林箭应无视前排保护击杀后排");
+assert.equal(sig.state.player.hand.length, Math.min(10, handBefore + 1), "穿林箭击杀后应抽1张牌");
+
+sig = signatureBattle("violet_witch");
+const witchHp = sig.state.enemy.hp;
+sig.selectSkill();
+assert.equal(witchHp - sig.state.enemy.hp, 3, "奥术飞弹无随从时应全部命中英雄");
+
+sig = signatureBattle("dawn_priestess", test => { test.state.player.board.front[1] = combatUnit("kingdom_knight", { attack: 2, health: 1, maxHealth: 9, keywords: [] }); });
+sig.selectSkill();
+assert.equal(sig.state.player.board.front[1].health, 9, "晨曦复苏应使随从恢复满生命");
+assert.equal(sig.state.player.hp, 32, "晨曦复苏应治疗英雄");
+
+sig = signatureBattle("horned_berserker", test => { test.state.player.board.front[0] = combatUnit("kingdom_knight", { attack: 3, health: 5, maxHealth: 5, keywords: [], ready: false }); });
+sig.selectSkill(); sig.castSkill("front", 0);
+assert.equal(sig.currentAttack(sig.state.player.board.front[0]), 5, "血怒狂击应提升本回合攻击");
+assert.equal(sig.state.player.board.front[0].ready, true, "血怒狂击后随从可以再次攻击");
+assert.equal(sig.state.player.hp, 28, "血怒狂击应消耗英雄生命");
+
+sig = signatureBattle("crimson_succubus", test => { test.state.enemy.board.back[2] = combatUnit("goblin_archer", { attack: 5, health: 5, maxHealth: 5, keywords: [] }); });
+sig.selectSkill();
+assert.equal(sig.state.enemy.board.back[2].attack, 3, "魅惑之吻应永久夺取攻击力");
+assert.equal(sig.state.player.hp, 32, "魅惑之吻应按夺取的攻击力治疗英雄");
+
+sig = signatureBattle("silverleaf_ranger");
+sig.selectSkill();
+assert.equal(sig.state.player.board.back[0]?.name, "林影弓手", "林间伏兵应在后排召唤弓手");
+assert.equal(sig.state.player.board.back[0].ready, true, "林影弓手可以立即攻击");
+
+sig = signatureBattle("aegis_knight");
+sig.selectSkill();
+assert.equal(sig.state.player.board.front[0]?.health, 4, "前排为空时圣盾壁垒应召唤圣盾卫士");
+
+sig = signatureBattle("grove_dryad");
+sig.selectSkill();
+const sapling = sig.state.player.board.front[0];
+assert.equal(sapling?.name, "古树幼苗", "萌芽古树应召唤古树幼苗");
+sig.startPlayerTurn();
+assert.equal(sapling.attack, 2, "古树幼苗每回合开始时应成长");
+assert.equal(sapling.maxHealth, 3, "古树幼苗每回合开始时应获得生命");
+storage.clear();
+CF.SaveSystem.load();
+
+console.log("✓ 选人界面、8名英雄独特技能与15个存档栏位测试全部通过");
 console.log("✓ 12张独立新卡及6种新法术效果测试全部通过");
 console.log("✓ 7张武器牌、攻击耐久、远近程与第一关Boss掉落测试全部通过");
 console.log("✓ 四大关独立存档、旧档迁移与战败保留进度测试全部通过");
