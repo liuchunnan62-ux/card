@@ -645,7 +645,7 @@
         { type: "cardXp", icon: "📚", title: "战斗领悟", detail: "随机一张未满级卡牌获得2点经验", value: 2 }
       ];
     },
-    // Boss战翻牌战利品：数量随章节难度递增（3~6件），三张牌固定揭示女王血河水、粗糙装备与笔记残页。
+    // Boss战翻牌战利品：数量随章节难度递增（3~6件），三张牌固定揭示女王精血、粗糙装备与笔记残页。
     generateBossLoot() {
       const run = this.current();
       const gearCount = Math.min(6, (run?.chapter || 1) + 2);
@@ -653,7 +653,7 @@
     },
     claimBossLoot() {
       const { gearCount } = this.generateBossLoot();
-      CF.SaveSystem.addInventoryItem("hoardedQueenWater", 1);
+      CF.SaveSystem.addInventoryItem("queenEssenceBlood", 1);
       CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
       CF.SaveSystem.addInventoryItem("armorT1", gearCount);
       let note = null;

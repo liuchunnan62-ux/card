@@ -643,7 +643,7 @@
     renderBackpack() {
       this.screen = "backpack"; this.battle = null; this.activeNode = null;
       const inv = CF.SaveSystem.data.inventory;
-      const waterCount = inv.hoardedQueenWater || 0;
+      const waterCount = inv.queenEssenceBlood || 0;
       const gearRows = kind => [1, 2, 3, 4].map(tier => {
         const count = inv[`${kind}T${tier}`] || 0;
         if (!count) return "";
@@ -654,16 +654,16 @@
       const armorItems = gearRows("armor");
       this.frame(`<section class="screen">
         <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
-        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>珍藏的女王血河水</strong><small>拥有 ${waterCount} 瓶 · 使用后永久+1最大生命</small><button class="secondary-btn" data-action="use-hoarded-water" ${waterCount ? "" : "disabled"}>使用</button></div></div>
+        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · 使用后永久+1最大生命</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount ? "" : "disabled"}>使用</button></div></div>
         <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
         <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
     },
 
-    useHoardedWater() {
-      const ok = CF.SaveSystem.useHoardedQueenWater();
-      if (!ok) return this.toast("没有可用的女王血河水。", "bad");
+    useQueenBlood() {
+      const ok = CF.SaveSystem.useQueenEssenceBlood();
+      if (!ok) return this.toast("没有可用的女王精血。", "bad");
       CF.Adventure.syncHeroGrowth();
       this.toast("英雄最大生命值永久增加1点。", "good");
       this.sfx("heal");
@@ -672,21 +672,19 @@
 
     openEquipTargetPicker(slot, tier) {
       const save = CF.SaveSystem.data;
-      const heroTier = save.heroEquipment?.[slot] || 0;
-      const heroRow = `<button class="choice-btn equip-target-choice" data-modal-action="equip-target" data-target="hero" data-slot="${slot}" data-tier="${tier}"><strong>${heroProfile().name}（英雄）</strong><small>当前：${heroTier ? EQUIPMENT_TIER_NAMES[slot][heroTier] : "未装备"}</small></button>`;
       const cardIds = Object.entries(save.collection).filter(([id, owned]) => owned > 0 && CF.CARD_LIBRARY[id]?.type === "unit").map(([id]) => id)
         .sort((left, right) => CF.CARD_LIBRARY[left].name.localeCompare(CF.CARD_LIBRARY[right].name, "zh-CN"));
       const cardRows = cardIds.map(id => {
         const cardTier = save.cardEquipment?.[id]?.[slot] || 0;
         return `<button class="choice-btn equip-target-choice" data-modal-action="equip-target" data-target="${id}" data-slot="${slot}" data-tier="${tier}">${this.cardPreview(id, true)}<small>当前：${cardTier ? EQUIPMENT_TIER_NAMES[slot][cardTier] : "未装备"}</small></button>`;
       }).join("");
-      this.modal(`<div class="page-heading"><div><span class="eyebrow">装备${EQUIPMENT_TIER_NAMES[slot][tier]}</span><h2>选择装备对象</h2></div><p>装备后原有的同槽位装备会退回背包。</p></div>
-        <div class="choice-grid">${heroRow}${cardRows}</div>
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">装备${EQUIPMENT_TIER_NAMES[slot][tier]}</span><h2>选择装备的随从</h2></div><p>装备后原有的同槽位装备会退回背包。</p></div>
+        <div class="choice-grid">${cardRows || '<p class="empty-hint">暂无已收集的随从卡牌。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-modal-action="close">取消</button></div>`, "training-modal");
     },
 
     equipTarget(target, slot, tier) {
-      const ok = target === "hero" ? CF.SaveSystem.equipHeroItem(slot, tier) : CF.SaveSystem.equipCardItem(target, slot, tier);
+      const ok = CF.SaveSystem.equipCardItem(target, slot, tier);
       if (!ok) return this.toast("装备失败，材料不足。", "bad");
       this.toast("装备成功。", "good");
       this.sfx("cardAdd");
@@ -1230,7 +1228,7 @@
         const bossName = this.battle?.enemyConfig?.name || "Boss";
         const storyDefeat = this.battle?.state?.storyDefeat;
         const lootCards = [
-          { title: "珍藏的女王血河水", detail: "本来是为还没喝过的野兽、或天资不好的觉醒野兽准备的。背包中使用可永久+1最大生命。" },
+          { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。背包中使用可永久+1最大生命。" },
           { title: `粗糙武器 ×${bossLoot.gearCount} · 粗糙盔甲 ×${bossLoot.gearCount}`, detail: "白色品质的战场缴获，可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。" },
           bossLoot.note
             ? { title: bossLoot.note.title, detail: bossLoot.note.text }
@@ -1476,7 +1474,7 @@
     if (action === "open-equipment-shop") UI.openEquipmentShop();
     if (action === "backpack-page") UI.renderBackpack();
     if (action === "book-page") UI.renderBook();
-    if (action === "use-hoarded-water") UI.useHoardedWater();
+    if (action === "use-queen-blood") UI.useQueenBlood();
     if (action === "equip-item") UI.openEquipTargetPicker(el.dataset.kind, Number(el.dataset.tier));
     if (action === "sound-toggle") { CF.SoundFX?.toggleMuted(); UI.renderSettings(); }
     if (action === "music-toggle") { CF.Music?.toggleMuted(); UI.renderSettings(UI.settingsReturnScreen); }

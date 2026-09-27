@@ -86,9 +86,8 @@
       chapterFiveBossRewards: {},
       questItemRewards: {},
       items: { queenBloodRiverWater: false },
-      inventory: { hoardedQueenWater: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
+      inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
       cardEquipment: {},
-      heroEquipment: { weapon: 0, armor: 0 },
       notesUnlocked: 0,
       commanderTrials: { completed: [] },
       levelMapLayout: {},
@@ -169,7 +168,6 @@
       items: { ...base.items, ...(raw.items || {}) },
       inventory: { ...base.inventory, ...(raw.inventory || {}) },
       cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
-      heroEquipment: { ...base.heroEquipment, ...(raw.heroEquipment || {}) },
       notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {
@@ -430,10 +428,10 @@
       this.save();
       return inventory[key];
     },
-    useHoardedQueenWater() {
+    useQueenEssenceBlood() {
       const inventory = this.data.inventory || (this.data.inventory = {});
-      if (!(inventory.hoardedQueenWater > 0)) return false;
-      inventory.hoardedQueenWater -= 1;
+      if (!(inventory.queenEssenceBlood > 0)) return false;
+      inventory.queenEssenceBlood -= 1;
       this.data.hero.maxHealth += 1;
       this.save();
       return true;
@@ -450,19 +448,6 @@
       if (previousTier) inventory[`${slot}T${previousTier}`] = (inventory[`${slot}T${previousTier}`] || 0) + 1;
       inventory[key] -= 1;
       entry[slot] = tier;
-      this.save();
-      return true;
-    },
-    equipHeroItem(slot, tier) {
-      if ((slot !== "weapon" && slot !== "armor") || !(tier >= 1 && tier <= 4)) return false;
-      const key = `${slot}T${tier}`;
-      const inventory = this.data.inventory || (this.data.inventory = {});
-      if (!(inventory[key] > 0)) return false;
-      const equipment = this.data.heroEquipment || (this.data.heroEquipment = { weapon: 0, armor: 0 });
-      const previousTier = equipment[slot] || 0;
-      if (previousTier) inventory[`${slot}T${previousTier}`] = (inventory[`${slot}T${previousTier}`] || 0) + 1;
-      inventory[key] -= 1;
-      equipment[slot] = tier;
       this.save();
       return true;
     },
