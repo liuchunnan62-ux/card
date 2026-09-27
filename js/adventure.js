@@ -3,6 +3,21 @@
 
   const CF = window.CardForge;
   const COIN_ICON = '<img class="coin-icon" src="assets/ui/gold-coin.png" alt="金币">';
+  // 笔记残页：共享收集池，每次击败Boss按顺序解锁下一篇，讲述野兽饮下女王之血后觉醒、聚拢、迎战主角小队的故事。
+  const LORE_PAGES = [
+    { title: "残页·觉醒", text: "浑身发烫的那一夜，河水的味道钻进骨头里。我睁开眼睛，第一次知道自己有名字可以想，却想不起该怎么称呼自己。" },
+    { title: "残页·饥饿", text: "醒来后的饥饿和从前不一样了——不是肚子空，是脑子空。我开始学着分辨哪些草能吃，哪些血是同类的血，不该喝。" },
+    { title: "残页·同类", text: "我在溪边闻到另一具正在发烫的躯体，隔着芦苇看了很久。它先叫了一声，像是在确认我也听得懂——我们是同一批被选中的。" },
+    { title: "残页·聚拢", text: "越来越多的呼唤从林子深处传来。我们不再各自躲藏，而是顺着河水最浓的方向走去，那里有更多醒来的同类在等。" },
+    { title: "残页·入侵者的气味", text: "人类的马蹄声第一次踏进我们的领地那天，族群里最老的一个说：他们身上没有女王之血的味道，闻着像敌人，也像猎物。" },
+    { title: "残页·筑巢", text: "我们把巢穴筑得更深，把幼崽藏在最里层。有同类说，等我们够强，就不用再躲了——可以自己决定谁能踏进这片林子。" },
+    { title: "残页·感召", text: "那天夜里，一种从未有过的召唤穿过我全身，比河水更浓、更清晰。我知道，那是首领在唤我们，去往林子深处汇合。" },
+    { title: "残页·首领", text: "第一次见到它时，我们全都跪伏在地——不是害怕，是血脉里的敬畏。它比我们所有人都更早喝下女王之血，也更早学会思考。" },
+    { title: "残页·集结", text: "消息传遍了整片领地：远征者的小队正在靠近。首领召集所有能战斗的同类，在巢穴最深处布下阵型，等待那一战。" },
+    { title: "残页·誓言", text: "首领说，我们不是怪物，只是喝下了不该喝的水，才第一次学会了恐惧、愤怒和爱。如果要倒下，也要倒在守护同类的路上。" },
+    { title: "残页·落败", text: "刀光落下的那一刻，我听见首领最后的心跳和我们所有人的心跳重叠在一起。它没有喊疼，只是说了一句：族群还在，就够了。" },
+    { title: "残页·余温", text: "战斗结束后，河水依旧在流。也许某天，会有新的躯体在河边发烫、睁眼、学会思考——而这些残页，就是讲给它们听的。" }
+  ];
   const MAP_STAGES = [
     [{ type: "normal", label: "林道遭遇", icon: "⚔️" }],
     [{ type: "normal", label: "断桥之战", icon: "⚔️", weaponBoss: true, weaponId: "mist_dagger", enemyId: "goblin_warband", portrait: "assets/enemies/goblin-warband.png" }, { type: "event", label: "迷雾岔路", icon: "❓" }],
@@ -630,6 +645,29 @@
         { type: "cardXp", icon: "📚", title: "战斗领悟", detail: "随机一张未满级卡牌获得2点经验", value: 2 }
       ];
     },
+    // Boss战翻牌战利品：数量随章节难度递增（3~6件），三张牌固定揭示女王血河水、粗糙装备与笔记残页。
+    generateBossLoot() {
+      const run = this.current();
+      const gearCount = Math.min(6, (run?.chapter || 1) + 2);
+      return { gearCount };
+    },
+    claimBossLoot() {
+      const { gearCount } = this.generateBossLoot();
+      CF.SaveSystem.addInventoryItem("hoardedQueenWater", 1);
+      CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
+      CF.SaveSystem.addInventoryItem("armorT1", gearCount);
+      let note = null;
+      let bonusGold = 0;
+      if (CF.SaveSystem.data.notesUnlocked < LORE_PAGES.length) {
+        note = { ...LORE_PAGES[CF.SaveSystem.data.notesUnlocked], index: CF.SaveSystem.data.notesUnlocked + 1 };
+        CF.SaveSystem.data.notesUnlocked += 1;
+      } else {
+        bonusGold = 15;
+        CF.SaveSystem.data.coins += bonusGold;
+      }
+      CF.SaveSystem.save();
+      return { gearCount, note, bonusGold };
+    },
     shopStock() {
       if (this.current()?.chapter === 1) {
         return ["eagle_eye", "iron_lancer", "royal_medic"].map(cardId => ({
@@ -647,5 +685,5 @@
   };
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { MAP_STAGES, CHAPTER_TWO_STAGES, CHAPTER_TWO_ROUTE_EDGES, CHAPTER_THREE_STAGES, CHAPTER_THREE_ROUTE_EDGES, CHAPTER_THREE_NPC, CHAPTER_FOUR_STAGES, CHAPTER_FOUR_ROUTE_EDGES, CHAPTER_FIVE_STAGES, CHAPTER_FIVE_ROUTE_EDGES, EVENTS, Adventure, freshRun });
+  Object.assign(window.CardForge, { MAP_STAGES, CHAPTER_TWO_STAGES, CHAPTER_TWO_ROUTE_EDGES, CHAPTER_THREE_STAGES, CHAPTER_THREE_ROUTE_EDGES, CHAPTER_THREE_NPC, CHAPTER_FOUR_STAGES, CHAPTER_FOUR_ROUTE_EDGES, CHAPTER_FIVE_STAGES, CHAPTER_FIVE_ROUTE_EDGES, EVENTS, LORE_PAGES, Adventure, freshRun });
 })();

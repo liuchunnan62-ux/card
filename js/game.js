@@ -447,6 +447,11 @@
       };
       if (row === "front" && unit.keywords.includes("守卫")) { unit.health += 2; unit.maxHealth += 2; }
       if (row === "back" && unit.keywords.includes("远程")) unit.attack += 1;
+      if (side === "player") {
+        const equip = CF.SaveSystem.data.cardEquipment?.[card.id];
+        if (equip?.weapon) unit.attack += equip.weapon;
+        if (equip?.armor) unit.armorValue = equip.armor;
+      }
       actor.board[row][column] = unit;
       this.sound("summon");
       this.recordCardPlayed(side, card);
@@ -1302,7 +1307,8 @@
 
     mitigatedDamage(unit, amount) {
       if (!unit) return Math.max(0, amount);
-      return unit.keywords?.includes("重甲") ? Math.max(1, amount - 2) : Math.max(0, amount);
+      const reduced = amount - (unit.armorValue || 0);
+      return unit.keywords?.includes("重甲") ? Math.max(1, reduced - 2) : Math.max(0, reduced);
     }
 
     damageUnit(side, row, column, amount, source, clean = true, kind = "system") {

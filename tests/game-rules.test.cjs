@@ -351,7 +351,8 @@ assert.ok(fs.existsSync(path.join(root, "assets/ui/mana-crystals.png")), "mana c
 assert.ok(fs.existsSync(path.join(root, "assets/ui/gold-coin.png")), "custom gold coin icon should exist");
 assert.match(mainSource, /assets\/ui\/gold-coin\.png/, "游戏资源栏应使用自定义金币图标");
 assert.match(mainSource, /cardPreview\(cardId, compact = false\)/, "奖励与商店应提供卡牌预览组件");
-assert.match(mainSource, /claim-boss-reward[\s\S]*<div class="reward-icon">\$\{r\.icon\}/, "Boss奖励应只显示女王之血、金币与经验图标");
+assert.match(mainSource, /claim-reward[\s\S]*<div class="reward-icon">\$\{r\.icon\}/, "普通/精英战斗奖励应只显示女王之血、金币与经验图标");
+assert.match(mainSource, /boss-loot-grid[\s\S]*flip-boss-card/, "Boss奖励应改为翻牌揭示三项固定战利品，而不是三选一");
 assert.match(mainSource, /item\.type === "card" \? this\.cardPreview\(item\.cardId, true\)/, "购买卡牌奖励应显示对应卡面");
 assert.match(cardsSource + fs.readFileSync(path.join(root, "js/adventure.js"), "utf8"), /assets\/ui\/gold-coin\.png/, "金币奖励应使用自定义金币图标");
 assert.ok(fs.existsSync(path.join(root, "assets/enemies/forest-wolf-king.png")), "wolf king portrait should exist");
@@ -482,7 +483,7 @@ assert.deepEqual(Array.from(CF.Adventure.rewards("normal"), reward => reward.typ
 assert.deepEqual(Array.from(CF.Adventure.rewards("boss"), reward => reward.value), [1, 20, 2], "首领三项奖励数值应正确");
 assert.match(mainSource, /claimActiveWeaponReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterTwoCardReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterThreeCardReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterFourCardReward\(\)/, "每个章节原有的首杀固定卡牌奖励应继续发放");
 assert.match(mainSource, /首杀固定奖励[\s\S]*cardPreview\(bossCardReward\.cardId\)/, "首杀卡牌应与额外三选一分开展示");
-assert.match(mainSource, /claim-boss-reward[\s\S]*UI\.applyReward/, "最终Boss奖励也应改为三选一");
+assert.match(mainSource, /continue-boss-loot[\s\S]*UI\.finishBoss/, "翻开三张Boss战利品牌后应可直接领取并返回地图");
 assert.ok(CF.Adventure.shopStock().every(item => item.type !== "skill"), "冒险商店不应出售英雄技能经验或等级");
 assert.deepEqual(Array.from(CF.Adventure.shopStock(), item => `${item.cardId}:${item.cost}`), ["eagle_eye:20", "iron_lancer:20", "royal_medic:20"], "第一关商店应以20金币出售三张指定随从牌");
 assert.equal(CF.Adventure.mapStages().length, 13, "第一关应将事件和商店作为独立路线节点");

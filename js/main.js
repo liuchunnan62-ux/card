@@ -83,6 +83,20 @@
     { id: "unit", action: "open-card-training", cardType: "unit", name: "战阵教官·伯恩", line: "木人桩不会喊疼，但你的新兵会学会坚持。", title: "⚔️ 随从训练 · 30金币", detail: "选择任意一张未满级随从牌，增加2点经验", hotspot: [72, 53, 10.5, 34], crop: [1085, 468, 130] },
     { id: "rescue", action: "rescue-injured", name: "草药师·莉娜", line: "把伤员交给我，药剂已经熬好了。", title: "🩹 救治伤员 · 30金币", hotspot: [89, 49, 9, 30], crop: [1310, 440, 112] }
   ];
+  // 城镇商店：场景图中四家店铺的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。本轮仅启用装备店。
+  const TOWN_ART = "assets/ui/town-square.jpg";
+  const TOWN_ART_SIZE = [1408, 768];
+  const TOWN_SHOPS = [
+    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [31, 37, 16, 19], crop: [555, 430, 140] },
+    { id: "tavern", name: "金杯酒馆", title: "🍺 酒馆", detail: "敬请期待。", enabled: false, hotspot: [6, 40, 18, 9], crop: [165, 260, 130] },
+    { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [63, 6, 19, 10], crop: [1010, 165, 130] },
+    { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [81, 42, 18, 9], crop: [1290, 400, 130] }
+  ];
+  const EQUIPMENT_TIER_NAMES = {
+    weapon: ["", "粗糙武器", "精良武器", "锋利武器", "传奇武器"],
+    armor: ["", "粗糙盔甲", "精良盔甲", "坚固盔甲", "传奇盔甲"]
+  };
+  const EQUIPMENT_TIER_QUALITY = ["", "quality-1", "quality-2", "quality-3", "quality-4"];
   const LEVEL_MAP_DEFAULT_LAYOUT = {
     "chapter-1": [31, 59], "chapter-2": [69, 39], "chapter-3": [48, 69], "chapter-4": [84, 48], "chapter-5": [82, 70],
     arena: [50, 51], trials: [73, 79]
@@ -412,7 +426,7 @@
       this.frame(`<section class="screen menu-screen">
         <div class="hero-banner menu-banner">
           <div class="menu-banner-art" style="background-image: url('${menuChapter.background}')" aria-hidden="true"></div>
-          <div class="hero-portrait" data-label="${heroProfile().name}"><div class="crest hero-image"><img src="${heroProfile().portrait}" alt="${heroProfile().name}"></div></div>
+          <button class="hero-portrait" data-action="hero-page" data-label="${heroProfile().name}"><div class="crest hero-image"><img src="${heroProfile().portrait}" alt="${heroProfile().name}"></div></button>
           <div class="hero-copy"><span class="eyebrow">单机卡牌闯关冒险</span><h2>${chapterHeading}</h2>
             <p>${chapterDescription}</p>
             <div class="menu-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${Math.min(progress.total, progress.completed)}">
@@ -425,13 +439,15 @@
             </div>
           </div>
           <div class="menu-utility">
+            <button class="icon-btn" data-action="backpack-page"><span aria-hidden="true">🎒</span> <span>背包</span></button>
+            <button class="icon-btn" data-action="book-page"><span aria-hidden="true">📖</span> <span>笔记</span></button>
             <button class="icon-btn" data-action="save-slots"><span aria-hidden="true">💾</span> <span>存档</span></button>
             <button class="icon-btn" data-action="settings-page"><span aria-hidden="true">⚙</span> <span>设置</span></button>
           </div>
         </div>
         <div class="menu-tiles">
           <button class="menu-tile" data-action="level-select"><span class="menu-tile-art" style="background-image: url('assets/maps/world-map.png')" aria-hidden="true"></span><strong>关卡选择</strong><small>远征世界</small></button>
-          <button class="menu-tile" data-action="hero-page"><span class="menu-tile-art" style="background-image: url('${heroProfile().portrait}')" aria-hidden="true"></span><strong>英雄档案</strong><small>${heroProfile().name} · Lv${data.hero.level}</small></button>
+          <button class="menu-tile" data-action="town-shop-page"><span class="menu-tile-art" style="background-image: url('${TOWN_ART}')" aria-hidden="true"></span><strong>城镇商店</strong><small>装备店已开放</small></button>
           <button class="menu-tile" data-action="deck-page"><span class="menu-tile-art" style="background-image: url('assets/cards/kingdom-knight.png')" aria-hidden="true"></span><strong>卡组编辑</strong><small>收藏 ${collected} 张</small></button>
           <button class="menu-tile" data-action="training-page"><span class="menu-tile-art" style="background-image: url('${TRAINING_GROUNDS_ART}')" aria-hidden="true"></span>${trainingReady ? '<span class="menu-tile-dot" aria-hidden="true"></span>' : ""}<strong>队伍营地</strong><small>${injuredCount ? `伤员 ${injuredCount} 名` : "营地"}</small></button>
         </div>
@@ -571,6 +587,124 @@
       this.sfx("rescue");
       this.toast(`${rescued.length ? `已救治${rescued.length}名伤员` : "伤员名单为空"}${run ? "，英雄也已恢复满生命。" : "。"}`, "good");
       if (this.screen === "training") this.renderTraining(); else this.renderMenu();
+    },
+
+    renderTownShop() {
+      this.screen = "town-shop"; this.battle = null; this.activeNode = null;
+      const [artWidth, artHeight] = TOWN_ART_SIZE;
+      const avatar = shop => {
+        const [cx, cy, size] = shop.crop;
+        const scale = 72 / size;
+        return `<span class="training-npc-avatar" style="background-image: url('${TOWN_ART}'); background-size: ${artWidth * scale}px ${artHeight * scale}px; background-position: ${-(cx - size / 2) * scale}px ${-(cy - size / 2) * scale}px" aria-hidden="true"></span>`;
+      };
+      const actionAttrs = shop => shop.enabled ? `data-action="${shop.action}"` : "disabled";
+      const hotspots = TOWN_SHOPS.map(shop => {
+        const [left, top, width, height] = shop.hotspot;
+        return `<button class="training-hotspot${shop.enabled ? " ready" : " locked"}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%" ${actionAttrs(shop)} aria-label="${shop.name}"><span class="training-hotspot-plate"><strong>${shop.name}</strong>${shop.enabled ? "" : "<small>敬请期待</small>"}</span></button>`;
+      }).join("");
+      const cards = TOWN_SHOPS.map(shop => `<button class="choice-btn camp-service training-npc-card${shop.enabled ? " ready" : " locked"}" ${actionAttrs(shop)}>${avatar(shop)}<span class="training-npc-copy"><span class="training-npc-name">${shop.name}</span><strong>${shop.title}</strong><small>${shop.detail}</small>${shop.enabled ? "" : '<em class="camp-service-hint">敬请期待</em>'}</span></button>`).join("");
+      this.frame(`<section class="screen training-screen">
+        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工，本次先开放装备店，可将战场缴获的粗糙武器、盔甲重锻为更高品质的装备。</p></div>
+        <div class="training-scene" style="background-image: url('${TOWN_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
+          ${hotspots}
+        </div>
+        <div class="training-npc-grid">${cards}</div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
+      </section>`);
+    },
+
+    openEquipmentShop() {
+      const inv = CF.SaveSystem.data.inventory;
+      const rows = ["weapon", "armor"].map(kind => {
+        const label = kind === "weapon" ? "武器" : "盔甲";
+        const tiers = [1, 2, 3].map(tier => {
+          const count = inv[`${kind}T${tier}`] || 0;
+          const cost = tier * 30;
+          const name = EQUIPMENT_TIER_NAMES[kind][tier];
+          const nextName = EQUIPMENT_TIER_NAMES[kind][tier + 1];
+          const disabled = count < 2 || CF.SaveSystem.data.coins < cost;
+          return `<button class="choice-btn forge-choice" data-modal-action="forge-item" data-kind="${kind}" data-tier="${tier}" ${disabled ? "disabled" : ""}><strong class="${EQUIPMENT_TIER_QUALITY[tier]}">${name} ×${count}</strong><small>消耗2件 + ${cost}金币 → 1件<span class="${EQUIPMENT_TIER_QUALITY[tier + 1]}"> ${nextName}</span></small></button>`;
+        }).join("");
+        return `<div class="forge-section"><h3>${label}重锻</h3><div class="choice-grid">${tiers}</div></div>`;
+      }).join("");
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店</span><h2>铁匠·葛罗姆的装备店</h2></div><p>当前金币：${CF.SaveSystem.data.coins}。战场缴获的装备可在此合成为更高品质，消耗2件同品级材料与对应金币。</p></div>
+        ${rows}
+        <div class="menu-actions"><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
+    },
+
+    forgeItemAction(kind, tier) {
+      const ok = CF.SaveSystem.forgeItem(kind, tier);
+      if (!ok) return this.toast("材料或金币不足。", "bad");
+      this.toast(`重锻成功，获得1件${EQUIPMENT_TIER_NAMES[kind][tier + 1]}。`, "good");
+      this.sfx("cardLevelUp");
+      this.openEquipmentShop();
+    },
+
+    renderBackpack() {
+      this.screen = "backpack"; this.battle = null; this.activeNode = null;
+      const inv = CF.SaveSystem.data.inventory;
+      const waterCount = inv.hoardedQueenWater || 0;
+      const gearRows = kind => [1, 2, 3, 4].map(tier => {
+        const count = inv[`${kind}T${tier}`] || 0;
+        if (!count) return "";
+        const name = EQUIPMENT_TIER_NAMES[kind][tier];
+        return `<div class="backpack-item"><strong class="${EQUIPMENT_TIER_QUALITY[tier]}">${name}</strong><small>拥有 ${count} 件 · +${tier}${kind === "weapon" ? "攻击" : "防御"}</small><button class="secondary-btn" data-action="equip-item" data-kind="${kind}" data-tier="${tier}">装备</button></div>`;
+      }).join("");
+      const weaponItems = gearRows("weapon");
+      const armorItems = gearRows("armor");
+      this.frame(`<section class="screen">
+        <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
+        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>珍藏的女王血河水</strong><small>拥有 ${waterCount} 瓶 · 使用后永久+1最大生命</small><button class="secondary-btn" data-action="use-hoarded-water" ${waterCount ? "" : "disabled"}>使用</button></div></div>
+        <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
+        <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
+      </section>`);
+    },
+
+    useHoardedWater() {
+      const ok = CF.SaveSystem.useHoardedQueenWater();
+      if (!ok) return this.toast("没有可用的女王血河水。", "bad");
+      CF.Adventure.syncHeroGrowth();
+      this.toast("英雄最大生命值永久增加1点。", "good");
+      this.sfx("heal");
+      this.renderBackpack();
+    },
+
+    openEquipTargetPicker(slot, tier) {
+      const save = CF.SaveSystem.data;
+      const heroTier = save.heroEquipment?.[slot] || 0;
+      const heroRow = `<button class="choice-btn equip-target-choice" data-modal-action="equip-target" data-target="hero" data-slot="${slot}" data-tier="${tier}"><strong>${heroProfile().name}（英雄）</strong><small>当前：${heroTier ? EQUIPMENT_TIER_NAMES[slot][heroTier] : "未装备"}</small></button>`;
+      const cardIds = Object.entries(save.collection).filter(([id, owned]) => owned > 0 && CF.CARD_LIBRARY[id]?.type === "unit").map(([id]) => id)
+        .sort((left, right) => CF.CARD_LIBRARY[left].name.localeCompare(CF.CARD_LIBRARY[right].name, "zh-CN"));
+      const cardRows = cardIds.map(id => {
+        const cardTier = save.cardEquipment?.[id]?.[slot] || 0;
+        return `<button class="choice-btn equip-target-choice" data-modal-action="equip-target" data-target="${id}" data-slot="${slot}" data-tier="${tier}">${this.cardPreview(id, true)}<small>当前：${cardTier ? EQUIPMENT_TIER_NAMES[slot][cardTier] : "未装备"}</small></button>`;
+      }).join("");
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">装备${EQUIPMENT_TIER_NAMES[slot][tier]}</span><h2>选择装备对象</h2></div><p>装备后原有的同槽位装备会退回背包。</p></div>
+        <div class="choice-grid">${heroRow}${cardRows}</div>
+        <div class="menu-actions"><button class="secondary-btn" data-modal-action="close">取消</button></div>`, "training-modal");
+    },
+
+    equipTarget(target, slot, tier) {
+      const ok = target === "hero" ? CF.SaveSystem.equipHeroItem(slot, tier) : CF.SaveSystem.equipCardItem(target, slot, tier);
+      if (!ok) return this.toast("装备失败，材料不足。", "bad");
+      this.toast("装备成功。", "good");
+      this.sfx("cardAdd");
+      this.closeModal();
+      this.renderBackpack();
+    },
+
+    renderBook() {
+      this.screen = "book"; this.battle = null; this.activeNode = null;
+      const unlocked = CF.SaveSystem.data.notesUnlocked;
+      const pages = CF.LORE_PAGES.map((page, index) => index >= unlocked
+        ? `<div class="note-entry locked"><strong>???</strong><small>尚未发现</small></div>`
+        : `<div class="note-entry"><strong>${page.title}</strong><p>${page.text}</p></div>`).join("");
+      this.frame(`<section class="screen">
+        <div class="page-heading"><div><span class="eyebrow">收藏</span><h2>笔记残页</h2></div><p>已收集 ${unlocked}/${CF.LORE_PAGES.length} 篇，击败首领时有机会拾获新的残页。</p></div>
+        <div class="note-grid">${pages}</div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
+      </section>`);
     },
 
     renderHero() {
@@ -1086,19 +1220,29 @@
       CF.SaveSystem.save();
       const bossCardReward = CF.Adventure.claimActiveWeaponReward() || CF.Adventure.claimActiveChapterTwoCardReward() || CF.Adventure.claimActiveChapterThreeCardReward() || CF.Adventure.claimActiveChapterFourCardReward() || CF.Adventure.claimActiveChapterFiveCardReward();
       const questItemReward = CF.Adventure.claimActiveQueenBloodWaterReward();
-      this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward);
+      const bossLoot = type === "boss" ? CF.Adventure.claimBossLoot() : null;
+      this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward, bossLoot);
     },
 
-    showRewards(type, baseGold, baseXp, bossCardReward = null, questItemReward = null) {
+    showRewards(type, baseGold, baseXp, bossCardReward = null, questItemReward = null, bossLoot = null) {
       const rewards = CF.Adventure.rewards(type);
       if (type === "boss") {
         const bossName = this.battle?.enemyConfig?.name || "Boss";
         const storyDefeat = this.battle?.state?.storyDefeat;
-        this.pendingRewards = rewards;
-        this.modal(`<span class="eyebrow">${storyDefeat ? "第五关剧情完成" : "最终胜利"}</span><h2>${storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`}</h2><p>${storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : ""}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。请选择一项额外奖励。</p>
+        const lootCards = [
+          { title: "珍藏的女王血河水", detail: "本来是为还没喝过的野兽、或天资不好的觉醒野兽准备的。背包中使用可永久+1最大生命。" },
+          { title: `粗糙武器 ×${bossLoot.gearCount} · 粗糙盔甲 ×${bossLoot.gearCount}`, detail: "白色品质的战场缴获，可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。" },
+          bossLoot.note
+            ? { title: bossLoot.note.title, detail: bossLoot.note.text }
+            : { title: "残页已集齐", detail: `世界观残页已全部收集，额外获得${bossLoot.bonusGold}金币。` }
+        ];
+        this.pendingBossLoot = lootCards;
+        this.modal(`<span class="eyebrow">${storyDefeat ? "第五关剧情完成" : "最终胜利"}</span><h2>${storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`}</h2><p>${storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : ""}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
           ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong></div>` : ""}
           ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
-          <div class="reward-grid">${rewards.map((r, index) => `<button class="reward-card" data-modal-action="claim-boss-reward" data-index="${index}"><div class="reward-icon">${r.icon}</div><h3>${r.title}</h3><p>${r.detail}</p></button>`).join("")}</div>`);
+          <p class="boss-loot-hint">翻开三张战利品牌：</p>
+          <div class="boss-loot-grid">${lootCards.map((loot, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${loot.title}</strong><small>${loot.detail}</small></span></button>`).join("")}</div>
+          <div class="menu-actions"><button class="primary-btn" data-modal-action="continue-boss-loot">领取奖励，返回地图</button></div>`);
       } else {
         this.pendingRewards = rewards;
         this.modal(`<span class="eyebrow">战斗胜利</span><h2>选择一项额外奖励</h2><p>已获得：${baseGold}金币 · ${baseXp}英雄经验 · 使用过的卡牌经验。</p>
@@ -1113,6 +1257,14 @@
       if (!card) return "";
       const className = compact ? "shop-card-preview" : "reward-card-preview";
       return `<span class="${className}"><img src="${card.image || ""}" alt="${card.name}" loading="lazy"><span>${card.name}</span></span>`;
+    },
+
+    // Boss战翻牌：奖励在 claimBossLoot() 时已写入存档，翻牌只是揭示动画，直接切换DOM上的.flipped类。
+    flipBossCard(index) {
+      const card = modalRoot.querySelectorAll(".boss-loot-card")[index];
+      if (!card || card.classList.contains("flipped")) return;
+      card.classList.add("flipped");
+      this.sfx("cardAdd");
     },
 
     applyReward(reward) {
@@ -1258,7 +1410,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "claim-reward", "claim-boss-reward", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "claim-reward", "flip-boss-card", "continue-boss-loot", "forge-item", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1320,6 +1472,12 @@
     if (action === "settings-page") UI.renderSettings(UI.screen === "cover" ? "cover" : "menu");
     if (action === "open-card-training") UI.openCardTraining(el.dataset.cardType);
     if (action === "rescue-injured") UI.rescueInjured();
+    if (action === "town-shop-page") UI.renderTownShop();
+    if (action === "open-equipment-shop") UI.openEquipmentShop();
+    if (action === "backpack-page") UI.renderBackpack();
+    if (action === "book-page") UI.renderBook();
+    if (action === "use-hoarded-water") UI.useHoardedWater();
+    if (action === "equip-item") UI.openEquipTargetPicker(el.dataset.kind, Number(el.dataset.tier));
     if (action === "sound-toggle") { CF.SoundFX?.toggleMuted(); UI.renderSettings(); }
     if (action === "music-toggle") { CF.Music?.toggleMuted(); UI.renderSettings(UI.settingsReturnScreen); }
     if (action === "sound-preview") {
@@ -1423,7 +1581,10 @@
     if (action === "confirm-pause-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); return; }
     if (action === "confirm-abandon") { CF.Adventure.abandon(); UI.closeModal(); UI.renderMenu(); }
     if (action === "claim-reward") { UI.applyReward(UI.pendingRewards[Number(el.dataset.index)]); UI.finishCombatNode(UI.activeNode.type); }
-    if (action === "claim-boss-reward") { UI.applyReward(UI.pendingRewards[Number(el.dataset.index)]); UI.finishBoss(); }
+    if (action === "flip-boss-card") UI.flipBossCard(Number(el.dataset.index));
+    if (action === "continue-boss-loot") { UI.pendingBossLoot = null; UI.finishBoss(); }
+    if (action === "forge-item") UI.forgeItemAction(el.dataset.kind, Number(el.dataset.tier));
+    if (action === "equip-target") UI.equipTarget(el.dataset.target, el.dataset.slot, Number(el.dataset.tier));
     if (action === "finish-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); }
     if (action === "failed-run") { UI.closeModal(); UI.renderMap(); }
     if (action === "failed-run-menu") { UI.closeModal(); UI.renderMenu(); }
