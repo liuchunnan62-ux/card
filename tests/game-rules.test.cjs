@@ -493,7 +493,8 @@ assert.equal(CF.SaveSystem.data.inventory.queenEssenceBlood, priorWater + 1, "�
 assert.equal(CF.SaveSystem.data.notesUnlocked, priorNotes + 1, "笔记残页应按顺序解锁");
 assert.ok(loot.note && typeof loot.note.text === "string", "尚未收集满的残页应携带文案");
 assert.equal(CF.LORE_BOOK_TITLE, "《源血纪元》", "笔记残页应收录世界观故事《源血纪元》");
-assert.equal(CF.LORE_PAGES.length, 12, "《源血纪元》应按章节切分为12页残页");
+assert.equal(CF.LORE_PAGES.length, 36, "《源血纪元》应切分为36页残页，一场胜利解锁一页");
+assert.ok(CF.LORE_PAGES.every(page => page.text.length >= 120 && page.text.length <= 240), "每页残页篇幅应在约200字左右");
 assert.equal(CF.LORE_PAGES[0].title, "序章·流淌在大陆血脉中的女王（一）", "第一页应从序章开始");
 assert.match(CF.LORE_PAGES[CF.LORE_PAGES.length - 1].text, /新生者/, "最后一页应讲到妖兽自称新生者");
 assert.ok(CF.LORE_PAGES.every(page => page.paragraphs.length && page.text === page.paragraphs.join("\n")), "每页残页应按段落保存故事全文");
