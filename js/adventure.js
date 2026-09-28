@@ -422,15 +422,9 @@
       "人类与魔族之间延续千年的战争尚未真正结束，一场更加危险的变化已经悄然开始。"
     ] }
   ].map(page => ({ ...page, text: page.paragraphs.join("\n") }));
-  // 营地监狱：四间牢房对应监狱场景图中的四面旗帜。成员按“章节 → 节点序号”列出，"all"表示该章全部战斗节点。
-  // 各关最终首领不收押：森林狼王战死于密林，其余首领都在最后关头被同族救走。因此每关19格，第一关7格。
-  // 第一关的兽人、强盗与暗影猎手和第二关一样归入哥布林王庭一方，只有野狼群进狼人牢房。
-  const PRISON_CAGES = [
-    { id: "goblin", name: "哥布林", members: [[1, [0, 1, 5, 7, 9, 11]], [2, "all"]], flavor: "翠影女王麾下的绿皮族群与投靠王庭的佣兵。关进来的第一天，就有三只试图用汤勺挖地道。" },
-    { id: "werewolf", name: "狼人", members: [[1, [3]], [5, "all"]], flavor: "密林与千枝城的狼族。它们安静得出奇，只在月圆之夜隔着铁栏低声嚎叫。" },
-    { id: "slime", name: "史莱姆", members: [[4, "all"]], flavor: "梦幻森林的史莱姆。铁栏对它们形同虚设，好在它们似乎并不想离开。" },
-    { id: "bear", name: "熊女", members: [[3, "all"]], flavor: "金麦农场的熊族。每天准时要求蜂蜜，否则拒绝配合点名。" }
-  ];
+  // 营地监狱：收押被击败的觉醒者。成员按“章节 → 节点序号”列出，"all"表示该章全部普通/精英战斗节点。
+  // 各关最终首领不收押：森林狼王战死于密林，其余首领都在最后关头被同族救走。因此每关19名，第一关7名。
+  const PRISON_MEMBERS = [[1, [0, 1, 3, 5, 7, 9, 11]], [2, "all"], [3, "all"], [4, "all"], [5, "all"]];
   const PRISONER_NODE_TYPES = ["normal", "elite"];
   // 第一关起点“林道遭遇”没有固定敌人，作为第一场战斗时总会遇到哥布林战团。
   const CHAPTER_ONE_PRISONER_FALLBACK = { 0: "goblin_warband" };
@@ -790,28 +784,24 @@
       save.prisoners ||= {};
       save.prisoners[`${chapter}-${stage}`] = true;
     },
-    prisonCages() {
+    prisonRoster() {
       const save = CF.SaveSystem.data;
       save.prisoners ||= {};
       const runs = save.chapterRuns || {};
       const captured = (chapter, stage) => Boolean(save.prisoners[`${chapter}-${stage}`]
         || (runs[chapter]?.completed || []).some(entry => Number(entry.stage) === stage));
-      return PRISON_CAGES.map(cage => {
-        const prisoners = cage.members.flatMap(([chapter, stages]) => {
-          // 直接按章节取节点：mapStages() 会把尚未解锁的章节回退为当前可玩的章节。
-          const chapterStages = { 1: CHAPTER_ONE_STAGES, 2: CHAPTER_TWO_STAGES, 3: CHAPTER_THREE_STAGES, 4: CHAPTER_FOUR_STAGES, 5: CHAPTER_FIVE_STAGES }[chapter];
-          const nodes = chapterStages.map(options => options[0]);
-          const indexes = stages === "all" ? nodes.map((node, index) => index) : stages;
-          return indexes.filter(index => PRISONER_NODE_TYPES.includes(nodes[index]?.type)).map(stage => {
-            const node = nodes[stage];
-            const enemy = CF.enemies?.[node.enemyId || (chapter === 1 ? CHAPTER_ONE_PRISONER_FALLBACK[stage] : "")];
-            const name = chapter === 1 ? (enemy?.name || node.label) : node.label;
-            const isCaptured = captured(chapter, stage);
-            if (isCaptured) save.prisoners[`${chapter}-${stage}`] = true;
-            return { key: `${chapter}-${stage}`, chapter, stage, name, place: chapter === 1 ? node.label : "", portrait: node.portrait || enemy?.portrait || "", type: node.type, captured: isCaptured };
-          });
+      return PRISON_MEMBERS.flatMap(([chapter, stages]) => {
+        // 直接按章节取节点：mapStages() 会把尚未解锁的章节回退为当前可玩的章节。
+        const chapterStages = { 1: CHAPTER_ONE_STAGES, 2: CHAPTER_TWO_STAGES, 3: CHAPTER_THREE_STAGES, 4: CHAPTER_FOUR_STAGES, 5: CHAPTER_FIVE_STAGES }[chapter];
+        const nodes = chapterStages.map(options => options[0]);
+        const indexes = stages === "all" ? nodes.map((node, index) => index) : stages;
+        return indexes.filter(index => PRISONER_NODE_TYPES.includes(nodes[index]?.type)).map(stage => {
+          const node = nodes[stage];
+          const enemy = CF.enemies?.[node.enemyId || (chapter === 1 ? CHAPTER_ONE_PRISONER_FALLBACK[stage] : "")];
+          const isCaptured = captured(chapter, stage);
+          if (isCaptured) save.prisoners[`${chapter}-${stage}`] = true;
+          return { key: `${chapter}-${stage}`, chapter, stage, name: chapter === 1 ? (enemy?.name || node.label) : node.label, portrait: node.portrait || enemy?.portrait || "", type: node.type, captured: isCaptured };
         });
-        return { ...cage, prisoners, capturedCount: prisoners.filter(prisoner => prisoner.captured).length };
       });
     },
     recordDefeat(nodeIndexOverride = null) {
@@ -1124,5 +1114,5 @@
   };
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { MAP_STAGES, CHAPTER_TWO_STAGES, CHAPTER_TWO_ROUTE_EDGES, CHAPTER_THREE_STAGES, CHAPTER_THREE_ROUTE_EDGES, CHAPTER_THREE_NPC, CHAPTER_FOUR_STAGES, CHAPTER_FOUR_ROUTE_EDGES, CHAPTER_FIVE_STAGES, CHAPTER_FIVE_ROUTE_EDGES, EVENTS, LORE_BOOK_TITLE, LORE_PAGES, PRISON_CAGES, Adventure, freshRun });
+  Object.assign(window.CardForge, { MAP_STAGES, CHAPTER_TWO_STAGES, CHAPTER_TWO_ROUTE_EDGES, CHAPTER_THREE_STAGES, CHAPTER_THREE_ROUTE_EDGES, CHAPTER_THREE_NPC, CHAPTER_FOUR_STAGES, CHAPTER_FOUR_ROUTE_EDGES, CHAPTER_FIVE_STAGES, CHAPTER_FIVE_ROUTE_EDGES, EVENTS, LORE_BOOK_TITLE, LORE_PAGES, Adventure, freshRun });
 })();

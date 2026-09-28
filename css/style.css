@@ -210,18 +210,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .prison-warden-intro { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.25); }
 .prison-warden-intro strong { display: block; color: var(--gold-bright); letter-spacing: .08em; }
 .prison-warden-intro q { color: #cbbd9f; font-style: italic; line-height: 1.6; }
-.prison-screen .training-scene::after { background: linear-gradient(0deg, rgba(6,6,12,.4), transparent 30%); }
-.prison-cage { border-radius: 10px; }
-.prison-cage::before { bottom: 2%; }
-.modal.prison-modal { width: min(900px, 96vw); }
-.prison-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; margin-top: 10px; }
-.prison-inmate { display: grid; gap: 4px; justify-items: center; padding: 8px; border: 1px solid #6e5433; border-radius: 10px; background: rgba(0,0,0,.3); text-align: center; }
+.prison-screen { position: relative; min-height: calc(100vh - 140px); padding: 22px 24px; border: 1px solid var(--line); border-radius: 18px; background: #0d0c12 center / cover no-repeat; box-shadow: var(--shadow); isolation: isolate; }
+.prison-screen::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: linear-gradient(180deg, rgba(8,7,12,.72), rgba(8,7,12,.35) 30%, rgba(8,7,12,.35) 70%, rgba(8,7,12,.8)); }
+.prison-screen .prison-warden-intro { background: rgba(10,8,12,.72); backdrop-filter: blur(3px); }
+.prison-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; margin: 6px 0 16px; }
+.prison-inmate { display: grid; gap: 4px; justify-items: center; padding: 8px; border: 1px solid #6e5433; border-radius: 10px; background: rgba(12,10,14,.78); text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,.45); }
 .prison-inmate img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #a98244; }
+.prison-inmate.elite { border-color: #c99b4e; }
 .prison-inmate strong { color: var(--gold-bright); font-size: 13px; line-height: 1.3; }
 .prison-inmate small { color: var(--muted); font-size: 11px; }
-.prison-inmate.empty { opacity: .55; }
-.prison-inmate.empty span { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px dashed #6e5433; color: #7d6a50; font-size: 34px; background: repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 10px, rgba(40,32,26,.5) 10px 14px); }
-.prison-inmate.empty strong { color: var(--muted); }
+.prison-empty { margin: 40px 0; padding: 18px; border-radius: 12px; background: rgba(10,8,12,.72); color: #cbbd9f; text-align: center; }
 
 /* 城镇商店：未启用的店铺淡化显示，热点铭牌标注"敬请期待" */
 .training-hotspot.locked, .training-npc-card.locked { filter: grayscale(.75); opacity: .68; }
