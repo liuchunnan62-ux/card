@@ -212,6 +212,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .quality-3 { color: #79b8ff; }
 .quality-4 { color: #d29bff; }
 
+/* 装备品级小圆点：出现在攻击力右侧（武器）与生命/防御左侧（盔甲），未装备时透明只留描边 */
+.equip-dot { display: inline-block; width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; border: 1px solid rgba(228,183,93,.55); vertical-align: middle; }
+
 /* Boss战翻牌：三张固定战利品牌，点击翻面揭示 */
 .boss-loot-hint { margin: 10px 0 6px; color: var(--muted); }
 .boss-loot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; perspective: 1200px; }

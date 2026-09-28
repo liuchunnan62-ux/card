@@ -467,6 +467,17 @@
     }
   };
 
+  // 装备品级小圆点：白/绿/蓝/紫依次对应T1~T4，未装备时为透明（仅保留描边）。
+  const EQUIPMENT_TIER_COLORS = ["transparent", "#e7e2d8", "#7fd97f", "#79b8ff", "#d29bff"];
+  const EQUIPMENT_TIER_LABELS = {
+    weapon: ["未装备武器", "粗糙武器 +1攻击", "精良武器 +2攻击", "锋利武器 +3攻击", "传奇武器 +4攻击"],
+    armor: ["未装备盔甲", "粗糙盔甲 +1防御", "精良盔甲 +2防御", "坚固盔甲 +3防御", "传奇盔甲 +4防御"]
+  };
+  function equipDotHTML(slot, tier) {
+    const level = tier || 0;
+    return `<i class="equip-dot" style="background:${EQUIPMENT_TIER_COLORS[level]}" title="${EQUIPMENT_TIER_LABELS[slot][level]}" aria-hidden="true"></i>`;
+  }
+
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT });
+  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, equipDotHTML });
 })();
