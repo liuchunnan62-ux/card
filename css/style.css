@@ -201,6 +201,26 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 @keyframes campPing { 70% { box-shadow: 0 0 0 9px rgba(224,72,58,0); } 100% { box-shadow: 0 0 0 0 rgba(224,72,58,0); } }
 @media (prefers-reduced-motion: reduce) { .camp-service.ready::after, .menu-tile-dot, .training-hotspot.ready .training-hotspot-plate::after, .training-hotspot.ready::before { animation: none; } }
 
+/* 营地监狱：典狱长立绘站在训练馆门口，点她进入监狱 */
+.camp-warden { border-radius: 40% 40% 12% 12%; }
+.camp-warden img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; object-position: bottom; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
+.camp-warden::before { z-index: 0; bottom: -6%; height: 10%; }
+.camp-warden .training-hotspot-plate { z-index: 2; }
+.prison-warden-avatar { background-color: #2a2230; flex: 0 0 auto; }
+.prison-warden-intro { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.25); }
+.prison-warden-intro strong { display: block; color: var(--gold-bright); letter-spacing: .08em; }
+.prison-warden-intro q { color: #cbbd9f; font-style: italic; line-height: 1.6; }
+.prison-screen { position: relative; min-height: calc(100vh - 140px); padding: 22px 24px; border: 1px solid var(--line); border-radius: 18px; background: #0d0c12 center / cover no-repeat; box-shadow: var(--shadow); isolation: isolate; }
+.prison-screen::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: linear-gradient(180deg, rgba(8,7,12,.72), rgba(8,7,12,.35) 30%, rgba(8,7,12,.35) 70%, rgba(8,7,12,.8)); }
+.prison-screen .prison-warden-intro { background: rgba(10,8,12,.72); backdrop-filter: blur(3px); }
+.prison-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; margin: 6px 0 16px; }
+.prison-inmate { display: grid; gap: 4px; justify-items: center; padding: 8px; border: 1px solid #6e5433; border-radius: 10px; background: rgba(12,10,14,.78); text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,.45); }
+.prison-inmate img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #a98244; }
+.prison-inmate.elite { border-color: #c99b4e; }
+.prison-inmate strong { color: var(--gold-bright); font-size: 13px; line-height: 1.3; }
+.prison-inmate small { color: var(--muted); font-size: 11px; }
+.prison-empty { margin: 40px 0; padding: 18px; border-radius: 12px; background: rgba(10,8,12,.72); color: #cbbd9f; text-align: center; }
+
 /* 城镇商店：未启用的店铺淡化显示，热点铭牌标注"敬请期待" */
 .training-hotspot.locked, .training-npc-card.locked { filter: grayscale(.75); opacity: .68; }
 .training-hotspot.locked { cursor: not-allowed; }
@@ -227,6 +247,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .boss-loot-back { transform: rotateY(180deg); border: 1px solid #f1c65f; background: radial-gradient(circle at center, rgba(103,68,19,.68), rgba(22,15,12,.9)); }
 .boss-loot-back strong { color: #ffe6a5; }
 .boss-loot-back small { color: var(--muted); line-height: 1.5; }
+/* 第三张战利品牌翻开后，在牌下展开本页《源血纪元》全文 */
+.loot-note-reading { margin-top: 14px; padding: 14px 18px; border: 1px solid #87663d; border-radius: 10px; background: rgba(0,0,0,.28); }
+.loot-note-reading[hidden] { display: none; }
+.loot-note-reading h3 { margin: 4px 0 8px; color: var(--gold-bright); }
+.loot-note-reading p { margin: 0 0 8px; }
 
 /* 背包页 */
 .backpack-section { margin-top: 18px; }
@@ -241,10 +266,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .forge-section h3 { margin: 0 0 6px; color: var(--gold-bright); }
 
 /* 笔记残页 */
-.note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+.note-grid { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 860px; margin-top: 16px; }
 .note-entry { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.2); }
 .note-entry strong { display: block; color: var(--gold-bright); margin-bottom: 6px; }
-.note-entry p { margin: 0; color: var(--muted); line-height: 1.6; }
+.note-entry p { margin: 0 0 8px; color: var(--muted); line-height: 1.75; }
+.note-entry p:last-child { margin-bottom: 0; }
 .note-entry.locked { opacity: .5; text-align: center; }
 .note-entry.locked strong { color: var(--muted); }
 .primary-btn, .secondary-btn, .danger-btn, .choice-btn {

@@ -97,6 +97,7 @@
       inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
       cardEquipment: starterCardEquipment(),
       notesUnlocked: 0,
+      prisoners: {},
       commanderTrials: { completed: [] },
       levelMapLayout: {},
       activeChapter: 1,
@@ -177,6 +178,7 @@
       inventory: { ...base.inventory, ...(raw.inventory || {}) },
       cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
       notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
+      prisoners: raw.prisoners && typeof raw.prisoners === "object" ? { ...raw.prisoners } : {},
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {
         ...base.commanderTrials,
@@ -436,8 +438,13 @@
       this.save();
       return inventory[key];
     },
+    // 女王精血需先通关统领试炼第七关“魅魔女王的低语”（此时最大法力达到10），得到女王认可后才能吸收。
+    queenBloodAwakened() {
+      return (this.data.commanderTrials?.completed || []).includes(7);
+    },
     useQueenEssenceBlood() {
       const inventory = this.data.inventory || (this.data.inventory = {});
+      if (!this.queenBloodAwakened()) return false;
       if (!(inventory.queenEssenceBlood > 0)) return false;
       inventory.queenEssenceBlood -= 1;
       this.data.hero.maxHealth += 1;

@@ -62,6 +62,7 @@
         enemyTurns: 0,
         selected: null,
         usedCards: [],
+        enemyUnitsKilled: 0,
         cardsPlayed: { player: 0, enemy: 0 },
         log: [],
         battleNotices: [],
@@ -697,6 +698,7 @@
         const cost = this.spendCard(selected.index);
         const canReturn = this.state.enemy.hand.length < 10 && CF.CARD_LIBRARY[target.cardId];
         this.state.enemy.board[row][column] = null;
+        if (!canReturn) this.state.enemyUnitsKilled += 1;
         if (canReturn) this.state.enemy.hand.push({ ...CF.getCard(target.cardId, { level: target.level }), instanceId: `${target.cardId}-banished-${Date.now()}` });
         this.sound("darkSpell");
         this.addLog(`你施放${card.name}（${cost}费），${target.name}${canReturn ? "被绑回敌方手牌" : "无处可逃并被消灭"}。`, "player");
@@ -1335,6 +1337,7 @@
             if (unit && unit.health <= 0) {
               this.state[side].board[row][column] = null;
               this.sound("death");
+              if (side === "enemy") this.state.enemyUnitsKilled += 1;
               const newlyInjured = side === "player" && CF.SaveSystem.injureCard(unit.cardId);
               this.addLog(`${unit.name}${side === "player" ? "重伤退场" : "阵亡"}，第${column + 1}路${row === "front" ? "前排" : "后排"}空出。`, side);
               if (newlyInjured) this.addLog(`${unit.name}已进入伤员名单，接受“救治伤员”前无法参加后续战斗。`, "system");

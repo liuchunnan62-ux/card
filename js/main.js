@@ -76,21 +76,25 @@
   ];
   // 队伍营地：场景图中四位教官的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。
   const TRAINING_GROUNDS_ART = "assets/ui/training-grounds.webp";
-  const TRAINING_ART_SIZE = [1408, 768];
+  const TRAINING_ART_SIZE = [1699, 926];
   const TRAINING_NPCS = [
-    { id: "weapon", action: "open-card-training", cardType: "weapon", name: "剑术教官·希尔达", line: "剑刃要比念头更快。来，再挥一次！", title: "🗡️ 武器训练 · 30金币", detail: "选择任意一张未满级武器牌，增加2点经验", hotspot: [14, 52, 10, 34], crop: [262, 468, 130] },
-    { id: "spell", action: "open-card-training", cardType: "spell", name: "奥术导师·奥雷利安", line: "法阵已经点亮，让你的咒语更加纯熟吧。", title: "✨ 法术训练 · 30金币", detail: "选择任意一张未满级法术牌，增加2点经验", hotspot: [52.5, 36, 7.5, 20], crop: [790, 322, 92] },
-    { id: "unit", action: "open-card-training", cardType: "unit", name: "战阵教官·伯恩", line: "木人桩不会喊疼，但你的新兵会学会坚持。", title: "⚔️ 随从训练 · 30金币", detail: "选择任意一张未满级随从牌，增加2点经验", hotspot: [72, 53, 10.5, 34], crop: [1085, 468, 130] },
-    { id: "rescue", action: "rescue-injured", name: "草药师·莉娜", line: "把伤员交给我，药剂已经熬好了。", title: "🩹 救治伤员 · 30金币", hotspot: [89, 49, 9, 30], crop: [1310, 440, 112] }
+    { id: "weapon", action: "open-card-training", cardType: "weapon", name: "剑术教官·希尔达", line: "剑刃要比念头更快。来，再挥一次！", title: "🗡️ 武器训练 · 30金币", detail: "选择任意一张未满级武器牌，增加2点经验", hotspot: [14, 52, 10, 36], crop: [322, 540, 160] },
+    { id: "spell", action: "open-card-training", cardType: "spell", name: "奥术导师·奥雷利安", line: "法阵已经点亮，让你的咒语更加纯熟吧。", title: "✨ 法术训练 · 30金币", detail: "选择任意一张未满级法术牌，增加2点经验", hotspot: [51.5, 41, 8, 19], crop: [935, 440, 110] },
+    { id: "unit", action: "open-card-training", cardType: "unit", name: "战阵教官·伯恩", line: "木人桩不会喊疼，但你的新兵会学会坚持。", title: "⚔️ 随从训练 · 30金币", detail: "选择任意一张未满级随从牌，增加2点经验", hotspot: [72.5, 52, 10.5, 35], crop: [1305, 560, 160] },
+    { id: "rescue", action: "rescue-injured", name: "草药师·莉娜", line: "把伤员交给我，药剂已经熬好了。", title: "🩹 救治伤员 · 30金币", hotspot: [89, 50, 9, 30], crop: [1585, 540, 130] }
   ];
+  // 营地监狱：典狱长站在队伍营地训练馆门口（场景百分比：左、上、宽、高），点她进入监狱。
+  // 头像裁切基于抠图后的立绘（原图像素：中心x、中心y、边长）。
+  const PRISON_WARDEN = { name: "典狱长·艾德琳", line: "钥匙在我腰上，猫在我头上。放心，这里没有一只跑得出去——也没有一只想跑。", image: "assets/ui/prison-warden.webp", size: [336, 900], spot: [83.1, 32.9, 4.2, 20.5], crop: [150, 100, 150] };
+  const PRISON_ART = "assets/ui/prison-hall.webp";
   // 城镇商店：场景图中四家店铺的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。本轮仅启用装备店。
-  const TOWN_ART = "assets/ui/town-square.jpg";
-  const TOWN_ART_SIZE = [1408, 768];
+  const TOWN_ART = "assets/ui/town-square.webp";
+  const TOWN_ART_SIZE = [1698, 926];
   const TOWN_SHOPS = [
-    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [31, 37, 16, 19], crop: [555, 430, 140] },
-    { id: "tavern", name: "金杯酒馆", title: "🍺 酒馆", detail: "敬请期待。", enabled: false, hotspot: [6, 40, 18, 9], crop: [165, 260, 130] },
-    { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [63, 6, 19, 10], crop: [1010, 165, 130] },
-    { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [81, 42, 18, 9], crop: [1290, 400, 130] }
+    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [32, 42, 11.5, 27], crop: [600, 600, 150] },
+    { id: "tavern", name: "金杯酒馆", title: "🍺 酒馆", detail: "敬请期待。", enabled: false, hotspot: [5, 27, 19, 17], crop: [165, 300, 150] },
+    { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [68, 16, 9, 19], crop: [1235, 250, 150] },
+    { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [88, 36, 11.3, 14], crop: [1590, 400, 180] }
   ];
   const EQUIPMENT_TIER_NAMES = {
     weapon: ["", "粗糙武器", "精良武器", "锋利武器", "传奇武器"],
@@ -507,13 +511,37 @@
         return `<button class="training-hotspot training-hotspot-${service.id}${service.ready ? " ready" : ""}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%" ${actionAttrs(service)} aria-label="${service.name}"><span class="training-hotspot-plate"><strong>${service.name}</strong>${badge(service)}</span></button>`;
       }).join("");
       const cards = services.map(service => `<button class="choice-btn camp-service training-npc-card${service.ready ? " ready" : ""}" ${actionAttrs(service)}>${avatar(service)}<span class="training-npc-copy"><span class="training-npc-name">${service.name}</span><q>${service.line}</q><strong>${service.title}</strong><small>${service.detail}</small><em class="camp-service-hint">${service.hint}</em></span>${badge(service)}</button>`).join("");
+      const [wardenLeft, wardenTop, wardenWidth, wardenHeight] = PRISON_WARDEN.spot;
+      const warden = `<button class="training-hotspot camp-warden ready" style="left:${wardenLeft}%;top:${wardenTop}%;width:${wardenWidth}%;height:${wardenHeight}%" data-action="prison-page" aria-label="${PRISON_WARDEN.name}：进入营地监狱"><img src="${PRISON_WARDEN.image}" alt="" draggable="false"><span class="training-hotspot-plate"><strong>${PRISON_WARDEN.name}</strong><small>营地监狱</small></span></button>`;
       this.frame(`<section class="screen training-screen">
         <div class="page-heading"><div><span class="eyebrow">营地</span><h2>队伍营地</h2></div><p>每项卡牌训练或救治服务均需30金币。阵亡的真实随从会进入伤员名单，救治后才能重新出战。</p></div>
         <div class="training-scene" style="background-image: url('${TRAINING_GROUNDS_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
-          ${hotspots}
+          ${hotspots}${warden}
         </div>
         <div class="training-npc-grid">${cards}</div>
-        <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="prison-page">🔒 进入营地监狱</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
+      </section>`);
+    },
+
+    wardenAvatar() {
+      const [artWidth, artHeight] = PRISON_WARDEN.size;
+      const [cx, cy, size] = PRISON_WARDEN.crop;
+      const scale = 72 / size;
+      return `<span class="training-npc-avatar prison-warden-avatar" style="background-image: url('${PRISON_WARDEN.image}'); background-size: ${artWidth * scale}px ${artHeight * scale}px; background-position: ${-(cx - size / 2) * scale}px ${-(cy - size / 2) * scale}px" aria-hidden="true"></span>`;
+    },
+
+    // 营地监狱：监狱场景图铺满整个界面作为背景，上面直接列出已押回的觉醒者头像。
+    renderPrison() {
+      this.screen = "prison"; this.battle = null; this.activeNode = null;
+      const roster = CF.Adventure.prisonRoster();
+      CF.SaveSystem.save();
+      const inmates = roster.filter(prisoner => prisoner.captured);
+      const tiles = inmates.map(prisoner => `<div class="prison-inmate${prisoner.type === "elite" ? " elite" : ""}"><img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy"><strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${prisoner.type === "elite" ? " · 精英" : ""}</small></div>`).join("");
+      this.frame(`<section class="screen prison-screen" style="background-image: url('${PRISON_ART}')">
+        <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>已关押 ${inmates.length}/${roster.length} 名觉醒者。各关的最终首领不在此列：森林狼王战死于密林，其余首领都在最后关头被同族救走。</p></div>
+        <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
+        ${tiles ? `<div class="prison-roster">${tiles}</div>` : '<p class="prison-empty">牢房还空着。击败冒险中的首领，它们就会被押回这里。</p>'}
+        <div class="menu-actions"><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
     },
 
@@ -655,6 +683,7 @@
       this.screen = "backpack"; this.battle = null; this.activeNode = null;
       const inv = CF.SaveSystem.data.inventory;
       const waterCount = inv.queenEssenceBlood || 0;
+      const bloodAwakened = CF.SaveSystem.queenBloodAwakened();
       const gearRows = kind => [1, 2, 3, 4].map(tier => {
         const count = inv[`${kind}T${tier}`] || 0;
         if (!count) return "";
@@ -665,7 +694,7 @@
       const armorItems = gearRows("armor");
       this.frame(`<section class="screen">
         <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
-        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · 使用后永久+1最大生命</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount ? "" : "disabled"}>使用</button></div></div>
+        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · ${bloodAwakened ? "使用后永久+1最大生命" : "通关统领试炼第七关“魅魔女王的低语”、得到女王认可后，才能吸收精血的力量（永久+1最大生命）"}</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount && bloodAwakened ? "" : "disabled"}>${bloodAwakened ? "使用" : "尚未得到认可"}</button></div></div>
         <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
         <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
@@ -673,6 +702,7 @@
     },
 
     useQueenBlood() {
+      if (!CF.SaveSystem.queenBloodAwakened()) return this.toast("精血拒绝与你相融。先通关统领试炼第七关，得到女王的认可。", "bad");
       const ok = CF.SaveSystem.useQueenEssenceBlood();
       if (!ok) return this.toast("没有可用的女王精血。", "bad");
       CF.Adventure.syncHeroGrowth();
@@ -708,9 +738,9 @@
       const unlocked = CF.SaveSystem.data.notesUnlocked;
       const pages = CF.LORE_PAGES.map((page, index) => index >= unlocked
         ? `<div class="note-entry locked"><strong>???</strong><small>尚未发现</small></div>`
-        : `<div class="note-entry"><strong>${page.title}</strong><p>${page.text}</p></div>`).join("");
+        : `<div class="note-entry"><strong>${page.title}</strong>${page.paragraphs.map(text => `<p>${text}</p>`).join("")}</div>`).join("");
       this.frame(`<section class="screen">
-        <div class="page-heading"><div><span class="eyebrow">收藏</span><h2>笔记残页</h2></div><p>已收集 ${unlocked}/${CF.LORE_PAGES.length} 篇，击败首领时有机会拾获新的残页。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">收藏</span><h2>笔记残页 · ${CF.LORE_BOOK_TITLE}</h2></div><p>已收集 ${unlocked}/${CF.LORE_PAGES.length} 页，每场战斗胜利后翻开第三张战利品牌，即可按顺序拾获下一页。</p></div>
         <div class="note-grid">${pages}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
@@ -938,7 +968,7 @@
       this.battle = null;
       this.sfx("trialClear");
       if (result.firstClear) this.sfx("manaUp", 1300);
-      this.modal(`<span class="eyebrow">统领试炼完成</span><h2>${trial.title}的认可</h2><div class="trial-result"><img src="${trial.portrait}" alt="${trial.name}"><div><strong>${trial.name}</strong><p>${result.firstClear ? `首次通关，最大法力永久提高至 ${result.maxMana}。` : "你再次完成了这项试炼；首次通关奖励已经领取。"}</p></div></div><button class="primary-btn" data-modal-action="trial-continue">返回训练场</button>`);
+      this.modal(`<span class="eyebrow">统领试炼完成</span><h2>${trial.title}的认可</h2><div class="trial-result"><img src="${trial.portrait}" alt="${trial.name}"><div><strong>${trial.name}</strong><p>${result.firstClear ? `首次通关，最大法力永久提高至 ${result.maxMana}。` : "你再次完成了这项试炼；首次通关奖励已经领取。"}</p>${result.firstClear && result.id === 7 ? "<p>女王认可了你。从此你走在魔族与人族之间——背包中的女王精血已可以吸收，每瓶永久+1最大生命。</p>" : ""}</div></div><button class="primary-btn" data-modal-action="trial-continue">返回训练场</button>`);
     },
     handleTrialDefeat(battle, id) {
       const trial = CF.Trials.byId(id);
@@ -1232,7 +1262,7 @@
       CF.SaveSystem.save();
       const bossCardReward = CF.Adventure.claimActiveWeaponReward() || CF.Adventure.claimActiveChapterTwoCardReward() || CF.Adventure.claimActiveChapterThreeCardReward() || CF.Adventure.claimActiveChapterFourCardReward() || CF.Adventure.claimActiveChapterFiveCardReward();
       const questItemReward = CF.Adventure.claimActiveQueenBloodWaterReward();
-      const loot = CF.Adventure.claimVictoryLoot();
+      const loot = CF.Adventure.claimVictoryLoot(battle.state.enemyUnitsKilled);
       this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward, loot);
     },
 
@@ -1242,11 +1272,13 @@
       const bossName = this.battle?.enemyConfig?.name || "";
       const storyDefeat = this.battle?.state?.storyDefeat;
       const lootCards = [
-        { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。背包中使用可永久+1最大生命。" },
-        { title: `粗糙武器 ×${loot.gearCount} · 粗糙盔甲 ×${loot.gearCount}`, detail: "白色品质的战场缴获，可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。" },
+        { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。通关统领试炼第七关、得到女王认可后，可在背包中使用，永久+1最大生命。" },
+        loot.gearCount > 0
+          ? { title: `粗糙武器 ×${loot.gearCount} · 粗糙盔甲 ×${loot.gearCount}`, detail: `本场击杀${loot.gearCount}个敌方随从，缴获同等数量的白色品质装备。可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。` }
+          : { title: "未缴获装备", detail: "本场没有击杀敌方随从，未能缴获粗糙武器/盔甲。击杀多少个随从，就能缴获多少件白装。" },
         loot.note
-          ? { title: loot.note.title, detail: loot.note.text }
-          : { title: "残页已集齐", detail: "世界观残页已全部收集，本次未获得新的残页。" }
+          ? { title: `${CF.LORE_BOOK_TITLE}${loot.note.title}`, detail: `笔记残页 ${loot.note.index}/${CF.LORE_PAGES.length}，翻开后可在下方阅读全文，之后也能在主界面“笔记残页”中重读。` }
+          : { title: "残页已集齐", detail: `${CF.LORE_BOOK_TITLE}已全部收集，本次未获得新的残页。` }
       ];
       this.pendingBossLoot = lootCards;
       const eyebrow = bossFight ? (storyDefeat ? "第五关剧情完成" : "最终胜利") : "战斗胜利";
@@ -1257,6 +1289,7 @@
         ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
         <p class="boss-loot-hint">翻开三张战利品牌：</p>
         <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>
+        ${loot.note ? `<article class="loot-note-reading" hidden><span class="eyebrow">${CF.LORE_BOOK_TITLE} · 残页 ${loot.note.index}/${CF.LORE_PAGES.length}</span><h3>${loot.note.title}</h3>${loot.note.paragraphs.map(text => `<p>${text}</p>`).join("")}</article>` : ""}
         <div class="menu-actions"><button class="primary-btn" data-modal-action="continue-boss-loot">领取奖励，返回地图</button></div>`);
     },
 
@@ -1273,6 +1306,11 @@
       if (!card || card.classList.contains("flipped")) return;
       card.classList.add("flipped");
       this.sfx("cardAdd");
+      // 第三张是笔记残页：翻开后在牌下展开本页故事全文。
+      if (index === 2) {
+        const reading = modalRoot.querySelector(".loot-note-reading");
+        if (reading) reading.hidden = false;
+      }
     },
 
     finishCombatNode(type) {
@@ -1463,6 +1501,7 @@
     }
     if (action === "deck-page") UI.renderDeck();
     if (action === "training-page") UI.renderTraining();
+    if (action === "prison-page") UI.renderPrison();
     if (action === "inspect-card") UI.openCardDetail(el.dataset.card);
     if (action === "settings-page") UI.renderSettings(UI.screen === "cover" ? "cover" : "menu");
     if (action === "open-card-training") UI.openCardTraining(el.dataset.cardType);
