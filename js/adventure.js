@@ -638,18 +638,20 @@
       const run = this.current();
       return EVENTS[(run?.stage + run?.completed?.length || 0) % EVENTS.length];
     },
-    // 战斗胜利翻牌战利品：数量随章节难度递增（3~6件），每场战斗（普通/精英/Boss）胜利后都会翻开
-    // 三张固定战利品牌——女王精血、粗糙装备、笔记残页。残页collect满12篇后，第三张牌不再有奖励。
-    generateVictoryLoot() {
-      const run = this.current();
-      const gearCount = Math.min(6, (run?.chapter || 1) + 2);
+    // 战斗胜利翻牌战利品：每场战斗（普通/精英/Boss）胜利后都会翻开三张固定战利品牌——
+    // 女王精血、粗糙装备、笔记残页。第二张的粗糙武器/盔甲数量等于本场击杀的敌方随从数；
+    // 残页collect满12篇后，第三张牌不再有奖励。
+    generateVictoryLoot(unitsKilled = 0) {
+      const gearCount = Math.max(0, Math.floor(Number(unitsKilled) || 0));
       return { gearCount };
     },
-    claimVictoryLoot() {
-      const { gearCount } = this.generateVictoryLoot();
+    claimVictoryLoot(unitsKilled = 0) {
+      const { gearCount } = this.generateVictoryLoot(unitsKilled);
       CF.SaveSystem.addInventoryItem("queenEssenceBlood", 1);
-      CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
-      CF.SaveSystem.addInventoryItem("armorT1", gearCount);
+      if (gearCount > 0) {
+        CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
+        CF.SaveSystem.addInventoryItem("armorT1", gearCount);
+      }
       let note = null;
       if (CF.SaveSystem.data.notesUnlocked < LORE_PAGES.length) {
         note = { ...LORE_PAGES[CF.SaveSystem.data.notesUnlocked], index: CF.SaveSystem.data.notesUnlocked + 1 };
