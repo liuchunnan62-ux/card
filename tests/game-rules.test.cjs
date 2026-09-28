@@ -481,7 +481,10 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
 {
   const cages = CF.Adventure.prisonCages();
   assert.deepEqual(Array.from(cages, cage => cage.id), ["goblin", "werewolf", "slime", "bear"], "营地监狱应按场景图顺序设置哥布林、狼人、史莱姆、熊女四间牢房");
-  assert.deepEqual(Array.from(cages, cage => cage.prisoners.length), [21, 22, 20, 20], "牢房应收押第二至第五关全部战斗节点，以及第一关的哥布林与狼族");
+  assert.deepEqual(Array.from(cages, cage => cage.prisoners.length), [25, 20, 19, 19], "每关最终首领不收押：第二至第五关各19格，第一关7格");
+  assert.ok(cages.every(cage => cage.prisoners.every(prisoner => prisoner.type !== "boss")), "各关最终首领（战死的狼王与被救走的首领）不应出现在牢房中");
+  assert.equal(cages.flatMap(cage => cage.prisoners).filter(prisoner => prisoner.chapter === 1).length, 7, "第一关应有7名在押者");
+  assert.ok(cages.flatMap(cage => cage.prisoners).every(prisoner => prisoner.portrait), "每个牢位都应有头像");
   const savedPrisoners = { ...CF.SaveSystem.data.prisoners };
   const savedRun = CF.SaveSystem.data.run;
   CF.SaveSystem.data.prisoners = {};

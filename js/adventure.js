@@ -423,14 +423,17 @@
     ] }
   ].map(page => ({ ...page, text: page.paragraphs.join("\n") }));
   // 营地监狱：四间牢房对应监狱场景图中的四面旗帜。成员按“章节 → 节点序号”列出，"all"表示该章全部战斗节点。
-  // 第一关只收押其中的哥布林与狼族，兽人、强盗和暗影猎手并非饮下女王之血的觉醒者。
+  // 各关最终首领不收押：森林狼王战死于密林，其余首领都在最后关头被同族救走。因此每关19格，第一关7格。
+  // 第一关的兽人、强盗与暗影猎手和第二关一样归入哥布林王庭一方，只有野狼群进狼人牢房。
   const PRISON_CAGES = [
-    { id: "goblin", name: "哥布林", members: [[1, [1]], [2, "all"]], flavor: "翠影女王麾下的绿皮族群。关进来的第一天，就有三只试图用汤勺挖地道。" },
-    { id: "werewolf", name: "狼人", members: [[1, [3, 12]], [5, "all"]], flavor: "密林与千枝城的狼族。它们安静得出奇，只在月圆之夜隔着铁栏低声嚎叫。" },
+    { id: "goblin", name: "哥布林", members: [[1, [0, 1, 5, 7, 9, 11]], [2, "all"]], flavor: "翠影女王麾下的绿皮族群与投靠王庭的佣兵。关进来的第一天，就有三只试图用汤勺挖地道。" },
+    { id: "werewolf", name: "狼人", members: [[1, [3]], [5, "all"]], flavor: "密林与千枝城的狼族。它们安静得出奇，只在月圆之夜隔着铁栏低声嚎叫。" },
     { id: "slime", name: "史莱姆", members: [[4, "all"]], flavor: "梦幻森林的史莱姆。铁栏对它们形同虚设，好在它们似乎并不想离开。" },
     { id: "bear", name: "熊女", members: [[3, "all"]], flavor: "金麦农场的熊族。每天准时要求蜂蜜，否则拒绝配合点名。" }
   ];
-  const COMBAT_NODE_TYPES = ["normal", "elite", "boss"];
+  const PRISONER_NODE_TYPES = ["normal", "elite"];
+  // 第一关起点“林道遭遇”没有固定敌人，作为第一场战斗时总会遇到哥布林战团。
+  const CHAPTER_ONE_PRISONER_FALLBACK = { 0: "goblin_warband" };
   const MAP_STAGES = [
     [{ type: "normal", label: "林道遭遇", icon: "⚔️" }],
     [{ type: "normal", label: "断桥之战", icon: "⚔️", weaponBoss: true, weaponId: "mist_dagger", enemyId: "goblin_warband", portrait: "assets/enemies/goblin-warband.png" }, { type: "event", label: "迷雾岔路", icon: "❓" }],
@@ -774,7 +777,7 @@
       if (!run) return;
       const nodeIndex = Number.isInteger(run.activeNode) ? run.activeNode : run.stage;
       if (!run.completed.some(entry => entry.stage === nodeIndex)) run.completed.push({ stage: nodeIndex, type });
-      if (COMBAT_NODE_TYPES.includes(type)) this.recordPrisoner(run.chapter, nodeIndex);
+      if (PRISONER_NODE_TYPES.includes(type)) this.recordPrisoner(run.chapter, nodeIndex);
       run.activeNode = null;
       run.stage = run.completed.length;
       run.cleared = run.completed.length >= this.mapStages().length;
@@ -791,21 +794,21 @@
       const save = CF.SaveSystem.data;
       save.prisoners ||= {};
       const runs = save.chapterRuns || {};
-      const captured = (chapter, stage, node) => Boolean(save.prisoners[`${chapter}-${stage}`]
-        || (runs[chapter]?.completed || []).some(entry => Number(entry.stage) === stage)
-        || (node.type === "boss" && Number(save.completedRuns) >= chapter));
+      const captured = (chapter, stage) => Boolean(save.prisoners[`${chapter}-${stage}`]
+        || (runs[chapter]?.completed || []).some(entry => Number(entry.stage) === stage));
       return PRISON_CAGES.map(cage => {
         const prisoners = cage.members.flatMap(([chapter, stages]) => {
           // 直接按章节取节点：mapStages() 会把尚未解锁的章节回退为当前可玩的章节。
           const chapterStages = { 1: CHAPTER_ONE_STAGES, 2: CHAPTER_TWO_STAGES, 3: CHAPTER_THREE_STAGES, 4: CHAPTER_FOUR_STAGES, 5: CHAPTER_FIVE_STAGES }[chapter];
           const nodes = chapterStages.map(options => options[0]);
           const indexes = stages === "all" ? nodes.map((node, index) => index) : stages;
-          return indexes.filter(index => COMBAT_NODE_TYPES.includes(nodes[index]?.type)).map(stage => {
+          return indexes.filter(index => PRISONER_NODE_TYPES.includes(nodes[index]?.type)).map(stage => {
             const node = nodes[stage];
-            const name = chapter === 1 ? (CF.enemies?.[node.enemyId]?.name || node.label) : node.label;
-            const isCaptured = captured(chapter, stage, node);
+            const enemy = CF.enemies?.[node.enemyId || (chapter === 1 ? CHAPTER_ONE_PRISONER_FALLBACK[stage] : "")];
+            const name = chapter === 1 ? (enemy?.name || node.label) : node.label;
+            const isCaptured = captured(chapter, stage);
             if (isCaptured) save.prisoners[`${chapter}-${stage}`] = true;
-            return { key: `${chapter}-${stage}`, chapter, stage, name, portrait: node.portrait || CF.enemies?.[node.enemyId]?.portrait || "", type: node.type, captured: isCaptured };
+            return { key: `${chapter}-${stage}`, chapter, stage, name, place: chapter === 1 ? node.label : "", portrait: node.portrait || enemy?.portrait || "", type: node.type, captured: isCaptured };
           });
         });
         return { ...cage, prisoners, capturedCount: prisoners.filter(prisoner => prisoner.captured).length };

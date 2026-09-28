@@ -558,7 +558,7 @@
       }).join("");
       const cards = cages.map(cage => `<button class="choice-btn camp-service training-npc-card${cage.capturedCount ? " ready" : ""}" data-action="prison-cage" data-cage="${cage.id}">${cageAvatar(cage)}<span class="training-npc-copy"><span class="training-npc-name">${cage.name}牢房</span><q>${cage.flavor}</q><strong>在押 ${cage.capturedCount}/${cage.prisoners.length}</strong><em class="camp-service-hint">${cage.capturedCount ? "点击查看在押名单" : "尚未押回任何觉醒者"}</em></span>${cage.capturedCount ? count(cage) : ""}</button>`).join("");
       this.frame(`<section class="screen training-screen prison-screen">
-        <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>被击败的觉醒者都押在这里，已关押 ${captured}/${total} 名。它们饮下了女王之血，学会了思考，也学会了饥饿。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>被击败的觉醒者都押在这里，已关押 ${captured}/${total} 名。各关的最终首领不在此列：森林狼王战死于密林，其余首领都在最后关头被同族救走。</p></div>
         <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
         <div class="training-scene" style="background-image: url('${PRISON_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
           ${hotspots}
@@ -573,7 +573,7 @@
       if (!cage) return;
       const typeLabel = { elite: "精英", boss: "首领" };
       const tiles = cage.prisoners.map(prisoner => prisoner.captured
-        ? `<div class="prison-inmate">${prisoner.portrait ? `<img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy">` : ""}<strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${typeLabel[prisoner.type] ? ` · ${typeLabel[prisoner.type]}` : ""}</small></div>`
+        ? `<div class="prison-inmate">${prisoner.portrait ? `<img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy">` : ""}<strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${prisoner.place ? ` · ${prisoner.place}` : ""}${typeLabel[prisoner.type] ? ` · ${typeLabel[prisoner.type]}` : ""}</small></div>`
         : `<div class="prison-inmate empty"><span aria-hidden="true">?</span><strong>空牢位</strong><small>第${prisoner.chapter}关 · 尚未擒获</small></div>`).join("");
       this.modal(`<div class="page-heading"><div><span class="eyebrow">营地监狱 · 在押 ${cage.capturedCount}/${cage.prisoners.length}</span><h2>${cage.name}牢房</h2></div></div>
         <p>${cage.flavor}</p>
