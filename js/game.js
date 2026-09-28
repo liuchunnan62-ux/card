@@ -447,11 +447,19 @@
       };
       if (row === "front" && unit.keywords.includes("守卫")) { unit.health += 2; unit.maxHealth += 2; }
       if (row === "back" && unit.keywords.includes("远程")) unit.attack += 1;
+      // 装备品级：玩家随从读取存档里的装备；敌方随从按阵营固定配置——
+      // 冒险模式（魔族阵营）统一白色T1，竞技场/试炼（人类阵营）统一绿色T2。
       if (side === "player") {
         const equip = CF.SaveSystem.data.cardEquipment?.[card.id];
-        if (equip?.weapon) unit.attack += equip.weapon;
-        if (equip?.armor) unit.armorValue = equip.armor;
+        unit.weaponTier = equip?.weapon || 0;
+        unit.armorTier = equip?.armor || 0;
+      } else {
+        const enemyTier = (this.enemyConfig?.mode === "arena" || this.enemyConfig?.mode === "trial") ? 2 : 1;
+        unit.weaponTier = enemyTier;
+        unit.armorTier = enemyTier;
       }
+      if (unit.weaponTier) unit.attack += unit.weaponTier;
+      if (unit.armorTier) unit.armorValue = unit.armorTier;
       actor.board[row][column] = unit;
       this.sound("summon");
       this.recordCardPlayed(side, card);
@@ -2245,10 +2253,9 @@
       const attack = this.currentAttack(unit);
       const combatLabel = unit.role === "healer" ? "治疗" : (unit.combatStyle === "ranged" ? "远程" : "近战");
       const combatClass = unit.role === "healer" ? "support" : (unit.combatStyle === "ranged" ? "ranged" : "melee");
-      const cardEquip = side === "player" ? (CF.SaveSystem.data.cardEquipment?.[unit.cardId] || {}) : {};
       return `<div class="unit ${side === "enemy" ? "enemy-unit" : ""} ${unit.ready ? "ready" : ""} ${selected ? "selected" : ""}" title="${unit.name}｜${unit.keywords.join("、") || "无关键词"}">
         <span class="combat-tag ${combatClass}">${combatLabel}</span><div class="unit-name">${unit.name}</div><div class="unit-icon ${unit.image ? "has-image" : ""}">${unit.image ? `<img src="${unit.image}" alt="${unit.name}" loading="lazy">` : unit.icon}</div>
-        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}${side === "player" ? CF.equipDotHTML("weapon", cardEquip.weapon) : ""}</span><span class="health-stat">${side === "player" ? CF.equipDotHTML("armor", cardEquip.armor) : ""}♥ ${unit.health}/${unit.maxHealth}</span></div>
+        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}${CF.equipDotHTML("weapon", unit.weaponTier)}</span><span class="health-stat">${CF.equipDotHTML("armor", unit.armorTier)}♥ ${unit.health}/${unit.maxHealth}</span></div>
       </div>`;
     }
 

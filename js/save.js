@@ -51,6 +51,14 @@
     }, {});
   }
 
+  // 人类阵营起步装备：英雄初始牌组里的随从统一预装绿色（T2）武器与盔甲。
+  function starterCardEquipment() {
+    return CF.STARTER_IDS.reduce((acc, id) => {
+      if (CF.CARD_LIBRARY[id]?.type === "unit") acc[id] = { weapon: 2, armor: 2 };
+      return acc;
+    }, {});
+  }
+
   function signatureSkillOf(heroId) {
     const hero = typeof CF.heroById === "function" ? CF.heroById(heroId) : null;
     return hero?.skill || "slash";
@@ -87,7 +95,7 @@
       questItemRewards: {},
       items: { queenBloodRiverWater: false },
       inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
-      cardEquipment: {},
+      cardEquipment: starterCardEquipment(),
       notesUnlocked: 0,
       commanderTrials: { completed: [] },
       levelMapLayout: {},
