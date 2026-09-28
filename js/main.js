@@ -76,21 +76,21 @@
   ];
   // 队伍营地：场景图中四位教官的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。
   const TRAINING_GROUNDS_ART = "assets/ui/training-grounds.webp";
-  const TRAINING_ART_SIZE = [1408, 768];
+  const TRAINING_ART_SIZE = [1699, 926];
   const TRAINING_NPCS = [
-    { id: "weapon", action: "open-card-training", cardType: "weapon", name: "剑术教官·希尔达", line: "剑刃要比念头更快。来，再挥一次！", title: "🗡️ 武器训练 · 30金币", detail: "选择任意一张未满级武器牌，增加2点经验", hotspot: [14, 52, 10, 34], crop: [262, 468, 130] },
-    { id: "spell", action: "open-card-training", cardType: "spell", name: "奥术导师·奥雷利安", line: "法阵已经点亮，让你的咒语更加纯熟吧。", title: "✨ 法术训练 · 30金币", detail: "选择任意一张未满级法术牌，增加2点经验", hotspot: [52.5, 36, 7.5, 20], crop: [790, 322, 92] },
-    { id: "unit", action: "open-card-training", cardType: "unit", name: "战阵教官·伯恩", line: "木人桩不会喊疼，但你的新兵会学会坚持。", title: "⚔️ 随从训练 · 30金币", detail: "选择任意一张未满级随从牌，增加2点经验", hotspot: [72, 53, 10.5, 34], crop: [1085, 468, 130] },
-    { id: "rescue", action: "rescue-injured", name: "草药师·莉娜", line: "把伤员交给我，药剂已经熬好了。", title: "🩹 救治伤员 · 30金币", hotspot: [89, 49, 9, 30], crop: [1310, 440, 112] }
+    { id: "weapon", action: "open-card-training", cardType: "weapon", name: "剑术教官·希尔达", line: "剑刃要比念头更快。来，再挥一次！", title: "🗡️ 武器训练 · 30金币", detail: "选择任意一张未满级武器牌，增加2点经验", hotspot: [14, 52, 10, 36], crop: [322, 540, 160] },
+    { id: "spell", action: "open-card-training", cardType: "spell", name: "奥术导师·奥雷利安", line: "法阵已经点亮，让你的咒语更加纯熟吧。", title: "✨ 法术训练 · 30金币", detail: "选择任意一张未满级法术牌，增加2点经验", hotspot: [51.5, 41, 8, 19], crop: [935, 440, 110] },
+    { id: "unit", action: "open-card-training", cardType: "unit", name: "战阵教官·伯恩", line: "木人桩不会喊疼，但你的新兵会学会坚持。", title: "⚔️ 随从训练 · 30金币", detail: "选择任意一张未满级随从牌，增加2点经验", hotspot: [72.5, 52, 10.5, 35], crop: [1305, 560, 160] },
+    { id: "rescue", action: "rescue-injured", name: "草药师·莉娜", line: "把伤员交给我，药剂已经熬好了。", title: "🩹 救治伤员 · 30金币", hotspot: [89, 50, 9, 30], crop: [1585, 540, 130] }
   ];
   // 城镇商店：场景图中四家店铺的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。本轮仅启用装备店。
-  const TOWN_ART = "assets/ui/town-square.jpg";
-  const TOWN_ART_SIZE = [1408, 768];
+  const TOWN_ART = "assets/ui/town-square.webp";
+  const TOWN_ART_SIZE = [1698, 926];
   const TOWN_SHOPS = [
-    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [31, 37, 16, 19], crop: [555, 430, 140] },
-    { id: "tavern", name: "金杯酒馆", title: "🍺 酒馆", detail: "敬请期待。", enabled: false, hotspot: [6, 40, 18, 9], crop: [165, 260, 130] },
-    { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [63, 6, 19, 10], crop: [1010, 165, 130] },
-    { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [81, 42, 18, 9], crop: [1290, 400, 130] }
+    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [32, 42, 11.5, 27], crop: [600, 600, 150] },
+    { id: "tavern", name: "金杯酒馆", title: "🍺 酒馆", detail: "敬请期待。", enabled: false, hotspot: [5, 27, 19, 17], crop: [165, 300, 150] },
+    { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [68, 16, 9, 19], crop: [1235, 250, 150] },
+    { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [88, 36, 11.3, 14], crop: [1590, 400, 180] }
   ];
   const EQUIPMENT_TIER_NAMES = {
     weapon: ["", "粗糙武器", "精良武器", "锋利武器", "传奇武器"],
