@@ -436,8 +436,13 @@
       this.save();
       return inventory[key];
     },
+    // 女王精血需先通关统领试炼第七关“魅魔女王的低语”（此时最大法力达到10），得到女王认可后才能吸收。
+    queenBloodAwakened() {
+      return (this.data.commanderTrials?.completed || []).includes(7);
+    },
     useQueenEssenceBlood() {
       const inventory = this.data.inventory || (this.data.inventory = {});
+      if (!this.queenBloodAwakened()) return false;
       if (!(inventory.queenEssenceBlood > 0)) return false;
       inventory.queenEssenceBlood -= 1;
       this.data.hero.maxHealth += 1;

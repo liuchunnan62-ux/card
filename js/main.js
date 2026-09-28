@@ -655,6 +655,7 @@
       this.screen = "backpack"; this.battle = null; this.activeNode = null;
       const inv = CF.SaveSystem.data.inventory;
       const waterCount = inv.queenEssenceBlood || 0;
+      const bloodAwakened = CF.SaveSystem.queenBloodAwakened();
       const gearRows = kind => [1, 2, 3, 4].map(tier => {
         const count = inv[`${kind}T${tier}`] || 0;
         if (!count) return "";
@@ -665,7 +666,7 @@
       const armorItems = gearRows("armor");
       this.frame(`<section class="screen">
         <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
-        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · 使用后永久+1最大生命</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount ? "" : "disabled"}>使用</button></div></div>
+        <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · ${bloodAwakened ? "使用后永久+1最大生命" : "通关统领试炼第七关“魅魔女王的低语”、得到女王认可后，才能吸收精血的力量（永久+1最大生命）"}</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount && bloodAwakened ? "" : "disabled"}>${bloodAwakened ? "使用" : "尚未得到认可"}</button></div></div>
         <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
         <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
@@ -673,6 +674,7 @@
     },
 
     useQueenBlood() {
+      if (!CF.SaveSystem.queenBloodAwakened()) return this.toast("精血拒绝与你相融。先通关统领试炼第七关，得到女王的认可。", "bad");
       const ok = CF.SaveSystem.useQueenEssenceBlood();
       if (!ok) return this.toast("没有可用的女王精血。", "bad");
       CF.Adventure.syncHeroGrowth();
@@ -938,7 +940,7 @@
       this.battle = null;
       this.sfx("trialClear");
       if (result.firstClear) this.sfx("manaUp", 1300);
-      this.modal(`<span class="eyebrow">统领试炼完成</span><h2>${trial.title}的认可</h2><div class="trial-result"><img src="${trial.portrait}" alt="${trial.name}"><div><strong>${trial.name}</strong><p>${result.firstClear ? `首次通关，最大法力永久提高至 ${result.maxMana}。` : "你再次完成了这项试炼；首次通关奖励已经领取。"}</p></div></div><button class="primary-btn" data-modal-action="trial-continue">返回训练场</button>`);
+      this.modal(`<span class="eyebrow">统领试炼完成</span><h2>${trial.title}的认可</h2><div class="trial-result"><img src="${trial.portrait}" alt="${trial.name}"><div><strong>${trial.name}</strong><p>${result.firstClear ? `首次通关，最大法力永久提高至 ${result.maxMana}。` : "你再次完成了这项试炼；首次通关奖励已经领取。"}</p>${result.firstClear && result.id === 7 ? "<p>女王认可了你。从此你走在魔族与人族之间——背包中的女王精血已可以吸收，每瓶永久+1最大生命。</p>" : ""}</div></div><button class="primary-btn" data-modal-action="trial-continue">返回训练场</button>`);
     },
     handleTrialDefeat(battle, id) {
       const trial = CF.Trials.byId(id);
@@ -1242,7 +1244,7 @@
       const bossName = this.battle?.enemyConfig?.name || "";
       const storyDefeat = this.battle?.state?.storyDefeat;
       const lootCards = [
-        { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。背包中使用可永久+1最大生命。" },
+        { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。通关统领试炼第七关、得到女王认可后，可在背包中使用，永久+1最大生命。" },
         loot.gearCount > 0
           ? { title: `粗糙武器 ×${loot.gearCount} · 粗糙盔甲 ×${loot.gearCount}`, detail: `本场击杀${loot.gearCount}个敌方随从，缴获同等数量的白色品质装备。可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。` }
           : { title: "未缴获装备", detail: "本场没有击杀敌方随从，未能缴获粗糙武器/盔甲。击杀多少个随从，就能缴获多少件白装。" },

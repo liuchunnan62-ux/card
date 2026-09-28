@@ -490,6 +490,23 @@ assert.equal(CF.SaveSystem.data.inventory.weaponT1, priorWeapons + 5, "击杀5�
 assert.equal(CF.SaveSystem.data.inventory.armorT1, priorArmors + 5, "击杀5个随从应获得5件粗糙盔甲");
 assert.match(mainSource, /claimVictoryLoot\(battle\.state\.enemyUnitsKilled\)/, "胜利结算应把本场击杀数传给战利品翻牌");
 assert.equal(CF.SaveSystem.data.inventory.queenEssenceBlood, priorWater + 1, "每场战斗胜利（不限普通/精英/Boss）都应获得1瓶女王精血");
+{
+  const savedTrials = CF.SaveSystem.data.commanderTrials;
+  const savedMaxHealth = CF.SaveSystem.data.hero.maxHealth;
+  const bloodBefore = CF.SaveSystem.data.inventory.queenEssenceBlood;
+  CF.SaveSystem.data.commanderTrials = { completed: [1, 2, 3, 4, 5, 6] };
+  assert.equal(CF.SaveSystem.queenBloodAwakened(), false, "未通关试炼第七关时不应得到女王认可");
+  assert.equal(CF.SaveSystem.useQueenEssenceBlood(), false, "未通关试炼第七关时不能使用女王精血");
+  assert.equal(CF.SaveSystem.data.inventory.queenEssenceBlood, bloodBefore, "被拒绝使用时不应消耗女王精血");
+  assert.equal(CF.SaveSystem.data.hero.maxHealth, savedMaxHealth, "被拒绝使用时不应增加最大生命");
+  CF.SaveSystem.data.commanderTrials = { completed: [1, 2, 3, 4, 5, 6, 7] };
+  assert.equal(CF.SaveSystem.useQueenEssenceBlood(), true, "通关试炼第七关、得到女王认可后才能使用女王精血");
+  assert.equal(CF.SaveSystem.data.hero.maxHealth, savedMaxHealth + 1, "使用女王精血应永久+1最大生命");
+  CF.SaveSystem.data.commanderTrials = savedTrials;
+  CF.SaveSystem.data.hero.maxHealth = savedMaxHealth;
+  CF.SaveSystem.data.inventory.queenEssenceBlood = bloodBefore;
+}
+assert.match(mainSource, /data-action="use-queen-blood" \$\{waterCount && bloodAwakened/, "背包中的女王精血按钮应在得到女王认可前禁用");
 assert.equal(CF.SaveSystem.data.notesUnlocked, priorNotes + 1, "笔记残页应按顺序解锁");
 assert.ok(loot.note && typeof loot.note.text === "string", "尚未收集满的残页应携带文案");
 assert.equal(CF.LORE_BOOK_TITLE, "《源血纪元》", "笔记残页应收录世界观故事《源血纪元》");
