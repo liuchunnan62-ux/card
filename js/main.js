@@ -708,9 +708,9 @@
       const unlocked = CF.SaveSystem.data.notesUnlocked;
       const pages = CF.LORE_PAGES.map((page, index) => index >= unlocked
         ? `<div class="note-entry locked"><strong>???</strong><small>尚未发现</small></div>`
-        : `<div class="note-entry"><strong>${page.title}</strong><p>${page.text}</p></div>`).join("");
+        : `<div class="note-entry"><strong>${page.title}</strong>${page.paragraphs.map(text => `<p>${text}</p>`).join("")}</div>`).join("");
       this.frame(`<section class="screen">
-        <div class="page-heading"><div><span class="eyebrow">收藏</span><h2>笔记残页</h2></div><p>已收集 ${unlocked}/${CF.LORE_PAGES.length} 篇，击败首领时有机会拾获新的残页。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">收藏</span><h2>笔记残页 · ${CF.LORE_BOOK_TITLE}</h2></div><p>已收集 ${unlocked}/${CF.LORE_PAGES.length} 页，每场战斗胜利后翻开第三张战利品牌，即可按顺序拾获下一页。</p></div>
         <div class="note-grid">${pages}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
@@ -1247,8 +1247,8 @@
           ? { title: `粗糙武器 ×${loot.gearCount} · 粗糙盔甲 ×${loot.gearCount}`, detail: `本场击杀${loot.gearCount}个敌方随从，缴获同等数量的白色品质装备。可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。` }
           : { title: "未缴获装备", detail: "本场没有击杀敌方随从，未能缴获粗糙武器/盔甲。击杀多少个随从，就能缴获多少件白装。" },
         loot.note
-          ? { title: loot.note.title, detail: loot.note.text }
-          : { title: "残页已集齐", detail: "世界观残页已全部收集，本次未获得新的残页。" }
+          ? { title: `${CF.LORE_BOOK_TITLE}${loot.note.title}`, detail: `笔记残页 ${loot.note.index}/${CF.LORE_PAGES.length}，翻开后可在下方阅读全文，之后也能在主界面“笔记残页”中重读。` }
+          : { title: "残页已集齐", detail: `${CF.LORE_BOOK_TITLE}已全部收集，本次未获得新的残页。` }
       ];
       this.pendingBossLoot = lootCards;
       const eyebrow = bossFight ? (storyDefeat ? "第五关剧情完成" : "最终胜利") : "战斗胜利";
@@ -1259,6 +1259,7 @@
         ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
         <p class="boss-loot-hint">翻开三张战利品牌：</p>
         <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>
+        ${loot.note ? `<article class="loot-note-reading" hidden><span class="eyebrow">${CF.LORE_BOOK_TITLE} · 残页 ${loot.note.index}/${CF.LORE_PAGES.length}</span><h3>${loot.note.title}</h3>${loot.note.paragraphs.map(text => `<p>${text}</p>`).join("")}</article>` : ""}
         <div class="menu-actions"><button class="primary-btn" data-modal-action="continue-boss-loot">领取奖励，返回地图</button></div>`);
     },
 
@@ -1275,6 +1276,11 @@
       if (!card || card.classList.contains("flipped")) return;
       card.classList.add("flipped");
       this.sfx("cardAdd");
+      // 第三张是笔记残页：翻开后在牌下展开本页故事全文。
+      if (index === 2) {
+        const reading = modalRoot.querySelector(".loot-note-reading");
+        if (reading) reading.hidden = false;
+      }
     },
 
     finishCombatNode(type) {

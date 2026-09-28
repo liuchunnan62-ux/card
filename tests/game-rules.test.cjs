@@ -492,6 +492,13 @@ assert.match(mainSource, /claimVictoryLoot\(battle\.state\.enemyUnitsKilled\)/, 
 assert.equal(CF.SaveSystem.data.inventory.queenEssenceBlood, priorWater + 1, "每场战斗胜利（不限普通/精英/Boss）都应获得1瓶女王精血");
 assert.equal(CF.SaveSystem.data.notesUnlocked, priorNotes + 1, "笔记残页应按顺序解锁");
 assert.ok(loot.note && typeof loot.note.text === "string", "尚未收集满的残页应携带文案");
+assert.equal(CF.LORE_BOOK_TITLE, "《源血纪元》", "笔记残页应收录世界观故事《源血纪元》");
+assert.equal(CF.LORE_PAGES.length, 12, "《源血纪元》应按章节切分为12页残页");
+assert.equal(CF.LORE_PAGES[0].title, "序章·流淌在大陆血脉中的女王（一）", "第一页应从序章开始");
+assert.match(CF.LORE_PAGES[CF.LORE_PAGES.length - 1].text, /新生者/, "最后一页应讲到妖兽自称新生者");
+assert.ok(CF.LORE_PAGES.every(page => page.paragraphs.length && page.text === page.paragraphs.join("\n")), "每页残页应按段落保存故事全文");
+assert.deepEqual(Array.from(loot.note.paragraphs), Array.from(CF.LORE_PAGES[priorNotes].paragraphs), "翻牌第三张应按顺序给出下一页故事");
+assert.match(mainSource, /loot-note-reading[\s\S]*loot\.note\.paragraphs/, "翻开第三张战利品牌后应能阅读本页故事全文");
 assert.match(mainSource, /claimActiveWeaponReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterTwoCardReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterThreeCardReward\(\)\s*\|\|\s*CF\.Adventure\.claimActiveChapterFourCardReward\(\)/, "每个章节原有的首杀固定卡牌奖励应继续发放");
 assert.match(mainSource, /首杀固定奖励[\s\S]*cardPreview\(bossCardReward\.cardId\)/, "首杀卡牌应与战利品翻牌分开展示");
 assert.match(mainSource, /continue-boss-loot[\s\S]*UI\.finishBoss/, "翻开三张战利品牌后，Boss战应可领取并进入通关总结");

@@ -227,6 +227,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .boss-loot-back { transform: rotateY(180deg); border: 1px solid #f1c65f; background: radial-gradient(circle at center, rgba(103,68,19,.68), rgba(22,15,12,.9)); }
 .boss-loot-back strong { color: #ffe6a5; }
 .boss-loot-back small { color: var(--muted); line-height: 1.5; }
+/* 第三张战利品牌翻开后，在牌下展开本页《源血纪元》全文 */
+.loot-note-reading { margin-top: 14px; padding: 14px 18px; border: 1px solid #87663d; border-radius: 10px; background: rgba(0,0,0,.28); }
+.loot-note-reading[hidden] { display: none; }
+.loot-note-reading h3 { margin: 4px 0 8px; color: var(--gold-bright); }
+.loot-note-reading p { margin: 0 0 8px; }
 
 /* 背包页 */
 .backpack-section { margin-top: 18px; }
@@ -241,10 +246,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .forge-section h3 { margin: 0 0 6px; color: var(--gold-bright); }
 
 /* 笔记残页 */
-.note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+.note-grid { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 860px; margin-top: 16px; }
 .note-entry { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.2); }
 .note-entry strong { display: block; color: var(--gold-bright); margin-bottom: 6px; }
-.note-entry p { margin: 0; color: var(--muted); line-height: 1.6; }
+.note-entry p { margin: 0 0 8px; color: var(--muted); line-height: 1.75; }
+.note-entry p:last-child { margin-bottom: 0; }
 .note-entry.locked { opacity: .5; text-align: center; }
 .note-entry.locked strong { color: var(--muted); }
 .primary-btn, .secondary-btn, .danger-btn, .choice-btn {
