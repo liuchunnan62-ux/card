@@ -160,9 +160,34 @@
           <span class="resource-chip hero-resource"><img class="resource-avatar" src="${heroProfile().portrait}" alt="${heroProfile().name}"><strong>Lv${data.hero.level}</strong></span>
           <span class="resource-chip">${COIN_ICON}<strong data-resource-coins>${data.coins}</strong></span>
           <span class="resource-chip">✦ <strong>${data.hero.maxMana}</strong> 最大法力</span>
+          ${this.rationChip()}
         </div>
         ${showHome ? '<button class="icon-btn" data-action="home" title="返回主菜单">⌂ 主菜单</button>' : ""}
       </header>`;
+    },
+    // 顶栏粮食：现有粮食 / 每场战斗消耗（出战随从 + 在押犯人），不够时标红。
+    rationChip() {
+      const R = CF.Restaurant;
+      const have = R.rations();
+      const { units, prisoners, total } = R.upkeep();
+      return `<span class="resource-chip ration-chip${have < total ? " short" : ""}" title="每场战斗消耗：随从${units} + 犯人${prisoners} = ${total}份粮食">🌾 <strong data-resource-rations>${have}</strong> 粮食 <small>每战-${total}</small></span>`;
+    },
+    // 开战前检查粮食：够就直接扣除出发；不够时让玩家选择买面粉补足或饿着肚子出战。
+    withRations(start) {
+      const R = CF.Restaurant;
+      const have = R.rations();
+      const { units, prisoners, total } = R.upkeep();
+      const go = () => {
+        const result = R.consumeForBattle();
+        start(result.hungry);
+        if (result.hungry) this.toast(`粮食不足，队伍饿着肚子出战：本场我方随从攻击-1。`, "bad");
+      };
+      if (have >= total) return go();
+      const { bags, cost } = R.flourFor(total - have);
+      const canBuy = CF.SaveSystem.data.coins >= cost;
+      this.pendingRationStart = { go, bags };
+      this.modal(`<span class="eyebrow">队伍补给</span><h2>🌾 粮食不足</h2><p>本场战斗需要 <strong>${total}</strong> 份粮食（出战随从 ${units} + 在押犯人 ${prisoners}），现有 <strong>${have}</strong> 份。</p><p>${R.FLOUR.icon}${R.FLOUR.name}每袋${R.FLOUR.price}金币、可供${R.FLOUR.rations}人吃一顿。补足需要${bags}袋，共${cost}金币。</p>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="ration-buy-go" ${canBuy ? "" : "disabled"}>${canBuy ? `花${cost}金币买面粉并出战` : `金币不足（需要${cost}）`}</button><button class="danger-btn" data-modal-action="ration-hungry-go">饿着肚子出战（本场随从攻击-1）</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`);
     },
     frame(content, showHome = true) { this.hideAttackArrow(); app.innerHTML = this.topbar(showHome) + content; if (this.screen === "deck") this.decorateDeckRows(); this.syncMusic(); },
     musicTrack() {
@@ -737,6 +762,8 @@
     // 金杯餐馆：用金币购买食物，存进背包，再到营地监狱投喂在押首领。
     openRestaurant() {
       const R = CF.Restaurant;
+      const rations = R.rations();
+      const upkeep = R.upkeep();
       const favoriteOf = food => Object.values(R.RACES).filter(race => race.favorite === food.id).map(race => race.name);
       const rows = R.FOODS.map(food => {
         const fans = favoriteOf(food);
@@ -745,8 +772,25 @@
         return `<div class="restaurant-food"><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><div class="restaurant-food-copy"><strong>${food.name}</strong><small>${food.detail}</small><small class="restaurant-food-stats">好感 +${food.affinity}${fans.length ? ` · ${fans.join("、")}最爱（好感翻倍）` : ""} · 已有 ${owned} 份</small></div><button class="secondary-btn" data-modal-action="buy-food" data-food="${food.id}" ${canBuy ? "" : "disabled"}>${COIN_ICON}${food.price}</button></div>`;
       }).join("");
       this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店 · 新开业</span><h2>金杯餐馆</h2></div><p>当前金币：<strong>${CF.SaveSystem.data.coins}</strong>。第二关起获得的首领卡牌，需要去营地监狱探望对应的在押首领，用美食把好感度提升到${R.BOND_THRESHOLD}、与其结缘后才能出战；继续投喂还能升级好感，让卡牌变得更强。</p></div>
+        <div class="restaurant-flour"><span class="restaurant-food-icon" aria-hidden="true">${R.FLOUR.icon}</span><div class="restaurant-food-copy"><strong>${R.FLOUR.name} · 队伍口粮</strong><small>${R.FLOUR.detail}每袋${R.FLOUR.price}金币 = ${R.FLOUR.rations}份粮食。</small><small class="restaurant-food-stats">现有粮食 ${rations} 份 · 每场战斗消耗 ${upkeep.total} 份（出战随从 ${upkeep.units} + 在押犯人 ${upkeep.prisoners}）· 约够 ${upkeep.total ? Math.floor(rations / upkeep.total) : "∞"} 场</small></div><div class="restaurant-flour-buttons">${[1, 10, 50].map(bags => `<button class="secondary-btn" data-modal-action="buy-flour" data-bags="${bags}" ${CF.SaveSystem.data.coins >= bags * R.FLOUR.price ? "" : "disabled"}>×${bags} · ${COIN_ICON}${bags * R.FLOUR.price}</button>`).join("")}</div></div>
+        <h3>投喂菜肴</h3>
         <div class="restaurant-menu">${rows}</div>
         <div class="menu-actions"><button class="primary-btn" data-modal-action="restaurant-to-prison">带上食物去营地监狱</button><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
+    },
+
+    buyFlourAction(bags) {
+      const result = CF.Restaurant.buyFlour(bags);
+      if (!result.ok) return this.toast(result.reason, "bad");
+      this.sfx("purchase");
+      this.toast(`购买了${result.bags}袋面粉，粮食+${result.rations}。`, "good");
+      this.refreshTopbar();
+      this.openRestaurant();
+    },
+
+    // 弹窗里花钱后同步刷新顶栏的金币与粮食。
+    refreshTopbar() {
+      const header = app.querySelector(".topbar");
+      if (header) header.outerHTML = this.topbar(Boolean(header.querySelector('[data-action="home"]')));
     },
 
     buyFoodAction(foodId) {
@@ -754,6 +798,7 @@
       if (!result.ok) return this.toast(result.reason, "bad");
       this.sfx("purchase");
       this.toast(`购买了1份${result.food.name}，已放进背包。`, "good");
+      this.refreshTopbar();
       this.openRestaurant();
     },
 
@@ -1180,9 +1225,10 @@
       this.frame(`<section class="screen arena-screen"><div class="page-heading"><div><span class="eyebrow">64人单败淘汰赛</span><h2>荣耀竞技场</h2></div><p>累计奖金 ${COIN_ICON}<strong>${tournament.earnings}</strong></p></div>${status}${this.arenaBracketHTML(tournament)}<div class="menu-actions"><button class="secondary-btn" data-action="level-select">返回世界地图</button></div></section>`);
       this.focusArenaBracket();
     },
-    startArenaBattle() {
+    startArenaBattle(hungry = null) {
       const enemy = CF.Arena.opponent();
       if (!enemy || !this.validateDeck()) return;
+      if (hungry === null) return this.withRations(isHungry => this.startArenaBattle(isHungry));
       this.screen = "battle";
       this.battle = new CF.Battle(enemy, {
         onRender: battle => { this.frame(battle.html()); this.syncAttackArrow(); },
@@ -1190,6 +1236,7 @@
         onVictory: battle => this.handleArenaVictory(battle),
         onDefeat: battle => this.handleArenaDefeat(battle)
       });
+      this.battle.state.hungry = hungry;
       this.battle.startPlayerTurn(true);
       requestAnimationFrame(() => window.scrollTo(0, 0));
     },
@@ -1276,17 +1323,19 @@
       this.modal(`<span class="eyebrow">金麦农场 · 留守者的证言</span><h2>${npc.name}</h2><div class="farm-npc-dialogue"><img src="${npc.portrait}" alt="${npc.name}"><div>${npc.dialogue.map(text => `<p>“${text}”</p>`).join("")}</div></div><p class="farm-npc-summary">他们并不要求你放下武器，只希望你在见到丰穗战母之前，先知道这些熊族并未伤害原来的村民。</p><button class="primary-btn" data-modal-action="close">我会亲眼判断</button>`);
     },
 
-    enterNode(choiceIndex) {
+    enterNode(choiceIndex, hungry = null) {
+      const preview = CF.Adventure.mapStages()[Number(choiceIndex)]?.[0];
+      if (hungry === null && ["normal", "elite", "boss"].includes(preview?.type) && CF.Adventure.isNodeAvailable(choiceIndex)) return this.withRations(isHungry => this.enterNode(choiceIndex, isHungry));
       const node = CF.Adventure.chooseNode(choiceIndex);
       if (!node) return;
       this.activeNode = node;
-      if (["normal", "elite", "boss"].includes(node.type)) this.startBattle(node.type);
+      if (["normal", "elite", "boss"].includes(node.type)) this.startBattle(node.type, Boolean(hungry));
       else if (node.type === "event") this.renderEvent();
       else if (node.type === "camp") this.renderCamp();
       else if (node.type === "shop") this.renderShop();
     },
 
-    startBattle(type) {
+    startBattle(type, hungry = false) {
       this.screen = "battle";
       const enemy = CF.Adventure.encounterFor(type);
       this.activeNode = { ...(this.activeNode || {}), type };
@@ -1296,6 +1345,7 @@
         onVictory: battle => this.handleVictory(battle, type),
         onDefeat: battle => this.handleDefeat(battle)
       });
+      this.battle.state.hungry = hungry;
       this.battle.startPlayerTurn(true);
       requestAnimationFrame(() => window.scrollTo(0, 0));
       if (!CF.SaveSystem.data.tutorialSeen) this.showTutorial();
@@ -1558,7 +1608,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1738,6 +1788,14 @@
     }
     if (action === "forge-item") UI.forgeItemAction(el.dataset.kind, Number(el.dataset.tier));
     if (action === "buy-food") UI.buyFoodAction(el.dataset.food);
+    if (action === "buy-flour") UI.buyFlourAction(Number(el.dataset.bags));
+    if (action === "ration-buy-go" && UI.pendingRationStart) {
+      const pending = UI.pendingRationStart; UI.pendingRationStart = null;
+      const bought = CF.Restaurant.buyFlour(pending.bags);
+      if (!bought.ok) return UI.toast(bought.reason, "bad");
+      UI.sfx("purchase"); UI.closeModal(); pending.go();
+    }
+    if (action === "ration-hungry-go" && UI.pendingRationStart) { const pending = UI.pendingRationStart; UI.pendingRationStart = null; UI.closeModal(); pending.go(); }
     if (action === "feed-prisoner") UI.feedPrisonerAction(el.dataset.key, el.dataset.food);
     if (action === "restaurant-to-prison") { UI.closeModal(); UI.renderPrison(); }
     if (action === "prison-to-restaurant") { UI.closeModal(); UI.renderTownShop(); UI.openRestaurant(); }

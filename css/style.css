@@ -1330,3 +1330,10 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
 .prison-boss-cards ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .prison-boss-cards li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: #cbbd9f; font-size: 13px; }
 .prisoner-boss-hint { color: #e7b6c9; font-size: 13px; }
+/* 队伍粮食 */
+.ration-chip small { margin-left: 3px; color: var(--muted); font-size: 11px; }
+.ration-chip.short { border-color: rgba(224,72,58,.7); }
+.ration-chip.short strong, .ration-chip.short small { color: #ff8a7a; }
+.restaurant-flour { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0 14px; padding: 12px 14px; border: 1px solid #c99b4e; border-radius: 12px; background: rgba(201,155,78,.1); }
+.restaurant-flour-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.restaurant-flour-buttons .secondary-btn { display: inline-flex; align-items: center; gap: 4px; }

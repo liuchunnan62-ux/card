@@ -28,6 +28,10 @@
     { id: "hunter_stew", name: "猎人炖锅", icon: "🍲", price: 60, affinity: 30, detail: "炖了一整夜的浓汤，暖胃也暖心。" },
     { id: "harvest_feast", name: "丰收宴席", icon: "🍱", price: 120, affinity: 60, detail: "一整桌丰盛的宴席，再倔强的俘虏也会动摇。" }
   ];
+  // 队伍粮食（类似魔兽争霸的人口食物）：每场战斗按“出战随从数 + 在押犯人数”消耗，用面粉补充。
+  // 面粉只用来填饱肚子，不能提升好感；上面的菜肴只用来投喂犯人，不计入粮食。
+  const FLOUR = { id: "flour", name: "面粉", icon: "🌾", price: 2, rations: 5, detail: "最便宜的基础口粮，一袋够5个人吃一顿。" };
+  const STARTING_RATIONS = 60;
   const FOOD_BY_ID = Object.fromEntries(FOODS.map(food => [food.id, food]));
   const AFFINITY_TIERS = [
     [60, "信任"],
@@ -48,6 +52,38 @@
   const pick = list => list[Math.floor(Math.random() * list.length)];
 
   const Restaurant = {
+    FLOUR,
+    STARTING_RATIONS,
+    rations() { return Math.max(0, Math.floor(Number(save().rations) || 0)); },
+    // 每场战斗的粮食消耗：能出战的随从牌（每张1份）+ 营地监狱的在押犯人（每人1份）。
+    upkeep() {
+      const units = CF.SaveSystem.availableDeck().filter(id => CF.CARD_LIBRARY[id]?.type === "unit").length;
+      const prisoners = CF.Adventure.prisonRoster().filter(prisoner => prisoner.captured).length;
+      return { units, prisoners, total: units + prisoners };
+    },
+    // 补足 need 份粮食需要的面粉袋数与金币。
+    flourFor(need) {
+      const bags = Math.max(0, Math.ceil(need / FLOUR.rations));
+      return { bags, cost: bags * FLOUR.price };
+    },
+    buyFlour(bags = 1) {
+      const count = Math.max(1, Math.floor(Number(bags) || 1));
+      const cost = count * FLOUR.price;
+      if (save().coins < cost) return { ok: false, reason: `金币不足，需要${cost}金币。` };
+      save().coins -= cost;
+      save().rations = this.rations() + count * FLOUR.rations;
+      CF.SaveSystem.save();
+      return { ok: true, bags: count, cost, rations: count * FLOUR.rations };
+    },
+    // 开战时扣除粮食。粮食不够时 hungry 为 true：剩余粮食全部吃光，本场随从饿着肚子上阵。
+    consumeForBattle() {
+      const { total } = this.upkeep();
+      const have = this.rations();
+      const hungry = have < total;
+      save().rations = hungry ? 0 : have - total;
+      CF.SaveSystem.save();
+      return { cost: total, eaten: Math.min(have, total), hungry };
+    },
     BOND_THRESHOLD,
     BOND_STEP,
     MAX_BOND_LEVEL,

@@ -461,6 +461,8 @@
       }
       if (unit.weaponTier) unit.attack += unit.weaponTier;
       if (unit.armorTier) unit.armorValue = unit.armorTier;
+      // 粮食不足时饿着肚子出战：本场我方随从攻击-1（最低为0）。
+      if (side === "player" && this.state.hungry) unit.attack = Math.max(0, unit.attack - 1);
       actor.board[row][column] = unit;
       this.sound("summon");
       this.recordCardPlayed(side, card);

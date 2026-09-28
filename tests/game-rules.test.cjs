@@ -501,7 +501,7 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   // 金杯餐馆与在押首领好感度：第二关起的首领卡牌需结缘后才能出战，继续投喂可升级好感、强化卡牌。
   const R = CF.Restaurant;
   const data = CF.SaveSystem.data;
-  const saved = { coins: data.coins, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
+  const saved = { coins: data.coins, rations: data.rations, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
   const goblinCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[0];
   const queenCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[19];
   const owners = CF.Adventure.bondCardOwners();
@@ -564,6 +564,31 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   data.prisoners[members[5]] = true; data.foods = { harvest_feast: 1 };
   const bossUp = R.feed(members[5], "harvest_feast");
   assert.equal(bossUp.bossCard?.to, 3, "最后一名在押首领升级时，最终首领卡同步升级");
+  // 队伍粮食：每场战斗按出战随从数 + 在押犯人数消耗，面粉2金币一袋补充。
+  data.prisoners = { "2-0": true, "2-1": true, "3-0": true };
+  const upkeep = R.upkeep();
+  const unitCount = CF.SaveSystem.availableDeck().filter(id => CF.CARD_LIBRARY[id].type === "unit").length;
+  assert.equal(upkeep.units, unitCount, "粮食消耗应计入能出战的随从牌");
+  assert.ok(upkeep.prisoners >= 3, "粮食消耗应计入在押犯人");
+  assert.equal(upkeep.total, upkeep.units + upkeep.prisoners, "每场消耗 = 随从 + 犯人");
+  assert.equal(R.FLOUR.price, 2, "面粉应是2金币的便宜基础口粮");
+  data.coins = 10; data.rations = 0;
+  assert.equal(R.buyFlour(5).ok, true, "金币足够时应能买面粉");
+  assert.equal(data.coins, 0, "买面粉应扣金币");
+  assert.equal(R.rations(), 5 * R.FLOUR.rations, "面粉应转换为粮食");
+  assert.equal(R.buyFlour(1).ok, false, "金币不足时不能买面粉");
+  data.rations = upkeep.total + 4;
+  const fedBattle = R.consumeForBattle();
+  assert.equal(fedBattle.hungry, false, "粮食充足时不会挨饿");
+  assert.equal(R.rations(), 4, "开战应扣除本场粮食");
+  const hungryBattle = R.consumeForBattle();
+  assert.equal(hungryBattle.hungry, true, "粮食不够时队伍挨饿");
+  assert.equal(R.rations(), 0, "挨饿时剩余粮食全部吃光");
+  assert.deepEqual(JSON.parse(JSON.stringify(R.flourFor(12))), { bags: 3, cost: 6 }, "补足12份粮食需要3袋面粉、6金币");
+  assert.match(gameJs, /side === "player" && this\.state\.hungry\) unit\.attack = Math\.max\(0, unit\.attack - 1\)/, "饿着肚子出战时我方随从攻击-1");
+  assert.match(mainSource, /withRations\(isHungry => this\.enterNode/, "冒险战斗节点开战前应检查粮食");
+  assert.match(mainSource, /withRations\(isHungry => this\.startArenaBattle/, "竞技场开战前应检查粮食");
+  assert.match(mainSource, /rationChip\(\)/, "顶栏应显示粮食");
   Object.assign(data, saved);
 }
 assert.match(mainSource, /data-action="open-restaurant"|action: "open-restaurant"/, "城镇商店应开放金杯餐馆");
