@@ -97,6 +97,7 @@
       inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
       cardEquipment: starterCardEquipment(),
       notesUnlocked: 0,
+      prisoners: {},
       commanderTrials: { completed: [] },
       levelMapLayout: {},
       activeChapter: 1,
@@ -177,6 +178,7 @@
       inventory: { ...base.inventory, ...(raw.inventory || {}) },
       cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
       notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
+      prisoners: raw.prisoners && typeof raw.prisoners === "object" ? { ...raw.prisoners } : {},
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {
         ...base.commanderTrials,

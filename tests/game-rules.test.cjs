@@ -478,6 +478,27 @@ assert.equal(CF.SaveSystem.data.cardProgress.forest_wolf.level, 5, "card should 
 const run = CF.Adventure.start();
 assert.equal(run.stage, 0);
 assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻底删除");
+{
+  const cages = CF.Adventure.prisonCages();
+  assert.deepEqual(Array.from(cages, cage => cage.id), ["goblin", "werewolf", "slime", "bear"], "营地监狱应按场景图顺序设置哥布林、狼人、史莱姆、熊女四间牢房");
+  assert.deepEqual(Array.from(cages, cage => cage.prisoners.length), [21, 22, 20, 20], "牢房应收押第二至第五关全部战斗节点，以及第一关的哥布林与狼族");
+  const savedPrisoners = { ...CF.SaveSystem.data.prisoners };
+  const savedRun = CF.SaveSystem.data.run;
+  CF.SaveSystem.data.prisoners = {};
+  const before = CF.Adventure.prisonCages().find(cage => cage.id === "goblin").capturedCount;
+  run.activeNode = 1;
+  CF.Adventure.finishNode("normal");
+  assert.equal(CF.SaveSystem.data.prisoners["1-1"], true, "击败战斗节点后应把觉醒者押回营地监狱");
+  assert.equal(CF.Adventure.prisonCages().find(cage => cage.id === "goblin").capturedCount, before + 1, "哥布林牢房应多出一名在押者");
+  run.completed = run.completed.filter(entry => entry.stage !== 1);
+  run.stage = run.completed.length;
+  assert.equal(CF.Adventure.prisonCages().find(cage => cage.id === "goblin").prisoners.find(prisoner => prisoner.key === "1-1").captured, true, "重开章节后已押回的觉醒者不应被释放");
+  CF.SaveSystem.data.prisoners = savedPrisoners;
+  CF.SaveSystem.data.run = savedRun;
+}
+assert.ok(fs.existsSync(path.join(root, "assets/ui/prison-hall.webp")) && fs.existsSync(path.join(root, "assets/ui/prison-warden.webp")), "营地监狱场景图与典狱长立绘应位于项目资源目录");
+assert.match(mainSource, /camp-warden[\s\S]*data-action="prison-page"/, "点击队伍营地门口的典狱长应进入营地监狱");
+assert.match(mainSource, /action === "prison-cage"\) UI\.openPrisonCage/, "点击牢房应打开在押名单");
 assert.equal(CF.Adventure.generateVictoryLoot(4).gearCount, 4, "战斗胜利的粗糙武器/盔甲数量应等于击杀的敌方随从数");
 assert.equal(CF.Adventure.generateVictoryLoot(0).gearCount, 0, "未击杀随从时不应获得粗糙武器/盔甲");
 const priorNotes = CF.SaveSystem.data.notesUnlocked;

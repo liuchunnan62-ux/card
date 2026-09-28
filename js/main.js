@@ -83,6 +83,18 @@
     { id: "unit", action: "open-card-training", cardType: "unit", name: "战阵教官·伯恩", line: "木人桩不会喊疼，但你的新兵会学会坚持。", title: "⚔️ 随从训练 · 30金币", detail: "选择任意一张未满级随从牌，增加2点经验", hotspot: [72.5, 52, 10.5, 35], crop: [1305, 560, 160] },
     { id: "rescue", action: "rescue-injured", name: "草药师·莉娜", line: "把伤员交给我，药剂已经熬好了。", title: "🩹 救治伤员 · 30金币", hotspot: [89, 50, 9, 30], crop: [1585, 540, 130] }
   ];
+  // 营地监狱：典狱长站在队伍营地训练馆门口（场景百分比：左、上、宽、高），点她进入监狱。
+  // 头像裁切基于抠图后的立绘（原图像素：中心x、中心y、边长）。
+  const PRISON_WARDEN = { name: "典狱长·艾德琳", line: "钥匙在我腰上，猫在我头上。放心，这里没有一只跑得出去——也没有一只想跑。", image: "assets/ui/prison-warden.webp", size: [336, 900], spot: [83.1, 32.9, 4.2, 20.5], crop: [150, 100, 150] };
+  const PRISON_ART = "assets/ui/prison-hall.webp";
+  const PRISON_ART_SIZE = [1536, 1024];
+  // 四间牢房在监狱场景图中的位置（百分比）与牢房头像裁切（原图像素：中心x、中心y、边长）。
+  const PRISON_CAGE_SPOTS = {
+    goblin: { hotspot: [1, 36, 28, 57], crop: [200, 600, 260] },
+    werewolf: { hotspot: [32, 40, 21, 48], crop: [620, 540, 220] },
+    slime: { hotspot: [54.5, 46, 11, 39], crop: [900, 640, 160] },
+    bear: { hotspot: [66.5, 48, 9, 36], crop: [1065, 640, 140] }
+  };
   // 城镇商店：场景图中四家店铺的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。本轮仅启用装备店。
   const TOWN_ART = "assets/ui/town-square.webp";
   const TOWN_ART_SIZE = [1698, 926];
@@ -507,14 +519,66 @@
         return `<button class="training-hotspot training-hotspot-${service.id}${service.ready ? " ready" : ""}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%" ${actionAttrs(service)} aria-label="${service.name}"><span class="training-hotspot-plate"><strong>${service.name}</strong>${badge(service)}</span></button>`;
       }).join("");
       const cards = services.map(service => `<button class="choice-btn camp-service training-npc-card${service.ready ? " ready" : ""}" ${actionAttrs(service)}>${avatar(service)}<span class="training-npc-copy"><span class="training-npc-name">${service.name}</span><q>${service.line}</q><strong>${service.title}</strong><small>${service.detail}</small><em class="camp-service-hint">${service.hint}</em></span>${badge(service)}</button>`).join("");
+      const [wardenLeft, wardenTop, wardenWidth, wardenHeight] = PRISON_WARDEN.spot;
+      const warden = `<button class="training-hotspot camp-warden ready" style="left:${wardenLeft}%;top:${wardenTop}%;width:${wardenWidth}%;height:${wardenHeight}%" data-action="prison-page" aria-label="${PRISON_WARDEN.name}：进入营地监狱"><img src="${PRISON_WARDEN.image}" alt="" draggable="false"><span class="training-hotspot-plate"><strong>${PRISON_WARDEN.name}</strong><small>营地监狱</small></span></button>`;
       this.frame(`<section class="screen training-screen">
         <div class="page-heading"><div><span class="eyebrow">营地</span><h2>队伍营地</h2></div><p>每项卡牌训练或救治服务均需30金币。阵亡的真实随从会进入伤员名单，救治后才能重新出战。</p></div>
         <div class="training-scene" style="background-image: url('${TRAINING_GROUNDS_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
+          ${hotspots}${warden}
+        </div>
+        <div class="training-npc-grid">${cards}</div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="prison-page">🔒 进入营地监狱</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
+      </section>`);
+    },
+
+    wardenAvatar() {
+      const [artWidth, artHeight] = PRISON_WARDEN.size;
+      const [cx, cy, size] = PRISON_WARDEN.crop;
+      const scale = 72 / size;
+      return `<span class="training-npc-avatar prison-warden-avatar" style="background-image: url('${PRISON_WARDEN.image}'); background-size: ${artWidth * scale}px ${artHeight * scale}px; background-position: ${-(cx - size / 2) * scale}px ${-(cy - size / 2) * scale}px" aria-hidden="true"></span>`;
+    },
+
+    // 营地监狱：关押被击败的觉醒者。四间牢房对应场景图中的旗帜，点击牢房查看在押名单。
+    renderPrison() {
+      this.screen = "prison"; this.battle = null; this.activeNode = null;
+      const [artWidth, artHeight] = PRISON_ART_SIZE;
+      const cages = CF.Adventure.prisonCages();
+      CF.SaveSystem.save();
+      const total = cages.reduce((sum, cage) => sum + cage.prisoners.length, 0);
+      const captured = cages.reduce((sum, cage) => sum + cage.capturedCount, 0);
+      const cageAvatar = cage => {
+        const [cx, cy, size] = PRISON_CAGE_SPOTS[cage.id].crop;
+        const scale = 72 / size;
+        return `<span class="training-npc-avatar" style="background-image: url('${PRISON_ART}'); background-size: ${artWidth * scale}px ${artHeight * scale}px; background-position: ${-(cx - size / 2) * scale}px ${-(cy - size / 2) * scale}px" aria-hidden="true"></span>`;
+      };
+      const count = cage => `<span class="camp-service-badge" title="在押 ${cage.capturedCount} 名">${cage.capturedCount}</span>`;
+      const hotspots = cages.map(cage => {
+        const [left, top, width, height] = PRISON_CAGE_SPOTS[cage.id].hotspot;
+        return `<button class="training-hotspot prison-cage${cage.capturedCount ? " ready" : ""}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%" data-action="prison-cage" data-cage="${cage.id}" aria-label="${cage.name}牢房"><span class="training-hotspot-plate"><strong>${cage.name}</strong>${count(cage)}</span></button>`;
+      }).join("");
+      const cards = cages.map(cage => `<button class="choice-btn camp-service training-npc-card${cage.capturedCount ? " ready" : ""}" data-action="prison-cage" data-cage="${cage.id}">${cageAvatar(cage)}<span class="training-npc-copy"><span class="training-npc-name">${cage.name}牢房</span><q>${cage.flavor}</q><strong>在押 ${cage.capturedCount}/${cage.prisoners.length}</strong><em class="camp-service-hint">${cage.capturedCount ? "点击查看在押名单" : "尚未押回任何觉醒者"}</em></span>${cage.capturedCount ? count(cage) : ""}</button>`).join("");
+      this.frame(`<section class="screen training-screen prison-screen">
+        <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>被击败的觉醒者都押在这里，已关押 ${captured}/${total} 名。它们饮下了女王之血，学会了思考，也学会了饥饿。</p></div>
+        <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
+        <div class="training-scene" style="background-image: url('${PRISON_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
           ${hotspots}
         </div>
         <div class="training-npc-grid">${cards}</div>
-        <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
+    },
+
+    openPrisonCage(cageId) {
+      const cage = CF.Adventure.prisonCages().find(entry => entry.id === cageId);
+      if (!cage) return;
+      const typeLabel = { elite: "精英", boss: "首领" };
+      const tiles = cage.prisoners.map(prisoner => prisoner.captured
+        ? `<div class="prison-inmate">${prisoner.portrait ? `<img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy">` : ""}<strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${typeLabel[prisoner.type] ? ` · ${typeLabel[prisoner.type]}` : ""}</small></div>`
+        : `<div class="prison-inmate empty"><span aria-hidden="true">?</span><strong>空牢位</strong><small>第${prisoner.chapter}关 · 尚未擒获</small></div>`).join("");
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">营地监狱 · 在押 ${cage.capturedCount}/${cage.prisoners.length}</span><h2>${cage.name}牢房</h2></div></div>
+        <p>${cage.flavor}</p>
+        <div class="prison-roster">${tiles}</div>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="close">离开牢房</button></div>`, "prison-modal");
     },
 
     trainingCandidates(type) {
@@ -1473,6 +1537,8 @@
     }
     if (action === "deck-page") UI.renderDeck();
     if (action === "training-page") UI.renderTraining();
+    if (action === "prison-page") UI.renderPrison();
+    if (action === "prison-cage") UI.openPrisonCage(el.dataset.cage);
     if (action === "inspect-card") UI.openCardDetail(el.dataset.card);
     if (action === "settings-page") UI.renderSettings(UI.screen === "cover" ? "cover" : "menu");
     if (action === "open-card-training") UI.openCardTraining(el.dataset.cardType);

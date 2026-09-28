@@ -201,6 +201,28 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 @keyframes campPing { 70% { box-shadow: 0 0 0 9px rgba(224,72,58,0); } 100% { box-shadow: 0 0 0 0 rgba(224,72,58,0); } }
 @media (prefers-reduced-motion: reduce) { .camp-service.ready::after, .menu-tile-dot, .training-hotspot.ready .training-hotspot-plate::after, .training-hotspot.ready::before { animation: none; } }
 
+/* 营地监狱：典狱长立绘站在训练馆门口，点她进入监狱 */
+.camp-warden { border-radius: 40% 40% 12% 12%; }
+.camp-warden img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; object-position: bottom; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
+.camp-warden::before { z-index: 0; bottom: -6%; height: 10%; }
+.camp-warden .training-hotspot-plate { z-index: 2; }
+.prison-warden-avatar { background-color: #2a2230; flex: 0 0 auto; }
+.prison-warden-intro { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.25); }
+.prison-warden-intro strong { display: block; color: var(--gold-bright); letter-spacing: .08em; }
+.prison-warden-intro q { color: #cbbd9f; font-style: italic; line-height: 1.6; }
+.prison-screen .training-scene::after { background: linear-gradient(0deg, rgba(6,6,12,.4), transparent 30%); }
+.prison-cage { border-radius: 10px; }
+.prison-cage::before { bottom: 2%; }
+.modal.prison-modal { width: min(900px, 96vw); }
+.prison-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; margin-top: 10px; }
+.prison-inmate { display: grid; gap: 4px; justify-items: center; padding: 8px; border: 1px solid #6e5433; border-radius: 10px; background: rgba(0,0,0,.3); text-align: center; }
+.prison-inmate img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #a98244; }
+.prison-inmate strong { color: var(--gold-bright); font-size: 13px; line-height: 1.3; }
+.prison-inmate small { color: var(--muted); font-size: 11px; }
+.prison-inmate.empty { opacity: .55; }
+.prison-inmate.empty span { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px dashed #6e5433; color: #7d6a50; font-size: 34px; background: repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 10px, rgba(40,32,26,.5) 10px 14px); }
+.prison-inmate.empty strong { color: var(--muted); }
+
 /* 城镇商店：未启用的店铺淡化显示，热点铭牌标注"敬请期待" */
 .training-hotspot.locked, .training-npc-card.locked { filter: grayscale(.75); opacity: .68; }
 .training-hotspot.locked { cursor: not-allowed; }
