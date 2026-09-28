@@ -2245,9 +2245,10 @@
       const attack = this.currentAttack(unit);
       const combatLabel = unit.role === "healer" ? "治疗" : (unit.combatStyle === "ranged" ? "远程" : "近战");
       const combatClass = unit.role === "healer" ? "support" : (unit.combatStyle === "ranged" ? "ranged" : "melee");
+      const cardEquip = side === "player" ? (CF.SaveSystem.data.cardEquipment?.[unit.cardId] || {}) : {};
       return `<div class="unit ${side === "enemy" ? "enemy-unit" : ""} ${unit.ready ? "ready" : ""} ${selected ? "selected" : ""}" title="${unit.name}｜${unit.keywords.join("、") || "无关键词"}">
         <span class="combat-tag ${combatClass}">${combatLabel}</span><div class="unit-name">${unit.name}</div><div class="unit-icon ${unit.image ? "has-image" : ""}">${unit.image ? `<img src="${unit.image}" alt="${unit.name}" loading="lazy">` : unit.icon}</div>
-        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}</span><span class="health-stat">♥ ${unit.health}/${unit.maxHealth}</span></div>
+        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}${side === "player" ? CF.equipDotHTML("weapon", cardEquip.weapon) : ""}</span><span class="health-stat">${side === "player" ? CF.equipDotHTML("armor", cardEquip.armor) : ""}♥ ${unit.health}/${unit.maxHealth}</span></div>
       </div>`;
     }
 
@@ -2265,7 +2266,7 @@
       return `<div class="game-card ${card.type === "spell" ? "spell" : ""} ${card.type === "weapon" ? "weapon" : ""} ${selected ? "selected" : ""} ${unplayable ? "unplayable" : ""}" data-action="select-card" data-index="${index}" title="${card.description}">
         <span class="card-cost ${discounted ? "discounted" : ""}" title="${discounted ? `原始费用 ${card.cost}` : `${card.cost}费`}">${cost}</span><span class="card-level">Lv${card.level}</span>
         <div class="card-name">${card.name}</div><div class="card-art ${card.image ? "has-image" : ""}">${card.image ? `<img src="${card.image}" alt="${card.name}" loading="lazy">` : card.icon}</div>${card.type === "unit" ? `<div class="card-style ${card.role === "healer" ? "support" : card.combatStyle}">${card.role === "healer" ? "治疗 · 无法攻击" : (card.combatStyle === "ranged" ? "远程 · 无反击" : "近战 · 会反击")}</div>` : weaponStyle}<div class="card-copy">${card.description}</div>
-        ${card.type === "unit" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span>♥ ${card.health}</span></div>` : card.type === "weapon" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span class="durability-stat">◆ ${card.durability}</span></div>` : ""}
+        ${card.type === "unit" ? `<div class="card-stats"><span>⚔ ${card.attack}${CF.equipDotHTML("weapon", CF.SaveSystem.data.cardEquipment?.[card.id]?.weapon)}</span><span>${CF.equipDotHTML("armor", CF.SaveSystem.data.cardEquipment?.[card.id]?.armor)}♥ ${card.health}</span></div>` : card.type === "weapon" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span class="durability-stat">◆ ${card.durability}</span></div>` : ""}
       </div>`;
     }
 

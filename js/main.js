@@ -169,10 +169,11 @@
     },
     syncMusic() { CF.Music?.setTrack(this.musicTrack()); },
     decorateDeckRows() {
+      const data = CF.SaveSystem.data;
       app.querySelectorAll(".deck-row").forEach(row => {
         const cardId = row.querySelector("[data-card]")?.dataset.card;
         if (!cardId) return;
-        const progress = CF.SaveSystem.data.cardProgress[cardId] || { level: 1, xp: 0 };
+        const progress = data.cardProgress[cardId] || { level: 1, xp: 0 };
         const level = Math.max(1, Math.min(5, progress.level || 1));
         const stars = "★".repeat(level) + "☆".repeat(5 - level);
         const nextXp = level >= 5 ? 1 : level * 3;
@@ -184,7 +185,17 @@
         const details = row.querySelector(".deck-card-details");
         if (details) {
           const progressHTML = `<span class="card-xp-label">经验 ${level >= 5 ? "已满" : `${currentXp}/${nextXp}`}</span><span class="card-xp-progress"><span style="width:${pct}%"></span></span>`;
-          details.innerHTML = isDeckRow ? `${details.textContent}<span class="card-xp-inline">${progressHTML}</span>` : progressHTML;
+          if (isDeckRow) {
+            // 重新根据数据生成基础属性（含装备品级小圆点），避免用 textContent 时把 <i class="equip-dot"> 也一并抹掉。
+            const card = CF.getCard(cardId, progress);
+            const cardEquip = data.cardEquipment?.[cardId] || {};
+            const baseStats = card.type === "unit"
+              ? `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`
+              : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description;
+            details.innerHTML = `${baseStats}<span class="card-xp-inline">${progressHTML}</span>`;
+          } else {
+            details.innerHTML = progressHTML;
+          }
         }
       });
     },
@@ -766,7 +777,9 @@
         const injured = card.type === "unit" && data.injuredCards?.includes(id);
         const style = card.type === "unit" ? (card.role === "healer" ? "治疗" : (card.combatStyle === "ranged" ? "远程" : "近战")) : card.type === "weapon" ? `${card.combatStyle === "ranged" ? "远程" : "近战"}武器` : "法术";
         const thumb = card.image ? `<img class="deck-thumb" src="${card.image}" alt="" loading="lazy">` : `<span class="deck-icon">${card.icon}</span>`;
-        return `<div class="deck-row ${injured ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured ? " · 无法出战" : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? `${card.attack}/${card.health}` : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
+        const cardEquip = data.cardEquipment?.[id] || {};
+        const unitStats = `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`;
+        return `<div class="deck-row ${injured ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured ? " · 无法出战" : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
       }).join("");
       const availableCollection = Object.entries(data.collection).filter(([id, owned]) => owned > 0 && !deckCounts[id]);
       const collectionRows = availableCollection.map(([id, owned]) => {
@@ -800,8 +813,9 @@
         : card.type === "weapon" ? (card.combatStyle === "ranged" ? "远程武器 · 无反击" : "近战武器 · 会反击") : "法术牌";
       const stars = "★".repeat(card.level) + "☆".repeat(5 - card.level);
       const keywords = card.keywords.length ? card.keywords.join(" · ") : (card.type === "spell" ? "即时生效" : "无额外关键词");
+      const cardEquip = CF.SaveSystem.data.cardEquipment?.[cardId] || {};
       const stats = card.type === "unit"
-        ? `<span class="inspect-attack" aria-label="攻击力${card.attack}">⚔<b>${card.attack}</b></span><span class="inspect-health" aria-label="生命值${card.health}">♥<b>${card.health}</b></span>`
+        ? `<span class="inspect-attack" aria-label="攻击力${card.attack}">⚔<b>${card.attack}</b>${CF.equipDotHTML("weapon", cardEquip.weapon)}</span><span class="inspect-health" aria-label="生命值${card.health}">${CF.equipDotHTML("armor", cardEquip.armor)}♥<b>${card.health}</b></span>`
         : card.type === "weapon"
           ? `<span class="inspect-attack" aria-label="攻击力${card.attack}">⚔<b>${card.attack}</b></span><span class="inspect-durability" aria-label="耐久${card.durability}">◆<b>${card.durability}</b></span>`
           : `<span class="inspect-spell-seal" aria-hidden="true">✦</span>`;
