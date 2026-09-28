@@ -87,12 +87,12 @@
   // 头像裁切基于抠图后的立绘（原图像素：中心x、中心y、边长）。
   const PRISON_WARDEN = { name: "典狱长·艾德琳", line: "钥匙在我腰上，猫在我头上。放心，这里没有一只跑得出去——也没有一只想跑。", image: "assets/ui/prison-warden.webp", size: [336, 900], spot: [83.1, 32.9, 4.2, 20.5], crop: [150, 100, 150] };
   const PRISON_ART = "assets/ui/prison-hall.webp";
-  // 城镇商店：场景图中四家店铺的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。本轮仅启用装备店。
+  // 城镇商店：场景图中四家店铺的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。已开放装备店与餐馆。
   const TOWN_ART = "assets/ui/town-square.webp";
   const TOWN_ART_SIZE = [1698, 926];
   const TOWN_SHOPS = [
     { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [32, 42, 11.5, 27], crop: [600, 600, 150] },
-    { id: "tavern", name: "金杯酒馆", title: "🍺 酒馆", detail: "敬请期待。", enabled: false, hotspot: [5, 27, 19, 17], crop: [165, 300, 150] },
+    { id: "tavern", action: "open-restaurant", name: "金杯餐馆", title: "🍽️ 餐馆 · 新开业", detail: "出售各式菜肴。带去营地监狱投喂在押首领，提升好感度，结缘后才能使用它们的卡牌。", enabled: true, hotspot: [5, 27, 19, 17], crop: [165, 300, 150] },
     { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [68, 16, 9, 19], crop: [1235, 250, 150] },
     { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [88, 36, 11.3, 14], crop: [1590, 400, 180] }
   ];
@@ -462,7 +462,7 @@
         </div>
         <div class="menu-tiles">
           <button class="menu-tile" data-action="level-select"><span class="menu-tile-art" style="background-image: url('assets/maps/world-map.png')" aria-hidden="true"></span><strong>关卡选择</strong><small>远征世界</small></button>
-          <button class="menu-tile" data-action="town-shop-page"><span class="menu-tile-art" style="background-image: url('${TOWN_ART}')" aria-hidden="true"></span><strong>城镇商店</strong><small>装备店已开放</small></button>
+          <button class="menu-tile" data-action="town-shop-page"><span class="menu-tile-art" style="background-image: url('${TOWN_ART}')" aria-hidden="true"></span><strong>城镇商店</strong><small>装备店 · 餐馆已开放</small></button>
           <button class="menu-tile" data-action="deck-page"><span class="menu-tile-art" style="background-image: url('assets/cards/kingdom-knight.png')" aria-hidden="true"></span><strong>卡组编辑</strong><small>收藏 ${collected} 张</small></button>
           <button class="menu-tile" data-action="training-page"><span class="menu-tile-art" style="background-image: url('${TRAINING_GROUNDS_ART}')" aria-hidden="true"></span>${trainingReady ? '<span class="menu-tile-dot" aria-hidden="true"></span>' : ""}<strong>队伍营地</strong><small>${injuredCount ? `伤员 ${injuredCount} 名` : "营地"}</small></button>
         </div>
@@ -536,13 +536,58 @@
       const roster = CF.Adventure.prisonRoster();
       CF.SaveSystem.save();
       const inmates = roster.filter(prisoner => prisoner.captured);
-      const tiles = inmates.map(prisoner => `<div class="prison-inmate${prisoner.type === "elite" ? " elite" : ""}"><img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy"><strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${prisoner.type === "elite" ? " · 精英" : ""}</small></div>`).join("");
+      const R = CF.Restaurant;
+      const tiles = inmates.map(prisoner => {
+        const label = `<img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy"><strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${prisoner.type === "elite" ? " · 精英" : ""}</small>`;
+        if (!prisoner.cardId) return `<div class="prison-inmate${prisoner.type === "elite" ? " elite" : ""}">${label}</div>`;
+        const value = R.affinity(prisoner.key);
+        const bonded = value >= R.BOND_THRESHOLD;
+        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${bonded ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.BOND_THRESHOLD * 100}%"></span></span><em>${bonded ? "💞 已结缘" : `${R.tier(value)} ${value}/${R.BOND_THRESHOLD}`}</em></button>`;
+      }).join("");
       this.frame(`<section class="screen prison-screen" style="background-image: url('${PRISON_ART}')">
         <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>已关押 ${inmates.length}/${roster.length} 名觉醒者。各关的最终首领不在此列：森林狼王战死于密林，其余首领都在最后关头被同族救走。</p></div>
         <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
+        <p class="prison-bond-hint">第二关起击败的首领，其首杀奖励卡要与牢里的本人结缘后才能出战。点击头像探望并投喂城镇金杯餐馆的食物，好感度达到${R.BOND_THRESHOLD}即可结缘。背包里共有 ${R.totalFood()} 份食物。</p>
         ${tiles ? `<div class="prison-roster">${tiles}</div>` : '<p class="prison-empty">牢房还空着。击败冒险中的首领，它们就会被押回这里。</p>'}
-        <div class="menu-actions"><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
+        <div class="menu-actions"><button class="secondary-btn" data-action="town-shop-page">前往城镇商店</button><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
+    },
+
+    // 探望在押首领：查看对应卡牌与好感度，投喂食物。
+    openPrisonerVisit(key) {
+      const R = CF.Restaurant;
+      const prisoner = CF.Adventure.prisonRoster().find(entry => entry.key === key);
+      if (!prisoner?.captured || !prisoner.cardId) return;
+      const value = R.affinity(key);
+      const bonded = value >= R.BOND_THRESHOLD;
+      const race = R.RACES[prisoner.chapter];
+      const favorite = R.food(race?.favorite);
+      const foods = R.FOODS.map(food => {
+        const owned = R.foodCount(food.id);
+        const isFavorite = race?.favorite === food.id;
+        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !bonded ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
+      }).join("");
+      const card = CF.CARD_LIBRARY[prisoner.cardId];
+      this.modal(`<span class="eyebrow">营地监狱 · 第${prisoner.chapter}关${prisoner.type === "elite" ? " · 精英" : ""}</span><h2>${prisoner.name}</h2>
+        <div class="prisoner-visit"><img class="prisoner-visit-portrait" src="${prisoner.portrait}" alt="${prisoner.name}"><div class="prisoner-visit-info">
+          <p>好感度：<strong>${R.tier(value)} ${value}/${R.BOND_THRESHOLD}</strong></p>
+          <span class="affinity-bar large" aria-hidden="true"><span style="width:${value / R.BOND_THRESHOLD * 100}%"></span></span>
+          <p>${bonded ? `已经与你结缘，卡牌「${card.name}」可以编入卡组出战。` : `结缘后才能使用卡牌「${card.name}」。${race ? `${race.name}最爱吃${favorite?.name || "美食"}，投喂时好感翻倍。` : ""}`}</p>
+          ${this.cardPreview(prisoner.cardId, true)}
+        </div></div>
+        ${bonded ? "" : `<h3>投喂食物</h3><div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
+        <div class="menu-actions">${bonded ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
+    },
+
+    feedPrisonerAction(key, foodId) {
+      const result = CF.Restaurant.feed(key, foodId);
+      if (!result.ok) return this.toast(result.reason, "bad");
+      this.sfx(result.bonded ? "cardLevelUp" : "purchase");
+      const name = result.prisoner.name;
+      this.toast(result.bonded
+        ? `${name}：“${result.line}” 已结缘！卡牌「${CF.CARD_LIBRARY[result.prisoner.cardId].name}」现在可以出战了。`
+        : `${name}：“${result.line}” 好感度 +${result.gained}${result.favorite ? "（最爱）" : ""}`, "good");
+      this.openPrisonerVisit(key);
     },
 
     trainingCandidates(type) {
@@ -643,13 +688,36 @@
       }).join("");
       const cards = TOWN_SHOPS.map(shop => `<button class="choice-btn camp-service training-npc-card${shop.enabled ? " ready" : " locked"}" ${actionAttrs(shop)}>${avatar(shop)}<span class="training-npc-copy"><span class="training-npc-name">${shop.name}</span><strong>${shop.title}</strong><small>${shop.detail}</small>${shop.enabled ? "" : '<em class="camp-service-hint">敬请期待</em>'}</span></button>`).join("");
       this.frame(`<section class="screen training-screen">
-        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工，本次先开放装备店，可将战场缴获的粗糙武器、盔甲重锻为更高品质的装备。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工：装备店可将战场缴获的粗糙武器、盔甲重锻为更高品质；新开业的金杯餐馆出售各式菜肴，用来和营地监狱里的在押首领建立好感。</p></div>
         <div class="training-scene" style="background-image: url('${TOWN_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
           ${hotspots}
         </div>
         <div class="training-npc-grid">${cards}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
+    },
+
+    // 金杯餐馆：用金币购买食物，存进背包，再到营地监狱投喂在押首领。
+    openRestaurant() {
+      const R = CF.Restaurant;
+      const favoriteOf = food => Object.values(R.RACES).filter(race => race.favorite === food.id).map(race => race.name);
+      const rows = R.FOODS.map(food => {
+        const fans = favoriteOf(food);
+        const owned = R.foodCount(food.id);
+        const canBuy = CF.SaveSystem.data.coins >= food.price;
+        return `<div class="restaurant-food"><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><div class="restaurant-food-copy"><strong>${food.name}</strong><small>${food.detail}</small><small class="restaurant-food-stats">好感 +${food.affinity}${fans.length ? ` · ${fans.join("、")}最爱（好感翻倍）` : ""} · 已有 ${owned} 份</small></div><button class="secondary-btn" data-modal-action="buy-food" data-food="${food.id}" ${canBuy ? "" : "disabled"}>${COIN_ICON}${food.price}</button></div>`;
+      }).join("");
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店 · 新开业</span><h2>金杯餐馆</h2></div><p>当前金币：<strong>${CF.SaveSystem.data.coins}</strong>。第二关起获得的首领卡牌，需要去营地监狱探望对应的在押首领，用美食把好感度提升到${R.BOND_THRESHOLD}、与其结缘后才能出战。</p></div>
+        <div class="restaurant-menu">${rows}</div>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="restaurant-to-prison">带上食物去营地监狱</button><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
+    },
+
+    buyFoodAction(foodId) {
+      const result = CF.Restaurant.buyFood(foodId);
+      if (!result.ok) return this.toast(result.reason, "bad");
+      this.sfx("purchase");
+      this.toast(`购买了1份${result.food.name}，已放进背包。`, "good");
+      this.openRestaurant();
     },
 
     openEquipmentShop() {
@@ -692,9 +760,11 @@
       }).join("");
       const weaponItems = gearRows("weapon");
       const armorItems = gearRows("armor");
+      const foodItems = CF.Restaurant.FOODS.filter(food => CF.Restaurant.foodCount(food.id)).map(food => `<div class="backpack-item"><strong>${food.icon} ${food.name}</strong><small>拥有 ${CF.Restaurant.foodCount(food.id)} 份 · 投喂在押首领好感 +${food.affinity}</small><button class="secondary-btn" data-action="prison-page">去探监</button></div>`).join("");
       this.frame(`<section class="screen">
         <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
         <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · ${bloodAwakened ? "使用后永久+1最大生命" : "通关统领试炼第七关“魅魔女王的低语”、得到女王认可后，才能吸收精血的力量（永久+1最大生命）"}</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount && bloodAwakened ? "" : "disabled"}>${bloodAwakened ? "使用" : "尚未得到认可"}</button></div></div>
+        <div class="backpack-section"><h3>餐馆食物</h3>${foodItems || '<p class="empty-hint">暂无食物。可在城镇商店的金杯餐馆购买，带去营地监狱投喂在押首领。</p>'}</div>
         <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
         <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
@@ -805,26 +875,28 @@
       const deckRows = Object.entries(deckCounts).map(([id, count]) => {
         const card = CF.getCard(id, data.cardProgress[id]);
         const injured = card.type === "unit" && data.injuredCards?.includes(id);
+        const bondLocked = CF.Restaurant.isCardBondLocked(id);
         const style = card.type === "unit" ? (card.role === "healer" ? "治疗" : (card.combatStyle === "ranged" ? "远程" : "近战")) : card.type === "weapon" ? `${card.combatStyle === "ranged" ? "远程" : "近战"}武器` : "法术";
         const thumb = card.image ? `<img class="deck-thumb" src="${card.image}" alt="" loading="lazy">` : `<span class="deck-icon">${card.icon}</span>`;
         const cardEquip = data.cardEquipment?.[id] || {};
         const unitStats = `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`;
-        return `<div class="deck-row ${injured ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured ? " · 无法出战" : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
+        return `<div class="deck-row ${injured || bondLocked ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondLocked ? '<b class="injured-badge bond-badge">未结缘</b>' : ""}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured || bondLocked ? " · 无法出战" : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
       }).join("");
       const availableCollection = Object.entries(data.collection).filter(([id, owned]) => owned > 0 && !deckCounts[id]);
       const collectionRows = availableCollection.map(([id, owned]) => {
         const card = CF.getCard(id, data.cardProgress[id]);
         const injured = card.type === "unit" && data.injuredCards?.includes(id);
+        const bondOwner = CF.Restaurant.isCardBondLocked(id) ? CF.Restaurant.bondOwner(id) : null;
         const inDeck = deckCounts[id] || 0;
-        const canAdd = data.deck.length < deckLimit && inDeck < 1;
+        const canAdd = data.deck.length < deckLimit && inDeck < 1 && !bondOwner;
         const style = card.type === "unit" ? (card.role === "healer" ? "治疗" : (card.combatStyle === "ranged" ? "远程" : "近战")) : card.type === "weapon" ? `${card.combatStyle === "ranged" ? "远程" : "近战"}武器` : "法术";
         const thumb = card.image ? `<img class="deck-thumb" src="${card.image}" alt="" loading="lazy">` : `<span class="deck-icon">${card.icon}</span>`;
-        return `<div class="deck-row ${injured ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name}${injured ? '<b class="injured-badge">负伤</b>' : ""}</span></strong><small>拥有 ${owned} · 卡组 ${inDeck}/1 · ${card.rarity}</small></div><small class="deck-card-details">Lv${card.level} · ${style} · ${data.cardProgress[id].xp}经验${injured ? " · 无法出战" : ""}</small><button class="mini-btn" data-action="deck-add" data-card="${id}" ${canAdd ? "" : "disabled"}>添加</button></div>`;
+        return `<div class="deck-row ${injured || bondOwner ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondOwner ? '<b class="injured-badge bond-badge">未结缘</b>' : ""}</span></strong><small>拥有 ${owned} · 卡组 ${inDeck}/1 · ${card.rarity}</small></div><small class="deck-card-details">Lv${card.level} · ${style} · ${data.cardProgress[id].xp}经验${injured ? " · 无法出战" : ""}${bondOwner ? ` · 需在营地监狱与${bondOwner.name}结缘` : ""}</small><button class="mini-btn" data-action="deck-add" data-card="${id}" ${canAdd ? "" : "disabled"}>添加</button></div>`;
       }).join("");
       const duplicateCount = data.deck.length - new Set(data.deck).size;
       const valid = data.deck.length >= 24 && data.deck.length <= deckLimit && duplicateCount === 0;
       const validation = duplicateCount > 0 ? `卡组中有${duplicateCount}张重复卡牌，请保持每张卡只有1张。` : data.deck.length < 24 ? `至少还需加入 ${24 - data.deck.length} 张卡牌。` : data.deck.length > deckLimit ? `需要移除 ${data.deck.length - deckLimit} 张卡牌。` : `✓ 卡组数量正确，可携带24–${deckLimit}张牌。`;
-      this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">整备</span><h2>卡组编辑</h2></div><p>基础牌组为24张；英雄5级后每升一级，牌组上限增加1张。</p></div>
+      this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">整备</span><h2>卡组编辑</h2></div><p>基础牌组为24张；英雄5级后每升一级，牌组上限增加1张。第二关起获得的首领卡牌需在营地监狱与对应首领结缘后才能出战。</p></div>
         <div class="deck-layout"><div class="panel deck-column"><h3><span>当前卡组</span><span>${data.deck.length}/${deckLimit}</span></h3><div class="deck-list">${deckRows || "卡组为空"}</div><p class="validation ${valid ? "ok" : ""}">${validation}</p></div>
         <div class="panel deck-column"><h3><span>卡牌收藏</span><span>${availableCollection.length}张可加入</span></h3><div class="deck-list">${collectionRows || "所有收藏卡牌都已加入当前卡组"}</div></div></div>
       </section>`);
@@ -836,6 +908,7 @@
       const progress = CF.SaveSystem.data.cardProgress[cardId] || { level: 1, xp: 0 };
       const card = CF.getCard(cardId, progress);
       const injured = card.type === "unit" && CF.SaveSystem.data.injuredCards?.includes(cardId);
+      const bondOwner = CF.Restaurant.isCardBondLocked(cardId) ? CF.Restaurant.bondOwner(cardId) : null;
       const typeClass = card.type === "spell" ? "spell" : card.type === "weapon" ? "weapon" : "unit";
       const typeLabel = card.type === "spell" ? "法术" : card.type === "weapon" ? "武器" : "随从";
       const combatLabel = card.type === "unit"
@@ -856,6 +929,7 @@
           <div class="card-inspect-rarity">${card.rarity}</div>
           <header class="card-inspect-title"><h2>${card.name}</h2><div class="card-inspect-stars" aria-label="等级${card.level}">${stars}</div></header>
           ${injured ? '<div class="card-inspect-injured">负伤 · 无法出战</div>' : ""}
+          ${bondOwner ? `<div class="card-inspect-injured">未结缘 · 需在营地监狱与${bondOwner.name}结缘（好感度 ${CF.Restaurant.affinity(bondOwner.key)}/${CF.Restaurant.BOND_THRESHOLD}）</div>` : ""}
           <div class="card-inspect-copy"><span>${typeLabel} · ${combatLabel}</span><p>${card.description}</p><small>${keywords}</small></div>
           <footer class="card-inspect-stats">${stats}</footer>
         </article>
@@ -1285,7 +1359,7 @@
       const heading = bossFight ? (storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`) : "战斗胜利";
       const intro = storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : "";
       this.modal(`<span class="eyebrow">${eyebrow}</span><h2>${heading}</h2><p>${intro}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
-        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong></div>` : ""}
+        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong>${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。</small>` : ""}</div>` : ""}
         ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
         <p class="boss-loot-hint">翻开三张战利品牌：</p>
         <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>
@@ -1443,7 +1517,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1508,6 +1582,8 @@
     if (action === "rescue-injured") UI.rescueInjured();
     if (action === "town-shop-page") UI.renderTownShop();
     if (action === "open-equipment-shop") UI.openEquipmentShop();
+    if (action === "open-restaurant") UI.openRestaurant();
+    if (action === "prison-visit") UI.openPrisonerVisit(el.dataset.key);
     if (action === "backpack-page") UI.renderBackpack();
     if (action === "book-page") UI.renderBook();
     if (action === "use-queen-blood") UI.useQueenBlood();
@@ -1522,7 +1598,7 @@
     if (action === "new-run") UI.requestNewRun();
     if (action === "continue-run") UI.renderMap();
     if (action === "deck-remove") { const index = CF.SaveSystem.data.deck.lastIndexOf(el.dataset.card); if (index >= 0) { CF.SaveSystem.data.deck.splice(index,1); UI.sfx("cardRemove"); } CF.SaveSystem.save(); UI.renderDeck(); }
-    if (action === "deck-add" && CF.SaveSystem.data.deck.length < CF.SaveSystem.deckLimit() && !CF.SaveSystem.data.deck.includes(el.dataset.card)) { CF.SaveSystem.data.deck.push(el.dataset.card); UI.sfx("cardAdd"); CF.SaveSystem.save(); UI.renderDeck(); }
+    if (action === "deck-add" && CF.SaveSystem.data.deck.length < CF.SaveSystem.deckLimit() && !CF.SaveSystem.data.deck.includes(el.dataset.card) && !CF.Restaurant.isCardBondLocked(el.dataset.card)) { CF.SaveSystem.data.deck.push(el.dataset.card); UI.sfx("cardAdd"); CF.SaveSystem.save(); UI.renderDeck(); }
     if (action === "node") UI.enterNode(Number(el.dataset.choice));
     if (action === "farm-npc") UI.renderFarmNpc();
     if (action === "abandon-run") { UI.modal(`<h2>退出当前关卡？</h2><p>已击败的节点、路线解锁和本轮奖励都会保留。之后点击“继续游戏”即可从当前进度继续。</p><div class="menu-actions"><button class="primary-btn" data-modal-action="confirm-pause-run">保存并退出</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`); return; }
@@ -1620,6 +1696,11 @@
       if (UI.activeNode?.type === "boss") UI.finishBoss(); else UI.finishCombatNode(UI.activeNode.type);
     }
     if (action === "forge-item") UI.forgeItemAction(el.dataset.kind, Number(el.dataset.tier));
+    if (action === "buy-food") UI.buyFoodAction(el.dataset.food);
+    if (action === "feed-prisoner") UI.feedPrisonerAction(el.dataset.key, el.dataset.food);
+    if (action === "restaurant-to-prison") { UI.closeModal(); UI.renderPrison(); }
+    if (action === "prison-to-restaurant") { UI.closeModal(); UI.renderTownShop(); UI.openRestaurant(); }
+    if (action === "close-prison-visit") { UI.closeModal(); if (UI.screen === "prison") UI.renderPrison(); }
     if (action === "equip-target") UI.equipTarget(el.dataset.target, el.dataset.slot, Number(el.dataset.tier));
     if (action === "finish-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); }
     if (action === "failed-run") { UI.closeModal(); UI.renderMap(); }

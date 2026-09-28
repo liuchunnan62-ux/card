@@ -34,6 +34,7 @@ load("js/boss-dialogues.js");
 load("js/emotes.js");
 load("js/save.js");
 load("js/adventure.js");
+load("js/restaurant.js");
 load("js/trials.js");
 load("js/arena.js");
 load("js/heroes.js");
@@ -496,6 +497,45 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   CF.SaveSystem.data.prisoners = savedPrisoners;
   CF.SaveSystem.data.run = savedRun;
 }
+{
+  // 金杯餐馆与在押首领好感度：第二关起的首领卡牌需结缘后才能出战。
+  const R = CF.Restaurant;
+  const data = CF.SaveSystem.data;
+  const saved = { coins: data.coins, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
+  const goblinCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[0];
+  const queenCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[19];
+  assert.equal(`${R.bondOwner(goblinCard).key}·${R.bondOwner(goblinCard).name}`, "2-0·泥牙斥候长", "第二关首领奖励卡应对应监狱里的同一名首领");
+  assert.equal(Object.keys(CF.Adventure.bondCardOwners()).length, 76, "第二至第五关各19张首领卡牌需要结缘");
+  assert.equal(R.isCardBondLocked(queenCard), false, "被同族救走的最终首领，其奖励卡不受好感度限制");
+  assert.equal(R.isCardBondLocked(CF.STARTER_DECK[0]), false, "基础卡牌不受好感度限制");
+  data.affinity = {}; data.foods = {}; data.coins = 100;
+  data.prisoners = { "2-0": true };
+  data.collection[goblinCard] = 1;
+  assert.equal(R.isCardBondLocked(goblinCard), true, "未结缘时第二关首领卡牌应被锁定");
+  data.deck = [...saved.deck.filter(id => id !== goblinCard), goblinCard];
+  assert.ok(!CF.SaveSystem.availableDeck().includes(goblinCard), "未结缘的卡牌即使在卡组中也不能出战");
+  assert.equal(R.buyFood("charred_skewer").ok, true, "金币足够时应能买到食物");
+  assert.equal(data.coins, 70, "购买食物应扣除金币");
+  assert.equal(R.foodCount("charred_skewer"), 1, "买到的食物应放进背包");
+  assert.equal(R.buyFood("harvest_feast").ok, false, "金币不足时不能购买");
+  const fed = R.feed("2-0", "charred_skewer");
+  assert.equal(fed.ok, true, "应能投喂在押首领");
+  assert.equal(fed.gained, 30, "哥布林最爱的炭烤肉串应使好感翻倍");
+  assert.equal(R.foodCount("charred_skewer"), 0, "投喂会消耗食物");
+  assert.equal(R.feed("2-0", "charred_skewer").ok, false, "没有食物时不能投喂");
+  assert.equal(R.feed("2-1", "wheat_bread").ok, false, "未押回监狱的首领无法探望");
+  data.foods = { harvest_feast: 2 };
+  const bonded = R.feed("2-0", "harvest_feast");
+  assert.equal(bonded.to, 90, "普通食物按原值增加好感");
+  const done = R.feed("2-0", "harvest_feast");
+  assert.equal(done.to, R.BOND_THRESHOLD, "好感度应封顶于结缘值");
+  assert.equal(done.bonded, true, "好感度达到结缘值时应结缘");
+  assert.equal(R.isCardBondLocked(goblinCard), false, "结缘后卡牌应解锁");
+  assert.ok(CF.SaveSystem.availableDeck().includes(goblinCard), "结缘后卡牌可以出战");
+  Object.assign(data, saved);
+}
+assert.match(mainSource, /data-action="open-restaurant"|action: "open-restaurant"/, "城镇商店应开放金杯餐馆");
+assert.ok(indexSource.indexOf("js/restaurant.js") > indexSource.indexOf("js/adventure.js"), "游戏入口应在冒险模块之后加载餐馆模块");
 assert.ok(fs.existsSync(path.join(root, "assets/ui/prison-hall.webp")) && fs.existsSync(path.join(root, "assets/ui/prison-warden.webp")), "营地监狱场景图与典狱长立绘应位于项目资源目录");
 assert.match(mainSource, /camp-warden[\s\S]*data-action="prison-page"/, "点击队伍营地门口的典狱长应进入营地监狱");
 assert.match(mainSource, /prison-screen" style="background-image: url\('\$\{PRISON_ART\}'\)"[\s\S]*prison-roster/, "营地监狱应以监狱场景图为整页背景，直接列出在押者头像");

@@ -1294,3 +1294,32 @@ html:not(:lang(zh)):not(:lang(ja)) .game-card:not(.spell) .card-name { margin-le
   .hero-select-portrait { height: 180px; }
   .save-slot-grid { grid-template-columns: 1fr; }
 }
+
+/* 金杯餐馆与在押首领好感度 */
+.restaurant-menu { display: grid; gap: 10px; margin: 8px 0 14px; }
+.restaurant-food { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.25); }
+.restaurant-food-icon { flex: 0 0 auto; font-size: 30px; line-height: 1; }
+.restaurant-food-copy { display: grid; gap: 3px; flex: 1 1 auto; min-width: 0; }
+.restaurant-food-copy strong { color: var(--gold-bright); }
+.restaurant-food-copy small { color: var(--muted); line-height: 1.5; }
+.restaurant-food-copy .restaurant-food-stats { color: #cbbd9f; }
+.restaurant-food .secondary-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; }
+.prison-bond-hint { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: rgba(10,8,12,.72); color: #cbbd9f; line-height: 1.6; }
+button.prison-inmate { font: inherit; color: inherit; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
+button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--gold-bright); }
+.prison-inmate.bonded { border-color: #e28bb0; box-shadow: 0 0 0 1px rgba(226,139,176,.5), 0 6px 16px rgba(0,0,0,.45); }
+.prison-inmate em { color: #e7b6c9; font-size: 11px; font-style: normal; }
+.affinity-bar { display: block; width: 100%; height: 6px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.12); }
+.affinity-bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #b8506f, #f19ac0); }
+.affinity-bar.large { height: 10px; margin: 6px 0 10px; }
+.bond-badge { background: #8a3d5c; }
+.prisoner-visit { display: flex; gap: 16px; align-items: flex-start; margin: 8px 0 12px; }
+.prisoner-visit-portrait { width: 150px; aspect-ratio: 1; flex: 0 0 auto; object-fit: cover; border-radius: 12px; border: 1px solid #a98244; }
+.prisoner-visit-info { flex: 1 1 auto; min-width: 0; }
+.prisoner-visit-info p { margin: 0 0 6px; line-height: 1.6; }
+.feed-grid .feed-choice { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.feed-choice.favorite { border-color: #e28bb0; }
+@media (max-width: 640px) {
+  .prisoner-visit { flex-direction: column; align-items: center; }
+  .restaurant-food { flex-wrap: wrap; }
+}

@@ -98,6 +98,8 @@
       cardEquipment: starterCardEquipment(),
       notesUnlocked: 0,
       prisoners: {},
+      foods: {},
+      affinity: {},
       commanderTrials: { completed: [] },
       levelMapLayout: {},
       activeChapter: 1,
@@ -146,6 +148,12 @@
     };
   }
 
+  function cleanCounts(value) {
+    return Object.fromEntries(Object.entries(value && typeof value === "object" ? value : {})
+      .map(([key, count]) => [key, Math.max(0, Math.floor(Number(count) || 0))])
+      .filter(([, count]) => count > 0));
+  }
+
   function normalize(raw) {
     const base = freshSave(raw?.hero?.heroId);
     if (!raw || typeof raw !== "object") return base;
@@ -179,6 +187,8 @@
       cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
       notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
       prisoners: raw.prisoners && typeof raw.prisoners === "object" ? { ...raw.prisoners } : {},
+      foods: cleanCounts(raw.foods),
+      affinity: cleanCounts(raw.affinity),
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {
         ...base.commanderTrials,
@@ -382,7 +392,8 @@
     },
     availableDeck() {
       const injured = new Set(this.data.injuredCards || []);
-      return this.data.deck.filter(id => !injured.has(id));
+      // 负伤的随从与尚未和在押首领结缘的卡牌都不能出战。
+      return this.data.deck.filter(id => !injured.has(id) && !CF.Restaurant?.isCardBondLocked(id));
     },
     injureCard(id) {
       if (CF.CARD_LIBRARY[id]?.type !== "unit" || !this.data.collection[id]) return false;
