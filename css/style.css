@@ -1323,3 +1323,10 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
   .prisoner-visit { flex-direction: column; align-items: center; }
   .restaurant-food { flex-wrap: wrap; }
 }
+.bond-badge.bonded { background: #b8506f; color: #fff0f6; }
+.card-inspect-injured.card-inspect-bond { background: rgba(184,80,111,.85); }
+.prison-boss-cards { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #c99b4e; border-radius: 10px; background: rgba(10,8,12,.78); }
+.prison-boss-cards h3 { margin: 0 0 6px; color: var(--gold-bright); font-size: 15px; }
+.prison-boss-cards ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.prison-boss-cards li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: #cbbd9f; font-size: 13px; }
+.prisoner-boss-hint { color: #e7b6c9; font-size: 13px; }

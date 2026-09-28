@@ -203,8 +203,9 @@
   const STARTER_IDS = [...new Set(STARTER_DECK)];
   const REWARD_CARD_IDS = ["iron_lancer", "eagle_eye", "royal_medic"];
 
-  function valuesFor(card, level) {
-    const lv = Math.max(1, Math.min(5, Number(level) || 1));
+  // bonus：好感度加成的额外等级（仅法术牌使用），可突破5级上限，见 restaurant.js。
+  function valuesFor(card, level, bonus = 0) {
+    const lv = Math.max(1, Math.min(5, Number(level) || 1)) + (card.type === "spell" ? Math.max(0, Number(bonus) || 0) : 0);
     if (card.type === "unit") return { attack: card.attack + lv - 1, health: card.health + lv - 1 };
     if (card.type === "weapon") return { attack: card.attack + Math.floor((lv - 1) / 2), durability: card.durability + (lv >= 4 ? 1 : 0) };
     if (card.effect === "damage") return { value: 2 + lv };
@@ -247,20 +248,29 @@
     return { value: lv };
   }
 
-  function getCard(id, progress) {
+  // bond：与在押首领的好感加成等级。随从每级+1攻击/+10生命；法术每级相当于提升2个等级的效果。
+  const BOND_UNIT_ATTACK = 1;
+  const BOND_UNIT_HEALTH = 10;
+  const BOND_SPELL_LEVELS = 2;
+  function getCard(id, progress, bond = 0) {
     const base = CARD_LIBRARY[id];
     if (!base) return null;
     const level = Math.max(1, Math.min(5, progress?.level || 1));
-    const values = valuesFor(base, level);
+    const bondLevel = Math.max(0, Number(bond) || 0);
+    const values = valuesFor(base, level, bondLevel * BOND_SPELL_LEVELS);
+    if (base.type === "unit" && bondLevel) {
+      values.attack += bondLevel * BOND_UNIT_ATTACK;
+      values.health += bondLevel * BOND_UNIT_HEALTH;
+    }
     let description = base.description;
     Object.entries(values).forEach(([key, value]) => { description = description.replaceAll(`{${key}}`, value); });
-    return { ...base, ...values, level, description };
+    return { ...base, ...values, level, bond: bondLevel, description };
   }
 
-  function makeDeck(ids, progressMap = {}) {
-    return ids.map((id, index) => ({ ...getCard(id, progressMap[id]), instanceId: `${id}-${index}-${Math.random().toString(36).slice(2, 7)}` }));
+  function makeDeck(ids, progressMap = {}, bondFor = null) {
+    return ids.map((id, index) => ({ ...getCard(id, progressMap[id], bondFor ? bondFor(id) : 0), instanceId: `${id}-${index}-${Math.random().toString(36).slice(2, 7)}` }));
   }
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { CARD_LIBRARY, STARTER_DECK, STARTER_IDS, REWARD_CARD_IDS, NEW_CARD_IDS, WEAPON_CARD_IDS, CHAPTER_TWO_UNIT_CARD_IDS, CHAPTER_TWO_SPELL_CARD_IDS, CHAPTER_TWO_REWARD_CARD_IDS, CHAPTER_THREE_UNIT_CARD_IDS, CHAPTER_THREE_SPELL_CARD_IDS, CHAPTER_THREE_REWARD_CARD_IDS, CHAPTER_FOUR_UNIT_CARD_IDS, CHAPTER_FOUR_SPELL_CARD_IDS, CHAPTER_FOUR_REWARD_CARD_IDS, CHAPTER_FIVE_UNIT_CARD_IDS, CHAPTER_FIVE_SPELL_CARD_IDS, CHAPTER_FIVE_REWARD_CARD_IDS, getCard, makeDeck, valuesFor });
+  Object.assign(window.CardForge, { CARD_LIBRARY, STARTER_DECK, STARTER_IDS, REWARD_CARD_IDS, NEW_CARD_IDS, WEAPON_CARD_IDS, CHAPTER_TWO_UNIT_CARD_IDS, CHAPTER_TWO_SPELL_CARD_IDS, CHAPTER_TWO_REWARD_CARD_IDS, CHAPTER_THREE_UNIT_CARD_IDS, CHAPTER_THREE_SPELL_CARD_IDS, CHAPTER_THREE_REWARD_CARD_IDS, CHAPTER_FOUR_UNIT_CARD_IDS, CHAPTER_FOUR_SPELL_CARD_IDS, CHAPTER_FOUR_REWARD_CARD_IDS, CHAPTER_FIVE_UNIT_CARD_IDS, CHAPTER_FIVE_SPELL_CARD_IDS, CHAPTER_FIVE_REWARD_CARD_IDS, getCard, makeDeck, valuesFor, BOND_UNIT_ATTACK, BOND_UNIT_HEALTH, BOND_SPELL_LEVELS });
 })();

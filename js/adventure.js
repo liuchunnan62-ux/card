@@ -806,15 +806,21 @@
       });
     },
     // 第二关起，普通/精英首领的首杀奖励卡需要与监狱中的对应首领结缘后才能出战（见 restaurant.js）。
+    // 最终首领不在监狱中：它的卡牌要等本关全部在押首领都结缘才能使用，等级取其中最低的好感等级（members）。
     bondCardOwners() {
       if (bondOwnerCache) return bondOwnerCache;
       bondOwnerCache = {};
       [[2, CHAPTER_TWO_STAGES], [3, CHAPTER_THREE_STAGES], [4, CHAPTER_FOUR_STAGES], [5, CHAPTER_FIVE_STAGES]].forEach(([chapter, stages]) => {
+        const members = [];
+        let bossNode = null;
         stages.forEach((options, stage) => {
           const node = options[0];
+          if (node.type === "boss") bossNode = node;
           if (!PRISONER_NODE_TYPES.includes(node.type) || !node.rewardCardId) return;
-          bondOwnerCache[node.rewardCardId] = { key: `${chapter}-${stage}`, chapter, stage, name: node.label, portrait: node.portrait };
+          members.push(`${chapter}-${stage}`);
+          bondOwnerCache[node.rewardCardId] = { cardId: node.rewardCardId, key: `${chapter}-${stage}`, chapter, stage, name: node.label, portrait: node.portrait };
         });
+        if (bossNode?.rewardCardId) bondOwnerCache[bossNode.rewardCardId] = { cardId: bossNode.rewardCardId, key: `${chapter}-boss`, chapter, boss: true, name: bossNode.label, portrait: bossNode.portrait, members };
       });
       return bondOwnerCache;
     },

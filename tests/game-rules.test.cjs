@@ -498,20 +498,23 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   CF.SaveSystem.data.run = savedRun;
 }
 {
-  // 金杯餐馆与在押首领好感度：第二关起的首领卡牌需结缘后才能出战。
+  // 金杯餐馆与在押首领好感度：第二关起的首领卡牌需结缘后才能出战，继续投喂可升级好感、强化卡牌。
   const R = CF.Restaurant;
   const data = CF.SaveSystem.data;
   const saved = { coins: data.coins, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
   const goblinCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[0];
   const queenCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[19];
+  const owners = CF.Adventure.bondCardOwners();
   assert.equal(`${R.bondOwner(goblinCard).key}·${R.bondOwner(goblinCard).name}`, "2-0·泥牙斥候长", "第二关首领奖励卡应对应监狱里的同一名首领");
-  assert.equal(Object.keys(CF.Adventure.bondCardOwners()).length, 76, "第二至第五关各19张首领卡牌需要结缘");
-  assert.equal(R.isCardBondLocked(queenCard), false, "被同族救走的最终首领，其奖励卡不受好感度限制");
+  assert.equal(Object.keys(owners).length, 80, "第二至第五关各19张首领卡与4张最终首领卡都需要结缘");
+  assert.equal(R.bondOwner(queenCard).boss, true, "最终首领卡应对应本关全部在押首领");
+  assert.equal(R.bondOwner(queenCard).members.length, 19, "最终首领卡应关联本关19名在押首领");
   assert.equal(R.isCardBondLocked(CF.STARTER_DECK[0]), false, "基础卡牌不受好感度限制");
   data.affinity = {}; data.foods = {}; data.coins = 100;
   data.prisoners = { "2-0": true };
   data.collection[goblinCard] = 1;
   assert.equal(R.isCardBondLocked(goblinCard), true, "未结缘时第二关首领卡牌应被锁定");
+  assert.equal(R.isCardBondLocked(queenCard), true, "本关在押首领未全部结缘时，最终首领卡应被锁定");
   data.deck = [...saved.deck.filter(id => id !== goblinCard), goblinCard];
   assert.ok(!CF.SaveSystem.availableDeck().includes(goblinCard), "未结缘的卡牌即使在卡组中也不能出战");
   assert.equal(R.buyFood("charred_skewer").ok, true, "金币足够时应能买到食物");
@@ -524,14 +527,43 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   assert.equal(R.foodCount("charred_skewer"), 0, "投喂会消耗食物");
   assert.equal(R.feed("2-0", "charred_skewer").ok, false, "没有食物时不能投喂");
   assert.equal(R.feed("2-1", "wheat_bread").ok, false, "未押回监狱的首领无法探望");
-  data.foods = { harvest_feast: 2 };
+  data.foods = { harvest_feast: 20 };
+  assert.equal(R.feed("2-0", "harvest_feast").to, 90, "普通食物按原值增加好感");
   const bonded = R.feed("2-0", "harvest_feast");
-  assert.equal(bonded.to, 90, "普通食物按原值增加好感");
-  const done = R.feed("2-0", "harvest_feast");
-  assert.equal(done.to, R.BOND_THRESHOLD, "好感度应封顶于结缘值");
-  assert.equal(done.bonded, true, "好感度达到结缘值时应结缘");
+  assert.equal(bonded.bonded, true, "好感度达到100时应结缘");
+  assert.equal(R.cardBondLevel(goblinCard), 1, "结缘为好感Lv1");
   assert.equal(R.isCardBondLocked(goblinCard), false, "结缘后卡牌应解锁");
   assert.ok(CF.SaveSystem.availableDeck().includes(goblinCard), "结缘后卡牌可以出战");
+  const baseUnit = CF.getCard(goblinCard, data.cardProgress[goblinCard]);
+  assert.equal(R.cardBondBonus(goblinCard), 0, "刚结缘只是解锁，没有属性加成");
+  while (R.bondLevel("2-0") < 3) R.feed("2-0", "harvest_feast");
+  assert.equal(R.cardBondBonus(goblinCard), 2, "好感Lv3比结缘高两级");
+  const boosted = CF.getCard(goblinCard, data.cardProgress[goblinCard], R.cardBondBonus(goblinCard));
+  assert.equal(boosted.attack, baseUnit.attack + 2, "随从每高一级好感+1攻击");
+  assert.equal(boosted.health, baseUnit.health + 20, "随从每高一级好感+10生命");
+  const deck = CF.makeDeck([goblinCard], data.cardProgress, id => R.cardBondBonus(id));
+  assert.equal(deck[0].health, baseUnit.health + 20, "出战卡组应带上好感加成");
+  const spellId = CF.CHAPTER_TWO_SPELL_CARD_IDS.find(id => ["damage", "row_blast", "enemy_aoe", "poison"].includes(CF.CARD_LIBRARY[id].effect)) || CF.CHAPTER_TWO_SPELL_CARD_IDS[0];
+  const spellBase = CF.getCard(spellId, { level: 1 });
+  const spellBoosted = CF.getCard(spellId, { level: 1 }, 1);
+  assert.ok(Object.keys(CF.valuesFor(CF.CARD_LIBRARY[spellId], 1)).some(key => spellBoosted[key] > spellBase[key]), "法术牌好感加成应提升伤害或效果");
+  assert.equal(CF.getCard(goblinCard, { level: 1 }).attack, baseUnit.attack, "敌方同名卡牌不受玩家好感加成影响");
+  while (R.feed("2-0", "harvest_feast").ok) {}
+  assert.equal(R.affinity("2-0"), R.MAX_AFFINITY, "好感度应封顶于最高等级");
+  assert.equal(R.bondLevel("2-0"), R.MAX_BOND_LEVEL, "好感最高5级");
+  // 最终首领卡：全部在押首领结缘才解锁，等级取最低的一位。
+  const members = R.bondOwner(queenCard).members;
+  members.forEach(key => { data.affinity[key] = 100; });
+  data.affinity[members[1]] = 99;
+  assert.equal(R.isCardBondLocked(queenCard), true, "任一在押首领未结缘，最终首领卡仍锁定");
+  data.affinity[members[1]] = 100;
+  assert.equal(R.cardBondLevel(queenCard), 1, "全部结缘后最终首领卡解锁");
+  members.forEach(key => { data.affinity[key] = 300; });
+  data.affinity[members[5]] = 250;
+  assert.equal(R.cardBondLevel(queenCard), 2, "最终首领卡等级取本关在押首领的最低好感等级");
+  data.prisoners[members[5]] = true; data.foods = { harvest_feast: 1 };
+  const bossUp = R.feed(members[5], "harvest_feast");
+  assert.equal(bossUp.bossCard?.to, 3, "最后一名在押首领升级时，最终首领卡同步升级");
   Object.assign(data, saved);
 }
 assert.match(mainSource, /data-action="open-restaurant"|action: "open-restaurant"/, "城镇商店应开放金杯餐馆");

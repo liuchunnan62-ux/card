@@ -191,7 +191,7 @@
           const progressHTML = `<span class="card-xp-label">经验 ${level >= 5 ? "已满" : `${currentXp}/${nextXp}`}</span><span class="card-xp-progress"><span style="width:${pct}%"></span></span>`;
           if (isDeckRow) {
             // 重新根据数据生成基础属性（含装备品级小圆点），避免用 textContent 时把 <i class="equip-dot"> 也一并抹掉。
-            const card = CF.getCard(cardId, progress);
+            const card = CF.getCard(cardId, progress, CF.Restaurant.cardBondBonus(cardId));
             const cardEquip = data.cardEquipment?.[cardId] || {};
             const baseStats = card.type === "unit"
               ? `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`
@@ -541,16 +541,36 @@
         const label = `<img src="${prisoner.portrait}" alt="${prisoner.name}" loading="lazy"><strong>${prisoner.name}</strong><small>第${prisoner.chapter}关${prisoner.type === "elite" ? " · 精英" : ""}</small>`;
         if (!prisoner.cardId) return `<div class="prison-inmate${prisoner.type === "elite" ? " elite" : ""}">${label}</div>`;
         const value = R.affinity(prisoner.key);
-        const bonded = value >= R.BOND_THRESHOLD;
-        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${bonded ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.BOND_THRESHOLD * 100}%"></span></span><em>${bonded ? "💞 已结缘" : `${R.tier(value)} ${value}/${R.BOND_THRESHOLD}`}</em></button>`;
+        const level = R.levelFor(value);
+        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${level ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span><em>${level ? "💞 " : ""}${R.tier(value)} · ${value}</em></button>`;
+      }).join("");
+      // 各关最终首领卡：本关全部在押首领结缘后才能使用，等级取其中最低的一位。
+      const bossRows = Object.values(CF.Adventure.bondCardOwners()).filter(owner => owner.boss && CF.SaveSystem.data.collection[owner.cardId]).map(owner => {
+        const level = R.ownerLevel(owner);
+        const card = CF.CARD_LIBRARY[owner.cardId];
+        return `<li><strong>${owner.name} ·「${card.name}」</strong><span>${level ? `${R.levelName(level)} Lv${level}${R.bonusText(owner.cardId) ? ` · ${R.bonusText(owner.cardId)}` : ""}` : `未解锁 · 第${owner.chapter}关已结缘 ${R.bondedMembers(owner)}/${owner.members.length}`}</span></li>`;
       }).join("");
       this.frame(`<section class="screen prison-screen" style="background-image: url('${PRISON_ART}')">
         <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>已关押 ${inmates.length}/${roster.length} 名觉醒者。各关的最终首领不在此列：森林狼王战死于密林，其余首领都在最后关头被同族救走。</p></div>
         <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
-        <p class="prison-bond-hint">第二关起击败的首领，其首杀奖励卡要与牢里的本人结缘后才能出战。点击头像探望并投喂城镇金杯餐馆的食物，好感度达到${R.BOND_THRESHOLD}即可结缘。背包里共有 ${R.totalFood()} 份食物。</p>
+        <p class="prison-bond-hint">第二关起击败的首领，其首杀奖励卡要与牢里的本人结缘（好感度${R.BOND_THRESHOLD}）后才能出战；继续投喂，每${R.BOND_STEP}点好感升一级（最高${R.levelName(R.MAX_BOND_LEVEL)} Lv${R.MAX_BOND_LEVEL}），结缘后每高一级：随从+${CF.BOND_UNIT_ATTACK}攻击、+${CF.BOND_UNIT_HEALTH}生命，法术效果提升${CF.BOND_SPELL_LEVELS}级。最终首领的卡牌要等本关全部在押首领结缘才能使用，等级取其中最低的一位。背包里共有 ${R.totalFood()} 份食物。</p>
+        ${bossRows ? `<div class="prison-boss-cards"><h3>最终首领卡牌</h3><ul>${bossRows}</ul></div>` : ""}
         ${tiles ? `<div class="prison-roster">${tiles}</div>` : '<p class="prison-empty">牢房还空着。击败冒险中的首领，它们就会被押回这里。</p>'}
         <div class="menu-actions"><button class="secondary-btn" data-action="town-shop-page">前往城镇商店</button><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
+    },
+
+    // 卡牌的好感状态说明：未结缘时写明解锁条件，结缘后写明等级与加成。null 表示该卡不需要结缘。
+    bondStatusText(cardId) {
+      const R = CF.Restaurant;
+      const owner = R.bondOwner(cardId);
+      if (!owner) return null;
+      const level = R.ownerLevel(owner);
+      if (!level) return owner.boss
+        ? `未结缘 · 需第${owner.chapter}关全部在押首领结缘（${R.bondedMembers(owner)}/${owner.members.length}）`
+        : `未结缘 · 需在营地监狱与${owner.name}结缘（好感度 ${R.affinity(owner.key)}/${R.BOND_THRESHOLD}）`;
+      const bonus = R.bonusText(cardId);
+      return `${R.levelName(level)} Lv${level}${bonus ? ` · ${bonus}` : ""}`;
     },
 
     // 探望在押首领：查看对应卡牌与好感度，投喂食物。
@@ -559,34 +579,51 @@
       const prisoner = CF.Adventure.prisonRoster().find(entry => entry.key === key);
       if (!prisoner?.captured || !prisoner.cardId) return;
       const value = R.affinity(key);
-      const bonded = value >= R.BOND_THRESHOLD;
+      const level = R.levelFor(value);
+      const next = R.nextThreshold(value);
+      const maxed = next === null;
       const race = R.RACES[prisoner.chapter];
       const favorite = R.food(race?.favorite);
       const foods = R.FOODS.map(food => {
         const owned = R.foodCount(food.id);
         const isFavorite = race?.favorite === food.id;
-        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !bonded ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
+        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !maxed ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
       }).join("");
       const card = CF.CARD_LIBRARY[prisoner.cardId];
+      const bonus = R.bonusText(prisoner.cardId);
+      const nextBonus = maxed ? "" : R.bonusText(prisoner.cardId, level);
+      const bossOwner = Object.values(CF.Adventure.bondCardOwners()).find(owner => owner.boss && owner.chapter === prisoner.chapter);
+      const bossText = bossOwner ? this.bondStatusText(bossOwner.cardId) : "";
+      const status = !level
+        ? `结缘后才能使用卡牌「${card.name}」。`
+        : `卡牌「${card.name}」已可出战${bonus ? `，当前加成 ${bonus}` : ""}。${maxed ? "好感度已达最高等级。" : `好感度达到${next}升为${R.levelName(level + 1)}，加成变为 ${nextBonus}。`}`;
       this.modal(`<span class="eyebrow">营地监狱 · 第${prisoner.chapter}关${prisoner.type === "elite" ? " · 精英" : ""}</span><h2>${prisoner.name}</h2>
         <div class="prisoner-visit"><img class="prisoner-visit-portrait" src="${prisoner.portrait}" alt="${prisoner.name}"><div class="prisoner-visit-info">
-          <p>好感度：<strong>${R.tier(value)} ${value}/${R.BOND_THRESHOLD}</strong></p>
-          <span class="affinity-bar large" aria-hidden="true"><span style="width:${value / R.BOND_THRESHOLD * 100}%"></span></span>
-          <p>${bonded ? `已经与你结缘，卡牌「${card.name}」可以编入卡组出战。` : `结缘后才能使用卡牌「${card.name}」。${race ? `${race.name}最爱吃${favorite?.name || "美食"}，投喂时好感翻倍。` : ""}`}</p>
+          <p>好感度：<strong>${R.tier(value)} · ${value}/${maxed ? R.MAX_AFFINITY : level ? next : R.BOND_THRESHOLD}</strong></p>
+          <span class="affinity-bar large" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span>
+          <p>${status}${race && !maxed ? `${race.name}最爱吃${favorite?.name || "美食"}，投喂时好感翻倍。` : ""}</p>
+          ${bossText ? `<p class="prisoner-boss-hint">本关最终首领卡「${CF.CARD_LIBRARY[bossOwner.cardId].name}」：${bossText}</p>` : ""}
           ${this.cardPreview(prisoner.cardId, true)}
         </div></div>
-        ${bonded ? "" : `<h3>投喂食物</h3><div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
-        <div class="menu-actions">${bonded ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
+        ${maxed ? "" : `<h3>投喂食物</h3><div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
+        <div class="menu-actions">${maxed ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
     },
 
     feedPrisonerAction(key, foodId) {
-      const result = CF.Restaurant.feed(key, foodId);
+      const R = CF.Restaurant;
+      const result = R.feed(key, foodId);
       if (!result.ok) return this.toast(result.reason, "bad");
-      this.sfx(result.bonded ? "cardLevelUp" : "purchase");
+      this.sfx(result.leveledUp ? "cardLevelUp" : "purchase");
       const name = result.prisoner.name;
+      const cardName = CF.CARD_LIBRARY[result.prisoner.cardId].name;
       this.toast(result.bonded
-        ? `${name}：“${result.line}” 已结缘！卡牌「${CF.CARD_LIBRARY[result.prisoner.cardId].name}」现在可以出战了。`
-        : `${name}：“${result.line}” 好感度 +${result.gained}${result.favorite ? "（最爱）" : ""}`, "good");
+        ? `${name}：“${result.line}” 已结缘！卡牌「${cardName}」现在可以出战了。`
+        : result.leveledUp
+          ? `${name}：“${result.line}” 好感升至${R.levelName(result.levelTo)} Lv${result.levelTo}，「${cardName}」加成 ${R.bonusText(result.prisoner.cardId)}。`
+          : `${name}：“${result.line}” 好感度 +${result.gained}${result.favorite ? "（最爱）" : ""}`, "good");
+      if (result.bossCard) this.toast(result.bossCard.from
+        ? `本关全部在押首领都已达到${R.levelName(result.bossCard.to)}，最终首领卡「${CF.CARD_LIBRARY[result.bossCard.cardId].name}」升至 Lv${result.bossCard.to}！`
+        : `本关全部在押首领都已结缘，最终首领卡「${CF.CARD_LIBRARY[result.bossCard.cardId].name}」现在可以出战了！`, "good");
       this.openPrisonerVisit(key);
     },
 
@@ -707,7 +744,7 @@
         const canBuy = CF.SaveSystem.data.coins >= food.price;
         return `<div class="restaurant-food"><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><div class="restaurant-food-copy"><strong>${food.name}</strong><small>${food.detail}</small><small class="restaurant-food-stats">好感 +${food.affinity}${fans.length ? ` · ${fans.join("、")}最爱（好感翻倍）` : ""} · 已有 ${owned} 份</small></div><button class="secondary-btn" data-modal-action="buy-food" data-food="${food.id}" ${canBuy ? "" : "disabled"}>${COIN_ICON}${food.price}</button></div>`;
       }).join("");
-      this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店 · 新开业</span><h2>金杯餐馆</h2></div><p>当前金币：<strong>${CF.SaveSystem.data.coins}</strong>。第二关起获得的首领卡牌，需要去营地监狱探望对应的在押首领，用美食把好感度提升到${R.BOND_THRESHOLD}、与其结缘后才能出战。</p></div>
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店 · 新开业</span><h2>金杯餐馆</h2></div><p>当前金币：<strong>${CF.SaveSystem.data.coins}</strong>。第二关起获得的首领卡牌，需要去营地监狱探望对应的在押首领，用美食把好感度提升到${R.BOND_THRESHOLD}、与其结缘后才能出战；继续投喂还能升级好感，让卡牌变得更强。</p></div>
         <div class="restaurant-menu">${rows}</div>
         <div class="menu-actions"><button class="primary-btn" data-modal-action="restaurant-to-prison">带上食物去营地监狱</button><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
     },
@@ -873,30 +910,34 @@
       const deckLimit = CF.SaveSystem.deckLimit();
       const deckCounts = this.groupedDeck();
       const deckRows = Object.entries(deckCounts).map(([id, count]) => {
-        const card = CF.getCard(id, data.cardProgress[id]);
+        const card = CF.getCard(id, data.cardProgress[id], CF.Restaurant.cardBondBonus(id));
         const injured = card.type === "unit" && data.injuredCards?.includes(id);
+        const bondStatus = this.bondStatusText(id);
+        const bondBadge = bondStatus ? `<b class="injured-badge bond-badge${CF.Restaurant.isCardBondLocked(id) ? "" : " bonded"}">${CF.Restaurant.isCardBondLocked(id) ? "未结缘" : `💞${CF.Restaurant.levelName(CF.Restaurant.cardBondLevel(id))}`}</b>` : "";
         const bondLocked = CF.Restaurant.isCardBondLocked(id);
         const style = card.type === "unit" ? (card.role === "healer" ? "治疗" : (card.combatStyle === "ranged" ? "远程" : "近战")) : card.type === "weapon" ? `${card.combatStyle === "ranged" ? "远程" : "近战"}武器` : "法术";
         const thumb = card.image ? `<img class="deck-thumb" src="${card.image}" alt="" loading="lazy">` : `<span class="deck-icon">${card.icon}</span>`;
         const cardEquip = data.cardEquipment?.[id] || {};
         const unitStats = `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`;
-        return `<div class="deck-row ${injured || bondLocked ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondLocked ? '<b class="injured-badge bond-badge">未结缘</b>' : ""}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured || bondLocked ? " · 无法出战" : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
+        return `<div class="deck-row ${injured || bondLocked ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondBadge}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured || bondLocked ? " · 无法出战" : ""}${bondStatus ? ` · ${bondStatus}` : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
       }).join("");
       const availableCollection = Object.entries(data.collection).filter(([id, owned]) => owned > 0 && !deckCounts[id]);
       const collectionRows = availableCollection.map(([id, owned]) => {
-        const card = CF.getCard(id, data.cardProgress[id]);
+        const card = CF.getCard(id, data.cardProgress[id], CF.Restaurant.cardBondBonus(id));
         const injured = card.type === "unit" && data.injuredCards?.includes(id);
+        const bondStatus = this.bondStatusText(id);
+        const bondBadge = bondStatus ? `<b class="injured-badge bond-badge${CF.Restaurant.isCardBondLocked(id) ? "" : " bonded"}">${CF.Restaurant.isCardBondLocked(id) ? "未结缘" : `💞${CF.Restaurant.levelName(CF.Restaurant.cardBondLevel(id))}`}</b>` : "";
         const bondOwner = CF.Restaurant.isCardBondLocked(id) ? CF.Restaurant.bondOwner(id) : null;
         const inDeck = deckCounts[id] || 0;
         const canAdd = data.deck.length < deckLimit && inDeck < 1 && !bondOwner;
         const style = card.type === "unit" ? (card.role === "healer" ? "治疗" : (card.combatStyle === "ranged" ? "远程" : "近战")) : card.type === "weapon" ? `${card.combatStyle === "ranged" ? "远程" : "近战"}武器` : "法术";
         const thumb = card.image ? `<img class="deck-thumb" src="${card.image}" alt="" loading="lazy">` : `<span class="deck-icon">${card.icon}</span>`;
-        return `<div class="deck-row ${injured || bondOwner ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondOwner ? '<b class="injured-badge bond-badge">未结缘</b>' : ""}</span></strong><small>拥有 ${owned} · 卡组 ${inDeck}/1 · ${card.rarity}</small></div><small class="deck-card-details">Lv${card.level} · ${style} · ${data.cardProgress[id].xp}经验${injured ? " · 无法出战" : ""}${bondOwner ? ` · 需在营地监狱与${bondOwner.name}结缘` : ""}</small><button class="mini-btn" data-action="deck-add" data-card="${id}" ${canAdd ? "" : "disabled"}>添加</button></div>`;
+        return `<div class="deck-row ${injured || bondOwner ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondBadge}</span></strong><small>拥有 ${owned} · 卡组 ${inDeck}/1 · ${card.rarity}${bondStatus ? ` · ${bondStatus}` : ""}</small></div><small class="deck-card-details">Lv${card.level} · ${style} · ${data.cardProgress[id].xp}经验${injured ? " · 无法出战" : ""}</small><button class="mini-btn" data-action="deck-add" data-card="${id}" ${canAdd ? "" : "disabled"}>添加</button></div>`;
       }).join("");
       const duplicateCount = data.deck.length - new Set(data.deck).size;
       const valid = data.deck.length >= 24 && data.deck.length <= deckLimit && duplicateCount === 0;
       const validation = duplicateCount > 0 ? `卡组中有${duplicateCount}张重复卡牌，请保持每张卡只有1张。` : data.deck.length < 24 ? `至少还需加入 ${24 - data.deck.length} 张卡牌。` : data.deck.length > deckLimit ? `需要移除 ${data.deck.length - deckLimit} 张卡牌。` : `✓ 卡组数量正确，可携带24–${deckLimit}张牌。`;
-      this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">整备</span><h2>卡组编辑</h2></div><p>基础牌组为24张；英雄5级后每升一级，牌组上限增加1张。第二关起获得的首领卡牌需在营地监狱与对应首领结缘后才能出战。</p></div>
+      this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">整备</span><h2>卡组编辑</h2></div><p>基础牌组为24张；英雄5级后每升一级，牌组上限增加1张。第二关起获得的首领卡牌需在营地监狱与对应首领结缘后才能出战，好感等级越高卡牌越强。</p></div>
         <div class="deck-layout"><div class="panel deck-column"><h3><span>当前卡组</span><span>${data.deck.length}/${deckLimit}</span></h3><div class="deck-list">${deckRows || "卡组为空"}</div><p class="validation ${valid ? "ok" : ""}">${validation}</p></div>
         <div class="panel deck-column"><h3><span>卡牌收藏</span><span>${availableCollection.length}张可加入</span></h3><div class="deck-list">${collectionRows || "所有收藏卡牌都已加入当前卡组"}</div></div></div>
       </section>`);
@@ -906,9 +947,9 @@
       const baseCard = CF.CARD_LIBRARY[cardId];
       if (!baseCard || !CF.SaveSystem.data.collection[cardId]) return;
       const progress = CF.SaveSystem.data.cardProgress[cardId] || { level: 1, xp: 0 };
-      const card = CF.getCard(cardId, progress);
+      const card = CF.getCard(cardId, progress, CF.Restaurant.cardBondBonus(cardId));
       const injured = card.type === "unit" && CF.SaveSystem.data.injuredCards?.includes(cardId);
-      const bondOwner = CF.Restaurant.isCardBondLocked(cardId) ? CF.Restaurant.bondOwner(cardId) : null;
+      const bondStatus = this.bondStatusText(cardId);
       const typeClass = card.type === "spell" ? "spell" : card.type === "weapon" ? "weapon" : "unit";
       const typeLabel = card.type === "spell" ? "法术" : card.type === "weapon" ? "武器" : "随从";
       const combatLabel = card.type === "unit"
@@ -929,7 +970,7 @@
           <div class="card-inspect-rarity">${card.rarity}</div>
           <header class="card-inspect-title"><h2>${card.name}</h2><div class="card-inspect-stars" aria-label="等级${card.level}">${stars}</div></header>
           ${injured ? '<div class="card-inspect-injured">负伤 · 无法出战</div>' : ""}
-          ${bondOwner ? `<div class="card-inspect-injured">未结缘 · 需在营地监狱与${bondOwner.name}结缘（好感度 ${CF.Restaurant.affinity(bondOwner.key)}/${CF.Restaurant.BOND_THRESHOLD}）</div>` : ""}
+          ${bondStatus ? `<div class="card-inspect-injured${CF.Restaurant.isCardBondLocked(cardId) ? "" : " card-inspect-bond"}">${bondStatus}</div>` : ""}
           <div class="card-inspect-copy"><span>${typeLabel} · ${combatLabel}</span><p>${card.description}</p><small>${keywords}</small></div>
           <footer class="card-inspect-stats">${stats}</footer>
         </article>
@@ -1359,7 +1400,7 @@
       const heading = bossFight ? (storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`) : "战斗胜利";
       const intro = storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : "";
       this.modal(`<span class="eyebrow">${eyebrow}</span><h2>${heading}</h2><p>${intro}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
-        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong>${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。</small>` : ""}</div>` : ""}
+        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong>${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${CF.Restaurant.bondOwner(bossCardReward.cardId).boss ? `${bossCardReward.nodeLabel}被同族救走了。本关全部在押首领都在营地监狱结缘后，才能使用这张卡。` : `${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。`}</small>` : ""}</div>` : ""}
         ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
         <p class="boss-loot-hint">翻开三张战利品牌：</p>
         <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>
