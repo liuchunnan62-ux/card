@@ -1760,3 +1760,37 @@ console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
   const normalEntrants = CF.Arena.createTournament().bracket.rounds[0].flatMap(match => match.entrants);
   assert.ok(!normalEntrants.includes(CF.Arena.standIn().id), "以冒险英雄开局时对阵表不含罗兰替补");
 }
+
+{
+  // 竞技场英雄的专属表情台词，以及投靠人族的魔族选手被敌方嘲讽。
+  const Emotes = CF.Emotes;
+  CF.ARENA_HEROES.forEach(hero => {
+    const lines = Emotes.HERO_LINES[hero.id];
+    assert.ok(lines, `${hero.name}应拥有专属表情台词`);
+    Emotes.list.forEach(emote => assert.ok(lines[emote.id]?.length >= 2, `${hero.name}的${emote.label}台词应至少两句`));
+  });
+  const greets = CF.ARENA_HEROES.map(hero => Emotes.HERO_LINES[hero.id].greet.join("|"));
+  assert.equal(new Set(greets).size, greets.length, "每名竞技场英雄的问候台词应各不相同");
+  assert.ok(Emotes.HERO_LINES.arena_05.threaten.includes(Emotes.playerLine("threaten", Math.random, "arena_05")), "应按当前竞技场英雄选择表情台词");
+
+  const defectors = Object.keys(Emotes.DEFECTORS);
+  assert.ok(defectors.length >= 20 && defectors.every(id => CF.heroById(id).arena), "应有一批投靠人族的魔族选手");
+  const demonSide = ["1", "2", "3", "4", "5", "wolf_king", "goblin_queen", "bear_matriarch", "slime_sage", "wolf_matriarch", "succubus_officers", "queen_iselanda"];
+  demonSide.forEach(key => Emotes.list.forEach(emote => assert.ok(Emotes.DEFECTOR_TAUNTS[key]?.[emote.id]?.length >= 2, `${key}对叛徒的${emote.label}嘲讽应至少两句`)));
+  const always = () => 0.9; // 不走同族分支
+  const kinFirst = () => 0.1;
+  const forest = { id: "goblin_warband", chapter: 1 };
+  const normalReply = Emotes.replyFor(forest, "greet", { random: always, heroId: "captain", heroName: "罗兰·维克" });
+  assert.ok(Emotes.CHAPTER_REPLIES[1].greet.includes(normalReply), "普通英雄仍得到原来的回应");
+  const taunt = Emotes.replyFor(forest, "greet", { random: always, heroId: "arena_05", heroName: "裂牙酋长" });
+  assert.ok(!Emotes.CHAPTER_REPLIES[1].greet.includes(taunt) && taunt.length > 0, "魔族叛徒发出表情后应被敌方嘲讽");
+  assert.ok(!taunt.includes("{0}"), "嘲讽中的名字占位符应被替换");
+  const wolfTaunt = Emotes.replyFor({ id: "wolf_king", chapter: 1 }, "wow", { random: kinFirst, heroId: "arena_46", heroName: "寒牙战王" });
+  assert.ok(Emotes.DEFECTOR_TAUNTS.wolf_king.kin.wolf.map(line => line.replaceAll("{0}", "寒牙战王")).includes(wolfTaunt), "狼王对狼族叛徒应说同族专属的嘲讽");
+  const arenaReply = Emotes.replyFor({ mode: "arena" }, "greet", { random: always, heroId: "arena_05", heroName: "裂牙酋长" });
+  assert.ok(Emotes.BOSS_REPLIES.arena.greet.includes(arenaReply), "竞技场对手不会嘲讽叛徒");
+  const mentorReply = Emotes.replyFor({ mode: "trial", trialId: 2 }, "greet", { random: always, heroId: "arena_05", heroName: "裂牙酋长" });
+  assert.ok(Emotes.BOSS_REPLIES.trial_mentor.greet.includes(mentorReply), "人类教官不会嘲讽叛徒");
+  const queenTaunt = Emotes.replyFor({ mode: "trial", trialId: 7 }, "sorry", { random: always, heroId: "arena_43", heroName: "炼狱女王" });
+  assert.ok(Emotes.DEFECTOR_TAUNTS.queen_iselanda.sorry.map(line => line.replaceAll("{0}", "炼狱女王")).includes(queenTaunt), "伊瑟兰妲也会质问投靠人族的魔裔");
+}

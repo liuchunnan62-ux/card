@@ -313,7 +313,8 @@
         if (!this.state.ended) this.render();
       }, PLAYER_EMOTE_DURATION);
       const rescue = this.state.rescueEpilogue;
-      const reply = Emotes.replyFor(this.enemyConfig, emoteId, { rescueActive: !!rescue });
+      const hero = CF.currentHero?.();
+      const reply = Emotes.replyFor(this.enemyConfig, emoteId, { rescueActive: !!rescue, heroId: hero?.id, heroName: hero?.name });
       if (reply) {
         setTimeout(() => {
           if (this.state.ended) return;
