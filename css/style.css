@@ -1375,3 +1375,12 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
 .night-event .prison-warden-intro p { margin: 4px 0 0; color: #d8cdb6; line-height: 1.7; }
 .night-choices .choice-btn { display: grid; gap: 4px; text-align: left; }
 .night-result { line-height: 1.8; color: #e3d6bd; }
+
+/* 存档导出/导入 */
+.save-slot-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; }
+.save-slot-toolbar small { color: var(--muted); font-size: 12px; }
+.save-slot-info .save-slot-warning { color: #f0a35d; }
+.save-transfer-text { display: block; width: 100%; min-height: 120px; max-height: 40vh; margin: 10px 0; padding: 8px 10px; box-sizing: border-box; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: rgba(0,0,0,.35); color: var(--gold-bright); font: 12px/1.45 ui-monospace, Consolas, monospace; word-break: break-all; }
+.save-transfer-file { display: grid; gap: 6px; margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.save-transfer-file input { color: var(--gold-bright); max-width: 100%; }
+.save-import-plan { margin: 8px 0 12px; padding-left: 20px; display: grid; gap: 4px; }

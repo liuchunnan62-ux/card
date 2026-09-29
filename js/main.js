@@ -5,6 +5,7 @@
   const HERO_PORTRAIT = "assets/hero/novice-swordsman.png";
   const heroProfile = () => CF.currentHero?.() || { id: "captain", name: "罗兰·维克", title: "前王都护卫队长", portrait: HERO_PORTRAIT, skill: "slash", bio: "曾任王都护卫队长。野兽接连觉醒后，他认为只守住一座王都远远不够，于是离开王都、集结自己的小队，奔赴各地平定乱局。" };
   const pad2 = value => String(value).padStart(2, "0");
+  const escapeHTML = text => String(text).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const formatSavedAt = time => {
     if (!time) return "";
     const date = new Date(time);
@@ -366,7 +367,7 @@
           <div class="cover-actions">
             <button class="cover-button cover-new" data-action="hero-select"><span>新游戏</span><small>选择英雄，踏上新的远征</small></button>
             <button class="cover-button" data-action="cover-continue" ${canContinue ? "" : "disabled"}><span>继续游戏</span><small>${canContinue ? `栏位${activeSlot.slot} · ${activeSlot.heroName} Lv${activeSlot.level}` : "暂无进行中的存档"}</small></button>
-            <button class="cover-button" data-action="load-slots" ${hasSaves ? "" : "disabled"}><span>读取存档</span><small>${hasSaves ? `共${CF.SAVE_SLOT_COUNT}个存档栏位` : "暂无存档"}</small></button>
+            <button class="cover-button" data-action="load-slots"><span>读取存档</span><small>${hasSaves ? `共${CF.SAVE_SLOT_COUNT}个存档栏位` : "暂无存档 · 可导入存档文件"}</small></button>
             <button class="cover-button" data-action="settings-page"><span>游戏设置</span><small>音效与本地存档</small></button>
           </div>
         </div>
@@ -408,11 +409,11 @@
         const label = `栏位 ${pad2(slot.slot)}`;
         const body = slot.empty
           ? `<div class="save-slot-empty">空栏位</div>`
-          : `<img src="${slot.portrait}" alt="${slot.heroName}"><div class="save-slot-info"><strong>${slot.heroName} · Lv${slot.level}</strong><small>第${slot.chapter}关 · 节点${slot.chapterCompleted}/${slot.chapterTotal} · 通关${slot.completedRuns}次</small><small>${COIN_ICON} ${slot.coins}${slot.savedAt ? ` · ${formatSavedAt(slot.savedAt)}` : ""}</small></div>`;
+          : `<img src="${slot.portrait}" alt="${slot.heroName}"><div class="save-slot-info"><strong>${slot.heroName} · Lv${slot.level}</strong><small>第${slot.chapter}关 · 节点${slot.chapterCompleted}/${slot.chapterTotal} · 通关${slot.completedRuns}次</small><small>${COIN_ICON} ${slot.coins}${slot.savedAt ? ` · ${formatSavedAt(slot.savedAt)}` : ""}</small>${slot.fromBackup ? `<small class="save-slot-warning">存档损坏，已改用自动备份</small>` : ""}${slot.future ? `<small class="save-slot-warning">来自更新版本的游戏，请升级后读取</small>` : ""}</div>`;
         let actions = "";
         if (mode === "new") actions = `<button class="mini-btn" data-action="slot-new" data-slot="${slot.slot}">${slot.empty ? "在此开始" : "覆盖并开始"}</button>`;
-        if (mode === "load") actions = `<button class="mini-btn" data-action="slot-load" data-slot="${slot.slot}" ${slot.empty ? "disabled" : ""}>读取</button>`;
-        if (mode === "manage") actions = `<button class="mini-btn" data-action="slot-load" data-slot="${slot.slot}" ${slot.empty || slot.active ? "disabled" : ""}>读取</button><button class="mini-btn" data-action="slot-save" data-slot="${slot.slot}">保存到此</button><button class="mini-btn danger" data-action="slot-delete" data-slot="${slot.slot}" ${slot.empty ? "disabled" : ""}>删除</button>`;
+        if (mode === "load") actions = `<button class="mini-btn" data-action="slot-load" data-slot="${slot.slot}" ${slot.empty || slot.future ? "disabled" : ""}>读取</button>`;
+        if (mode === "manage") actions = `<button class="mini-btn" data-action="slot-load" data-slot="${slot.slot}" ${slot.empty || slot.active || slot.future ? "disabled" : ""}>读取</button><button class="mini-btn" data-action="slot-save" data-slot="${slot.slot}">保存到此</button><button class="mini-btn" data-action="slot-export" data-slot="${slot.slot}" ${slot.empty ? "disabled" : ""}>导出</button><button class="mini-btn" data-action="slot-import" data-slot="${slot.slot}">导入</button><button class="mini-btn danger" data-action="slot-delete" data-slot="${slot.slot}" ${slot.empty ? "disabled" : ""}>删除</button>`;
         return `<article class="save-slot ${slot.empty ? "empty" : ""} ${slot.active ? "active" : ""}"><header><span>${label}</span>${slot.active ? "<em>当前存档</em>" : ""}</header><div class="save-slot-body">${body}</div><div class="save-slot-actions">${actions}</div></article>`;
       }).join("");
       const heading = mode === "new" ? "选择存档栏位" : mode === "load" ? "读取存档" : "存档管理";
@@ -423,6 +424,7 @@
       const back = mode === "new" ? "hero-select" : mode === "load" ? "cover" : "home";
       const html = `<section class="screen save-slots-screen">
         <div class="page-heading"><div><span class="eyebrow">${CF.SAVE_SLOT_COUNT}个存档栏位</span><h2>${heading}</h2></div><p>${note}</p>${mode === "manage" ? "" : `<button class="secondary-btn back" data-action="${back}">返回</button>`}</div>
+        ${mode === "new" ? "" : `<div class="save-slot-toolbar">${mode === "manage" ? `<button class="secondary-btn" data-action="export-all-saves" ${slots.some(slot => !slot.empty) ? "" : "disabled"}>导出全部存档</button>` : ""}<button class="secondary-btn" data-action="import-saves">导入存档文件</button><small>换设备、换浏览器或清理浏览器数据前，请先导出存档。</small></div>`}
         <div class="save-slot-grid">${cards}</div>
       </section>`;
       if (mode === "manage") this.frame(html);
@@ -479,6 +481,105 @@
       const summary = CF.SaveSystem.slotSummary(slot);
       if (summary.empty) return;
       this.modal(`<h2>删除栏位${slot}？</h2><p>${summary.heroName} Lv${summary.level}的存档将被永久删除。${summary.active ? "这是当前存档：删除后当前进度不会再自动保存到任何栏位。" : ""}</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-slot-delete" data-slot="${slot}">永久删除</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`);
+    },
+
+    // ——— 存档导出/导入 ———
+    // 导出弹窗同时提供“下载文件”和可复制的文本：安卓版 WebView 不支持下载与选择文件，只能复制粘贴。
+    exportSaves(slot = null) {
+      const text = slot ? CF.SaveSystem.exportSlot(slot) : CF.SaveSystem.exportAll();
+      if (!text) return this.toast("没有可以导出的存档。", "bad");
+      const date = new Date();
+      const stamp = `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}-${pad2(date.getHours())}${pad2(date.getMinutes())}`;
+      this.pendingExport = { text, filename: `rift-expedition-${slot ? `slot${pad2(slot)}` : "all"}-${stamp}.json` };
+      this.modal(`<span class="eyebrow">存档导出</span><h2>${slot ? `导出栏位${slot}` : "导出全部存档"}</h2>
+        <p>下载存档文件，或复制下面的文本另行保存。在其他设备或浏览器上用“导入存档文件”即可恢复。</p>
+        <textarea class="save-transfer-text" readonly data-no-i18n data-save-export-text>${escapeHTML(text)}</textarea>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="save-export-download">下载文件</button><button class="secondary-btn" data-modal-action="save-export-copy">复制文本</button><button class="secondary-btn" data-modal-action="close">关闭</button></div>`, "training-modal");
+    },
+    downloadExport() {
+      const pending = this.pendingExport;
+      if (!pending) return;
+      try {
+        const url = URL.createObjectURL(new Blob([pending.text], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = pending.filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.toast("存档文件已开始下载。", "good");
+      } catch (error) {
+        this.toast("当前环境无法下载文件，请改用“复制文本”。", "bad");
+      }
+    },
+    async copyExport() {
+      const area = modalRoot.querySelector("[data-save-export-text]");
+      if (!area || !this.pendingExport) return;
+      let copied = false;
+      try { await navigator.clipboard.writeText(this.pendingExport.text); copied = true; }
+      catch (error) {
+        area.focus();
+        area.select();
+        try { copied = document.execCommand("copy"); } catch (fallbackError) { copied = false; }
+      }
+      this.toast(copied ? "存档文本已复制。" : "无法自动复制，请手动全选文本后复制。", copied ? "good" : "bad");
+    },
+    // targetSlot 为空时按文件里记录的栏位导入（整体恢复）；否则把单个存档导入到指定栏位。
+    openImport(targetSlot = null) {
+      this.importTarget = targetSlot;
+      this.modal(`<span class="eyebrow">存档导入</span><h2>${targetSlot ? `导入到栏位${targetSlot}` : "导入存档文件"}</h2>
+        <p>${targetSlot ? "选择单个栏位导出的存档文件，或粘贴存档文本。" : "选择导出的存档文件（单个栏位或全部存档），或粘贴存档文本；存档会恢复到它原来的栏位。"}</p>
+        <label class="save-transfer-file"><span>存档文件</span><input type="file" accept=".json,application/json,text/plain" data-save-import-file></label>
+        <textarea class="save-transfer-text" placeholder="或在这里粘贴存档文本" data-save-import-text></textarea>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="save-import-read">下一步</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`, "training-modal");
+    },
+    async readImport() {
+      const file = modalRoot.querySelector("[data-save-import-file]")?.files?.[0];
+      let text = modalRoot.querySelector("[data-save-import-text]")?.value || "";
+      if (file) {
+        try { text = await file.text(); }
+        catch (error) { return this.toast("无法读取所选文件。", "bad"); }
+      }
+      const parsed = CF.SaveSystem.parseImport(text);
+      if (!parsed.ok) {
+        const reasons = {
+          empty: "请先选择存档文件或粘贴存档文本。",
+          format: "这不是《裂隙征途》的存档，或者文本不完整。",
+          future: "这个存档来自更新版本的游戏，请先升级游戏再导入。",
+          damaged: "存档数据已损坏，无法导入。"
+        };
+        return this.toast(reasons[parsed.error] || reasons.format, "bad");
+      }
+      let plan;
+      if (this.importTarget) {
+        if (parsed.saves.length !== 1) return this.toast("这是包含多个栏位的全部存档，请用存档页上方的“导入存档文件”整体恢复。", "bad");
+        plan = [{ ...parsed.saves[0], slot: this.importTarget }];
+      } else {
+        const used = new Set(parsed.saves.map(save => save.slot).filter(Boolean));
+        const free = CF.SaveSystem.listSlots().filter(slot => slot.empty && !used.has(slot.slot)).map(slot => slot.slot);
+        plan = parsed.saves.map(save => ({ ...save, slot: save.slot || free.shift() || null }));
+        if (plan.some(save => !save.slot)) return this.toast("没有空栏位可以放入这个存档，请在存档管理中选择栏位导入。", "bad");
+      }
+      this.pendingImport = plan;
+      const rows = plan.map(save => {
+        const existing = CF.SaveSystem.slotSummary(save.slot);
+        const incoming = `${save.summary.heroName} Lv${save.summary.level}`;
+        return `<li><strong>栏位${save.slot}</strong>：${existing.empty ? `写入 ${incoming}` : `${existing.heroName} Lv${existing.level} → ${incoming}`}${existing.active ? "（当前存档）" : ""}</li>`;
+      }).join("");
+      const overwrites = plan.some(save => !CF.SaveSystem.slotSummary(save.slot).empty);
+      this.modal(`<span class="eyebrow">存档导入</span><h2>确认导入？</h2><ul class="save-import-plan">${rows}</ul>
+        ${overwrites ? "<p>被覆盖的栏位会先自动备份一次。</p>" : ""}
+        <div class="menu-actions"><button class="${overwrites ? "danger-btn" : "primary-btn"}" data-modal-action="save-import-confirm">${overwrites ? "覆盖并导入" : "导入"}</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`, "training-modal");
+    },
+    finishImport() {
+      const plan = this.pendingImport || [];
+      this.pendingImport = null;
+      const failed = plan.filter(save => !CF.SaveSystem.importToSlot(save.slot, save.data));
+      this.closeModal();
+      if (failed.length) this.toast(`栏位${failed.map(save => save.slot).join("、")}导入失败，浏览器存储空间可能已满。`, "bad");
+      else { this.toast(`已导入${plan.length}个存档。`, "good"); this.sfx("save"); }
+      this.renderSaveSlots(this.slotMode || "manage");
     },
 
     renderMenu() {
@@ -1185,7 +1286,7 @@
             <div class="sound-actions"><button class="secondary-btn" data-action="sound-toggle">${sound?.muted ? "开启音效" : "关闭音效"}</button><button class="mini-btn" data-action="sound-preview" ${sound?.muted ? "disabled" : ""}>试听</button></div>
             <label class="sound-volume"><span>音量 <output data-sound-output>${soundVolume}%</output></span><input type="range" min="0" max="100" value="${soundVolume}" data-sound-volume ${sound?.muted ? "disabled" : ""}></label>
           </div>
-          <div class="panel"><h3>本地存档</h3><p>英雄等级、经验、法力、金币、收藏、卡组和当前冒险均保存在此浏览器的 localStorage 中。</p>
+          <div class="panel"><h3>本地存档</h3><p>英雄等级、经验、法力、金币、收藏、卡组和当前冒险均保存在此浏览器的 localStorage 中。</p><p>清理浏览器数据会删除存档，请在“存档”页面定期导出备份。</p>
           <p>调试面板默认隐藏，按 <strong>F2</strong> 可切换。</p><div class="menu-actions"><button class="secondary-btn" data-action="prepare-chapter5-finale">第五关：直达最终首领</button><button class="danger-btn" data-action="reset-save">删除存档</button></div></div>
         </div></section>`);
     },
@@ -1787,6 +1888,10 @@
     if (action === "slot-load") UI.slotLoad(Number(el.dataset.slot));
     if (action === "slot-save") UI.slotSave(Number(el.dataset.slot));
     if (action === "slot-delete") UI.slotDelete(Number(el.dataset.slot));
+    if (action === "slot-export") UI.exportSaves(Number(el.dataset.slot));
+    if (action === "slot-import") UI.openImport(Number(el.dataset.slot));
+    if (action === "export-all-saves") UI.exportSaves();
+    if (action === "import-saves") UI.openImport();
     if (action === "cover-continue") { if (CF.Adventure.current()) UI.renderMap(); else UI.renderMenu(); }
     if (action === "level-select") UI.renderLevelSelect();
     if (action === "toggle-level-layout") UI.beginLevelLayoutEdit();
@@ -1925,6 +2030,10 @@
     if (action === "confirm-slot-new") UI.startNewGame(Number(el.dataset.slot));
     if (action === "confirm-slot-load") UI.finishSlotLoad(Number(el.dataset.slot));
     if (action === "confirm-slot-save") UI.finishSlotSave(Number(el.dataset.slot));
+    if (action === "save-export-download") UI.downloadExport();
+    if (action === "save-export-copy") UI.copyExport();
+    if (action === "save-import-read") UI.readImport();
+    if (action === "save-import-confirm") UI.finishImport();
     if (action === "confirm-slot-delete") { CF.SaveSystem.deleteSlot(Number(el.dataset.slot)); UI.closeModal(); UI.toast("存档已删除。", "good"); UI.renderSaveSlots(UI.slotMode || "manage"); }
     if (action === "confirm-pause-run") { CF.Adventure.pause(); UI.closeModal(); UI.renderMenu(); return; }
     if (action === "confirm-abandon") { CF.Adventure.abandon(); UI.closeModal(); UI.renderMenu(); }
@@ -1991,6 +2100,13 @@
     } else UI.updateAttackArrow(event.clientX, event.clientY);
   });
   window.addEventListener("savechange", () => { if (UI.debugOpen) UI.toggleDebug(true); });
+  // 存档写入失败（通常是浏览器存储空间已满）：每分钟最多提醒一次，避免刷屏。
+  let saveFailedWarnedAt = 0;
+  window.addEventListener("savefailed", () => {
+    if (Date.now() - saveFailedWarnedAt < 60000) return;
+    saveFailedWarnedAt = Date.now();
+    UI.toast("存档写入失败：浏览器存储空间可能已满。请到“存档”页面导出存档，并删除不用的栏位。", "bad");
+  });
 
   window.CardForge.UI = UI;
 

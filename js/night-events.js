@@ -40,10 +40,11 @@
     return out;
   }
 
-  // 每个事件：condition 决定今晚能否发生，weight 为权重，roll 生成存档里的参数，
+  // 每个事件：condition 决定今晚能否发生，weight 为权重，mandatory 表示条件满足时必定发生（按声明顺序优先），roll 生成存档里的参数，
   // view 根据参数生成标题、正文与选项；选项的 apply 返回结果说明。
   const EVENTS = {
     riot: {
+      mandatory: true,
       weight: 100,
       condition: () => R().rations() <= 0 && bondable().length > 0,
       roll: () => ({}),
@@ -155,6 +156,7 @@
       })
     },
     fullmoon: {
+      mandatory: true,
       weight: 50,
       condition: () => CF.GameClock.day() % 7 === 0 && bondable().some(prisoner => prisoner.chapter === 5),
       roll: () => ({}),
@@ -180,6 +182,8 @@
     roll(forceId = null) {
       const available = Object.entries(EVENTS).filter(([id, event]) => (forceId ? id === forceId : true) && event.condition());
       if (!available.length) return null;
+      const mandatory = available.find(([, event]) => event.mandatory);
+      if (mandatory) return { id: mandatory[0], day: CF.GameClock.day(), params: mandatory[1].roll() };
       const total = available.reduce((sum, [, event]) => sum + event.weight, 0);
       let roll = Math.random() * total;
       const [id, event] = available.find(([, entry]) => (roll -= entry.weight) < 0) || available[available.length - 1];
