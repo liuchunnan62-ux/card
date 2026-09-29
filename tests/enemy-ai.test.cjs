@@ -103,7 +103,7 @@ test("敌方头像下显示手牌数量", () => {
   assert.match(battle.html(), new RegExp(`🂠 手牌 ${state.enemy.hand.length}<`));
 });
 
-test("首领在出牌后用剩余法力发动英雄技能，每回合一次", async () => {
+test("首领每回合免费发动英雄技能，不消耗法力", async () => {
   const data = CF.SaveSystem.data;
   data.completedRuns = 4;
   data.chapterRuns[5] = CF.freshRun(data, 5);
@@ -118,20 +118,19 @@ test("首领在出牌后用剩余法力发动英雄技能，每回合一次", as
   battle.state.enemy.deck = [];
   const before = [...battle.state.enemy.board.front, ...battle.state.enemy.board.back].filter(Boolean).length;
   assert.equal(battle.useEnemyHeroSkill(), true);
-  assert.equal(battle.state.enemy.mana, battle.state.enemy.maxMana - 1, "白狼急袭应消耗1点法力");
+  assert.equal(battle.state.enemy.mana, battle.state.enemy.maxMana, "英雄技能免费发动，不消耗法力");
   const after = [...battle.state.enemy.board.front, ...battle.state.enemy.board.back].filter(Boolean);
   assert.equal(after.length, before + 1, "应召唤出白狼先锋");
   assert.ok(battle.state.battleNotices.some(notice => notice.message.includes("发动「白狼急袭」")));
   assert.match(battle.html(), /英雄技能 · 白狼急袭 Lv1/);
   battle.state.enemy.mana = 0;
-  assert.equal(battle.useEnemyHeroSkill(), false, "法力不足时不应发动");
+  assert.equal(battle.useEnemyHeroSkill(), true, "法力为0时也能免费发动");
 });
 
-test("没有目标时首领不浪费法力发动技能", () => {
+test("没有目标时首领跳过英雄技能", () => {
   const { battle, state } = setup();
   battle.enemyConfig = { ...battle.enemyConfig, heroSkill: { id: "frost_fang", level: 3 } };
   state.player.board = CF.emptyBoard();
   state.enemy.mana = 5;
   assert.equal(battle.useEnemyHeroSkill(), false, "寒牙撕咬需要我方前排目标");
-  assert.equal(state.enemy.mana, 5);
 });

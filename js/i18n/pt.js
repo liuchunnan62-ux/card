@@ -2645,7 +2645,8 @@
       "{0} 装备武器「{1}」": "{0} equipa a arma “{1}”",
       "{0} 施放法术「{1}」": "{0} lança o feitiço “{1}”",
       "{0} 发动「{1}」": "{0} usa “{1}”",
-      "英雄技能 · {0} Lv{1}": "Habilidade de herói · {0} Nv{1}"
+      "英雄技能 · {0} Lv{1}": "Habilidade de herói · {0} Nv{1}",
+      "每回合": "Todo turno"
     },
     "joiners": {
       "": " ",

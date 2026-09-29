@@ -17,7 +17,7 @@
   //       deck                    牌组：from: "enemy" 表示沿用节点 enemyId 对应敌人的牌组，再重复前 extra 张；
   //                               否则取 units/spells 卡池的前 N 张（N = min(max, base + floor(stage / per))）并复制 copies 份
   //       passive / skills / battlefield / title / icon / description  首领被动、技能说明、战场与文案
-  //   heroSkill                   首领的英雄技能（arena.js 的 HERO_SKILLS 编号）：与玩家一样每个行动回合最多用一次，需要支付技能的法力；
+  //   heroSkill                   首领的英雄技能（arena.js 的 HERO_SKILLS 编号）：每个敌方行动回合在出牌后免费发动一次（相当于被动）；
   //                               levels 为普通/精英/最终首领使用的技能等级（1~3），boss 可为最终首领单独指定技能
   //   routeStyle                  地图连线样式："line" 直线，"curve" 曲线（可用 routeControls 指定控制点）
   //   nodes                       节点列表，下标即节点序号：

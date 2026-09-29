@@ -2645,7 +2645,8 @@
       "{0} 装备武器「{1}」": "{0} rüstet Waffe „{1}“ aus",
       "{0} 施放法术「{1}」": "{0} wirkt Zauber „{1}“",
       "{0} 发动「{1}」": "{0} setzt „{1}“ ein",
-      "英雄技能 · {0} Lv{1}": "Heldenfähigkeit · {0} St{1}"
+      "英雄技能 · {0} Lv{1}": "Heldenfähigkeit · {0} St{1}",
+      "每回合": "Jede Runde"
     },
     "joiners": {
       "": " ",

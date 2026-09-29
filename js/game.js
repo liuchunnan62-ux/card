@@ -1524,11 +1524,11 @@
       this.applyEnemySkill(CF.HERO_SKILLS?.[this.enemyConfig.arenaSkill], this.enemyConfig.arenaSkillLevel);
     }
 
-    // 冒险首领的英雄技能：与玩家一样每回合最多使用一次、需要支付法力（见 js/data/chapters.js 的 heroSkill）。
+    // 冒险首领的英雄技能：每个敌方行动回合免费发动一次，相当于被动（见 js/data/chapters.js 的 heroSkill）。
     enemyHeroSkill() {
       const config = this.enemyConfig.heroSkill;
       const skill = config && CF.HERO_SKILLS?.[config.id];
-      return skill ? { skill, level: Math.max(1, Math.min(3, Number(config.level) || 1)), cost: Number(skill.cost) || 0 } : null;
+      return skill ? { skill, level: Math.max(1, Math.min(3, Number(config.level) || 1)) } : null;
     }
 
     // 技能此刻是否有意义：没有目标或用了也没有效果时不浪费法力。
@@ -1545,16 +1545,15 @@
       return true;
     }
 
+    // 出牌之后、攻击之前免费发动；没有目标或用了也没效果时本回合跳过。
     useEnemyHeroSkill() {
       const heroSkill = this.enemyHeroSkill();
-      const enemy = this.state.enemy;
-      if (!heroSkill || this.state.ended || enemy.mana < heroSkill.cost || !this.enemySkillUseful(heroSkill.skill)) return false;
-      enemy.mana -= heroSkill.cost;
-      this.applyEnemySkill(heroSkill.skill, heroSkill.level, heroSkill.cost);
+      if (!heroSkill || this.state.ended || !this.enemySkillUseful(heroSkill.skill)) return false;
+      this.applyEnemySkill(heroSkill.skill, heroSkill.level);
       return true;
     }
 
-    applyEnemySkill(skill, skillLevel, cost = 0) {
+    applyEnemySkill(skill, skillLevel) {
       const enemy = this.state.enemy;
       const player = this.state.player;
       if (!skill) return;
@@ -1654,7 +1653,7 @@
         });
       }
       this.cleanDead();
-      this.addLog(`${enemy.name}发动Lv${level}「${skill.name}」${cost ? `（${cost}费，剩余${enemy.mana}/${enemy.maxMana}法力）` : ""}：${skill.playerDescription(level)}`, "boss");
+      this.addLog(`${enemy.name}发动Lv${level}「${skill.name}」：${skill.playerDescription(level)}`, "boss");
       this.checkOutcome();
     }
 
@@ -2424,7 +2423,7 @@
       }).join("");
       const active = heroSkill ? (() => {
         const description = heroSkill.skill.playerDescription(heroSkill.level);
-        return `<div class="boss-skill boss-hero-skill" title="${description}"><span class="boss-skill-icon">${heroSkill.skill.icon}</span><div><strong>英雄技能 · ${heroSkill.skill.name} Lv${heroSkill.level}</strong><small>${description}</small></div><span class="boss-skill-timer">${heroSkill.cost}费</span></div>`;
+        return `<div class="boss-skill boss-hero-skill" title="${description}"><span class="boss-skill-icon">${heroSkill.skill.icon}</span><div><strong>英雄技能 · ${heroSkill.skill.name} Lv${heroSkill.level}</strong><small>${description}</small></div><span class="boss-skill-timer">每回合</span></div>`;
       })() : "";
       return `<div class="boss-skills"><div class="boss-skills-title"><span>${this.enemyConfig.mode === "arena" ? "英雄技能" : "Boss技能"}</span><small>按敌方行动回合触发</small></div><div class="boss-skill-grid">${active}${passives}</div></div>`;
     }
