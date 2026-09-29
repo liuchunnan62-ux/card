@@ -13,6 +13,9 @@
   const BOSS_DIALOGUE_SEQUENCE_GAP = 1300 + DIALOGUE_EXTRA_DURATION;
   const BOSS_DEFEAT_DIALOGUE_DELAY = 1900 + DIALOGUE_EXTRA_DURATION;
   const INITIAL_BATTLE_HAND = 10;
+  // 战场中央的敌方行动播报：每条停留的时间与同时显示的最多条数。
+  const BATTLE_NOTICE_DURATION = 8000;
+  const BATTLE_NOTICE_LIMIT = 6;
   const emptyBoard = () => ({ front: [null, null, null, null], back: [null, null, null, null] });
   const shuffle = cards => {
     const copy = [...cards];
@@ -140,11 +143,11 @@
     }
     showBattleNotice(message, kind) {
       const notice = { id: ++this.state.noticeSeq, message, kind };
-      this.state.battleNotices = [...this.state.battleNotices, notice].slice(-5);
+      this.state.battleNotices = [...this.state.battleNotices, notice].slice(-BATTLE_NOTICE_LIMIT);
       setTimeout(() => {
         this.state.battleNotices = this.state.battleNotices.filter(item => item.id !== notice.id);
         if (!this.state.ended) this.render();
-      }, 3000);
+      }, BATTLE_NOTICE_DURATION);
     }
     bossSpeak(text, options = {}, renderNow = true) {
       if (!text) return;
