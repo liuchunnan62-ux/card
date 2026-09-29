@@ -259,7 +259,7 @@
 
     selectorHTML(className = "") {
       const options = LANGUAGES.map(item => `<option value="${item.code}" ${item.code === this.lang ? "selected" : ""}>${item.label}</option>`).join("");
-      return `<label class="language-select ${className}" data-no-i18n><span aria-hidden="true">🌐</span><select data-language-select aria-label="Language">${options}</select></label>`;
+      return `<label class="language-select ${className}" data-no-i18n><span aria-hidden="true">🌐</span><span class="language-select-label">Language</span><select data-language-select aria-label="Language">${options}</select></label>`;
     }
   };
 

@@ -1077,6 +1077,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .language-settings h3 { margin: 0 0 6px; color: var(--gold-bright); }
 .language-settings p { margin: 0; color: var(--muted); line-height: 1.55; }
 .language-select { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #6e5433; border-radius: 8px; background: rgba(28, 19, 16, .86); color: #f3e2bd; }
+.language-select-label { font-weight: 600; letter-spacing: .02em; }
 .language-select select { min-width: 132px; padding: 6px 8px; border: 1px solid #6e5433; border-radius: 6px; background: #1c1310; color: #f3e2bd; font: inherit; cursor: pointer; }
 .cover-language { position: absolute; top: 18px; right: 18px; z-index: 3; }
 /* 非中文界面：标题本身已是英文副标题的译文，隐藏重复的副标题；除中日文外卡名较长，缩小字号。 */
