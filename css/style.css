@@ -1370,3 +1370,8 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
 .race-story h4 { margin: 0 0 4px; color: #f0d6e0; font-size: 14px; }
 .race-story p { margin: 0; line-height: 1.75; color: #e3d6bd; font-size: 13px; }
 .race-story.locked { opacity: .7; }
+/* 夜晚事件 */
+.clock-chip.night { border-color: rgba(122,167,224,.6); background: rgba(20,28,52,.55); }
+.night-event .prison-warden-intro p { margin: 4px 0 0; color: #d8cdb6; line-height: 1.7; }
+.night-choices .choice-btn { display: grid; gap: 4px; text-align: left; }
+.night-result { line-height: 1.8; color: #e3d6bd; }

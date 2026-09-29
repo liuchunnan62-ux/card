@@ -104,6 +104,8 @@
       fedDay: {},
       labor: {},
       laborDay: {},
+      nightEvent: null,
+      nightRolled: 0,
       clock: { day: 1, elapsed: 0 },
       commanderTrials: { completed: [] },
       levelMapLayout: {},

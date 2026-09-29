@@ -177,14 +177,33 @@
     // 顶栏时钟：现实24分钟为一天，每秒由计时器刷新文字与进度条，不重绘整个界面。
     clockChip() {
       const clock = CF.GameClock;
-      return `<span class="resource-chip clock-chip" title="现实${clock.DAY_MS / 60000}分钟为游戏里的一天；新的一天可以再投喂每名在押首领一次，队伍会吃掉${clock.DAILY_BATTLES}场战斗的粮食。">🕰️ <strong data-clock-day>第${clock.day()}天</strong> <small data-clock-time>${clock.timeLabel()}</small><span class="clock-progress" aria-hidden="true"><span data-clock-bar style="width:${clock.progress() * 100}%"></span></span></span>`;
+      const night = CF.NightEvents?.isNight();
+      return `<span class="resource-chip clock-chip${night ? " night" : ""}" title="现实${clock.DAY_MS / 60000}分钟为游戏里的一天；新的一天可以再投喂每名在押首领一次，队伍会吃掉${clock.DAILY_BATTLES}场战斗的粮食。"><span data-clock-icon>${night ? "🌙" : "☀️"}</span> <strong data-clock-day>第${clock.day()}天</strong> <small data-clock-time>${clock.timeLabel()}</small><span class="clock-progress" aria-hidden="true"><span data-clock-bar style="width:${clock.progress() * 100}%"></span></span></span>`;
     },
     updateClockChip() {
       const clock = CF.GameClock;
       app.querySelectorAll("[data-clock-day]").forEach(el => { el.textContent = `第${clock.day()}天`; });
       app.querySelectorAll("[data-clock-time]").forEach(el => { el.textContent = clock.timeLabel(); });
       app.querySelectorAll("[data-clock-bar]").forEach(el => { el.style.width = `${clock.progress() * 100}%`; });
+      const night = CF.NightEvents.isNight();
+      app.querySelectorAll("[data-clock-icon]").forEach(el => { el.textContent = night ? "🌙" : "☀️"; el.closest(".clock-chip")?.classList.toggle("night", night); });
     },
+    // 夜晚事件：典狱长来报告，玩家选择如何处理。
+    showNightEvent() {
+      const event = CF.NightEvents.pending();
+      const view = CF.NightEvents.view(event);
+      if (!view) { CF.SaveSystem.data.nightEvent = null; return; }
+      this.sfx("click");
+      this.modal(`<span class="eyebrow">🌙 第${event.day}天夜里 · 营地监狱</span><h2>${view.title}</h2>
+        <div class="night-event"><div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><p>${view.text}</p></div></div></div>
+        <div class="choice-grid night-choices">${view.choices.map((choice, index) => `<button class="choice-btn" data-modal-action="night-choice" data-index="${index}" ${choice.disabled ? "disabled" : ""}><strong>${choice.label}</strong><small>${choice.detail}</small></button>`).join("")}</div>`, "training-modal");
+    },
+    resolveNightEvent(index) {
+      const result = CF.NightEvents.resolve(index);
+      if (!result.ok) return this.toast(result.reason, "bad");
+      this.modal(`<span class="eyebrow">🌙 夜晚事件</span><h2>${result.title}</h2><p class="night-result">${result.text}</p><div class="menu-actions"><button class="primary-btn" data-modal-action="night-done">好的</button></div>`, "training-modal");
+    },
+
     // 新的一天：提示口粮消耗，刷新顶栏；监狱界面同步刷新“今日已喂”状态。
     handleNewDays(reports) {
       reports.forEach(report => {
@@ -888,7 +907,7 @@
       const have = CF.Restaurant.rations();
       const canPay = CF.SaveSystem.data.coins >= clock.INN_PRICE;
       this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店 · 新开业</span><h2>赤龙客栈</h2></div><p>现在是第${clock.day()}天 ${clock.timeLabel()}，自然等到第二天早上还要现实时间${clock.untilNextDayLabel()}。当前金币：<strong>${CF.SaveSystem.data.coins}</strong>。</p></div>
-        <div class="inn-offer"><span class="restaurant-food-icon" aria-hidden="true">🛏️</span><div class="restaurant-food-copy"><strong>住一晚 · ${clock.INN_PRICE}金币</strong><small>一觉睡到第${clock.day() + 1}天早上6:00。和自然过一天一样：队伍吃掉${clock.DAILY_BATTLES}场战斗的口粮（${daily}份，现有${have}份${have < daily ? "，不够吃" : ""}），每名在押首领又可以投喂一次。</small></div></div>
+        <div class="inn-offer"><span class="restaurant-food-icon" aria-hidden="true">🛏️</span><div class="restaurant-food-copy"><strong>住一晚 · ${clock.INN_PRICE}金币</strong><small>一觉睡到第${clock.day() + 1}天早上6:00。可以避开今晚监狱里的夜间事件（已经发生、还没处理的除外）。和自然过一天一样：队伍吃掉${clock.DAILY_BATTLES}场战斗的口粮（${daily}份，现有${have}份${have < daily ? "，不够吃" : ""}），每名在押首领又可以投喂一次。</small></div></div>
         <div class="menu-actions"><button class="primary-btn" data-modal-action="inn-sleep" ${canPay ? "" : "disabled"}>${canPay ? `付${clock.INN_PRICE}金币，睡到天亮` : `金币不足（需要${clock.INN_PRICE}）`}</button><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
     },
 
@@ -1733,7 +1752,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "inn-sleep", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "inn-sleep", "night-choice", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1919,6 +1938,8 @@
     if (action === "buy-flour") UI.buyFlourAction(Number(el.dataset.bags));
     if (action === "inn-sleep") UI.sleepAtInn();
     if (action === "dispatch-prisoner") UI.dispatchLabor(el.dataset.key, true);
+    if (action === "night-choice") UI.resolveNightEvent(Number(el.dataset.index));
+    if (action === "night-done") { UI.closeModal(); if (UI.screen === "prison") UI.renderPrison(); else UI.refreshTopbar(); }
     if (action === "ration-buy-go" && UI.pendingRationStart) {
       const pending = UI.pendingRationStart; UI.pendingRationStart = null;
       const bought = CF.Restaurant.buyFlour(pending.bags);
@@ -1985,6 +2006,8 @@
     if (paused) return;
     const reports = CF.GameClock.tick(delta);
     if (reports.length) { clockSaveAt = now; UI.handleNewDays(reports); }
+    CF.NightEvents.check();
+    if (CF.NightEvents.pending() && !UI.battle && UI.screen !== "battle" && !modalRoot.innerHTML) UI.showNightEvent();
     const returned = CF.Labor.collectReturned();
     if (returned.length) { clockSaveAt = now; UI.handleLaborReturns(returned); }
     else if (UI.screen === "prison" && !modalRoot.innerHTML) app.querySelectorAll("[data-labor-timer]").forEach(el => { el.textContent = CF.Labor.returnLabel(el.dataset.laborTimer); });

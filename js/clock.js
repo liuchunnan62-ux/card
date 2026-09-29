@@ -70,6 +70,7 @@
       const save = CF.SaveSystem.data;
       if (save.coins < INN_PRICE) return { ok: false, reason: `金币不足，住一晚需要${INN_PRICE}金币。` };
       save.coins -= INN_PRICE;
+      CF.NightEvents?.skipTonight();
       const report = this.advance(this.msUntilNextDay())[0];
       CF.SaveSystem.save();
       return { ok: true, cost: INN_PRICE, report };

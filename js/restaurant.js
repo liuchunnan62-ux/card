@@ -122,6 +122,14 @@
       return level ? `${BOND_LEVEL_NAMES[level]} Lv${level}` : AFFINITY_TIERS.find(([min]) => value >= min)[1];
     },
     isBonded(key) { return this.bondLevel(key) >= 1; },
+    // 投喂以外的好感变化（夜晚事件等）：不占用当天的投喂次数。keepBond 时已结缘的首领不会跌回未结缘。
+    adjustAffinity(key, delta, keepBond = true) {
+      const from = this.affinity(key);
+      let to = Math.max(0, Math.min(MAX_AFFINITY, from + Math.round(Number(delta) || 0)));
+      if (keepBond && from >= BOND_THRESHOLD) to = Math.max(BOND_THRESHOLD, to);
+      affinityMap()[key] = to;
+      return to - from;
+    },
     // 投喂本族最爱的食物好感度翻倍；好感度封顶于满级。
     affinityGain(chapter, foodId) {
       const food = FOOD_BY_ID[foodId];
