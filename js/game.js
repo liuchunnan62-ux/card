@@ -1642,8 +1642,11 @@
     // 冒险首领的英雄技能：每个敌方行动回合免费发动一次，相当于被动（见 js/data/chapters.js 的 heroSkill）。
     enemyHeroSkill() {
       const config = this.enemyConfig.heroSkill;
-      const skill = config && CF.HERO_SKILLS?.[config.id];
-      return skill ? { skill, level: Math.max(1, Math.min(3, Number(config.level) || 1)) } : null;
+      const base = config && CF.HERO_SKILLS?.[config.id];
+      if (!base) return null;
+      // 关卡数据表可以只为本关覆盖技能数值（overrides），描述文字随之重新生成。
+      const skill = config.overrides && CF.makeHeroSkill ? CF.makeHeroSkill({ ...base, ...config.overrides }) : base;
+      return { skill, level: Math.max(1, Math.min(3, Number(config.level) || 1)) };
     }
 
     // 技能此刻是否有意义：没有目标或用了也没有效果时不浪费法力。

@@ -1703,3 +1703,23 @@ console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
   assert.equal(CF.SaveSystem.forgeItem("armor", 1), false, "装备店不能再重锻盔甲");
   assert.ok(!("equipDotHTML" in CF), "装备品级小图标已移除");
 }
+
+{
+  // 第一关首领的英雄技能削弱为每回合1点伤害（只在第一关生效）。
+  CF.SaveSystem.reset();
+  const run = CF.Adventure.start(1);
+  run.activeNode = 0;
+  const normal = new CF.Battle(CF.Adventure.encounterFor("normal"), {});
+  const hunt = normal.enemyHeroSkill();
+  assert.equal(normal.skillValue(hunt.skill, "amount", hunt.level), 1, "第一关猎手射击每回合只造成1点伤害");
+  normal.state.player.board = CF.emptyBoard();
+  const target = combatUnit("vanguard", { health: 5, maxHealth: 5 });
+  normal.state.player.board.front[0] = target;
+  normal.applyEnemySkill(hunt.skill, hunt.level);
+  assert.equal(target.health, 4, "第一关首领技能实际造成1点伤害");
+  run.activeNode = CF.chapterById(1).nodes.findIndex(node => node.type === "boss");
+  const wolfKing = new CF.Battle(CF.Adventure.encounterFor("boss"), {}).enemyHeroSkill();
+  assert.equal(wolfKing.skill.id, "frost_fang");
+  assert.match(wolfKing.skill.playerDescription(wolfKing.level), /造成1点伤害。$/, "狼王的寒牙撕咬也只造成1点伤害、不再回血");
+  assert.deepEqual([...CF.HERO_SKILLS.frost_fang.amount], [3, 4, 5], "其他地方的同名技能数值不受影响");
+}

@@ -505,5 +505,5 @@
   };
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { Arena, HERO_SKILLS });
+  Object.assign(window.CardForge, { Arena, HERO_SKILLS, makeHeroSkill: makeSkill });
 })();

@@ -43,7 +43,7 @@
   function heroSkillFor(chapter, type) {
     const config = chapter?.heroSkill;
     if (!config) return null;
-    return { id: type === "boss" && config.boss ? config.boss : config.id, level: config.levels?.[type] || 1, fallbackSummon: config.fallbackSummon || null };
+    return { id: type === "boss" && config.boss ? config.boss : config.id, level: config.levels?.[type] || 1, fallbackSummon: config.fallbackSummon || null, overrides: config.overrides || null };
   }
 
   // 第2~5关普通/精英首领：按数据表 encounter 中的公式生成；最终首领直接使用 enemies.js 中的专属配置。

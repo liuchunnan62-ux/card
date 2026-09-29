@@ -20,6 +20,7 @@
   //   heroSkill                   首领的英雄技能（arena.js 的 HERO_SKILLS 编号）：每个敌方行动回合在出牌后免费发动一次（相当于被动）；
   //                               levels 为普通/精英/最终首领使用的技能等级（1~3），boss 可为最终首领单独指定技能；
   //                               fallbackSummon（可选）：没有受伤的己方随从时改为召唤这个随从（attack/health 按技能等级取值）
+  //                               overrides（可选）：只在本关覆盖技能数值，例如 { amount: 1, heal: 0 }（不影响竞技场等其他地方的同名技能）
   //   bossWeapon                  首领随身武器 { normal|elite|boss: { id, level } }：开战即装备，不消耗耐久，每个行动回合都能攻击一次；
   //                               第一关节点的 weaponId（首杀掉落武器）优先于这里的 id。冒险中的首领每个行动回合还会把手牌补到10张。
   //   chapterWeapon               （第2~5关）关卡武器（cards.js 中的武器牌）：击败本关第一个首领后永久获得，可在英雄档案装备
@@ -44,7 +45,8 @@
       clearSummary: { title: "密林重见曙光",
         text: "你击败了森林狼王，并解锁第二关与英雄10级上限。最大法力只在统领试炼中提升。" },
       bossWeapon: { normal: { id: "mist_dagger", level: 1 }, elite: { id: "silverfeather_bow", level: 1 }, boss: { id: "riftmoon_blade", level: 1 } }, // 节点手持自己掉落的武器（weaponId 优先）
-      heroSkill: { id: "hunt", boss: "frost_fang", levels: { normal: 1, elite: 2, boss: 3 } }, // 猎手射击：打生命最低的随从；狼王：寒牙撕咬
+      // 猎手射击：打生命最低的随从；狼王：寒牙撕咬。第一关削弱：每回合只造成1点伤害、不回血。
+      heroSkill: { id: "hunt", boss: "frost_fang", levels: { normal: 1, elite: 2, boss: 3 }, overrides: { amount: 1, heal: 0 } },
       victoryRewards: { normal: { gold: 20, xp: 10 }, elite: { gold: 40, xp: 20 }, boss: { gold: 60, xp: 50 } },
       routeStyle: "line",
       nodes: [
