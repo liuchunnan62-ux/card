@@ -37,6 +37,7 @@ load("js/adventure.js");
 load("js/restaurant.js");
 load("js/clock.js");
 load("js/labor.js");
+load("js/bond-stories.js");
 load("js/trials.js");
 load("js/arena.js");
 load("js/heroes.js");
@@ -657,6 +658,27 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   G.advance(G.DAY_MS);
   assert.equal(L.dispatch("2-0").ok, true, "新的一天可以再派遣");
   assert.ok(indexSource.indexOf("js/labor.js") > indexSource.indexOf("js/clock.js"), "游戏入口应加载派遣劳动模块");
+  // 好感剧情：每名可结缘首领都有个人往事，每族5章族群往事按好感等级总和解锁。
+  const S = CF.BondStories;
+  const bondable = CF.Adventure.prisonRoster().filter(prisoner => prisoner.cardId);
+  assert.equal(bondable.length, 76, "第二至第五关共76名可结缘首领");
+  bondable.forEach(prisoner => assert.ok(S.personal(prisoner.name).length >= 40, `${prisoner.name}应有自己的个人往事`));
+  assert.equal(Object.keys(CF.BOND_PERSONAL_STORIES).length, 76, "个人往事不应多出无主条目");
+  [2, 3, 4, 5].forEach(chapter => {
+    assert.equal(S.RACE_CHAPTERS[chapter].chapters.length, 5, `第${chapter}关族群往事应有5章`);
+    [1, 2, 3, 4, 5].forEach(level => assert.ok(S.voice(chapter, level), `第${chapter}关Lv${level}应有心声`));
+  });
+  data.affinity = {}; data.prisoners = {};
+  assert.equal(S.unlockedChapters(3), 0, "没有结缘时族群往事全部锁定");
+  data.prisoners["3-0"] = true; data.affinity["3-0"] = 100;
+  assert.equal(S.unlockedChapters(3), 1, "结缘一名首领即解锁第一章");
+  assert.equal(S.personalUnlocked("3-0"), false, "结缘Lv1时个人往事仍锁定");
+  data.affinity["3-0"] = 300;
+  assert.equal(S.personalUnlocked("3-0"), true, "挚友Lv3解锁个人往事");
+  CF.Adventure.prisonRoster().filter(prisoner => prisoner.chapter === 3).forEach(prisoner => { data.prisoners[prisoner.key] = true; data.affinity[prisoner.key] = 500; });
+  assert.equal(S.chapterBondTotal(3), 95, "19名首领全部誓约Lv5时好感等级总和为95");
+  assert.equal(S.unlockedChapters(3), 5, "全部誓约后解锁族群往事最终章");
+  assert.ok(indexSource.indexOf("js/bond-stories.js") > indexSource.indexOf("js/restaurant.js"), "游戏入口应加载好感剧情");
   assert.ok(indexSource.indexOf("js/clock.js") > indexSource.indexOf("js/restaurant.js"), "游戏入口应加载时间系统");
   assert.match(mainSource, /clockChip\(\)/, "顶栏应显示游戏时间");
   Object.assign(data, saved);

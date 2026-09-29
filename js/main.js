@@ -605,7 +605,7 @@
         ${this.laborPanel()}
         ${bossRows ? `<div class="prison-boss-cards"><h3>最终首领卡牌</h3><ul>${bossRows}</ul></div>` : ""}
         ${tiles ? `<div class="prison-roster">${tiles}</div>` : '<p class="prison-empty">牢房还空着。击败冒险中的首领，它们就会被押回这里。</p>'}
-        <div class="menu-actions"><button class="secondary-btn" data-action="town-shop-page">前往城镇商店</button><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
+        <div class="menu-actions"><button class="primary-btn" data-action="race-stories">📖 族群往事</button><button class="secondary-btn" data-action="town-shop-page">前往城镇商店</button><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
     },
 
@@ -691,12 +691,35 @@
           <p>好感度：<strong>${R.tier(value)} · ${value}/${maxed ? R.MAX_AFFINITY : level ? next : R.BOND_THRESHOLD}</strong></p>
           <span class="affinity-bar large" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span>
           <p>${status}${race && !maxed ? `${race.name}最爱吃${favorite?.name || "美食"}，投喂时好感翻倍。` : ""}</p>
+          ${this.visitStoryHTML(prisoner, level)}
           ${this.visitLaborHTML(prisoner)}
           ${bossText ? `<p class="prisoner-boss-hint">本关最终首领卡「${CF.CARD_LIBRARY[bossOwner.cardId].name}」：${bossText}</p>` : ""}
           ${this.cardPreview(prisoner.cardId, true)}
         </div></div>
         ${maxed ? "" : `<h3>投喂食物</h3>${fedToday ? `<p class="fed-today-hint">🍽️ ${prisoner.name}今天已经吃饱了，${CF.GameClock.untilNextDayLabel()}后的新一天才能再投喂。</p>` : '<p class="fed-today-hint">每名首领每天只能投喂一次，挑一道好菜吧。</p>'}<div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
         <div class="menu-actions">${maxed ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
+    },
+
+    // 好感剧情：当前等级的心声 + 挚友后解锁的个人往事。
+    visitStoryHTML(prisoner, level) {
+      const S = CF.BondStories;
+      const voice = S.voice(prisoner.chapter, level);
+      const story = S.personal(prisoner.name);
+      const unlocked = S.personalUnlocked(prisoner.key);
+      return `${voice ? `<p class="prisoner-voice">“${voice}”</p>` : ""}${story ? `<details class="prisoner-story"${unlocked ? " open" : ""}><summary>📜 ${prisoner.name}的往事${unlocked ? "" : `（好感达到${CF.Restaurant.levelName(S.PERSONAL_LEVEL)} Lv${S.PERSONAL_LEVEL}解锁）`}</summary>${unlocked ? `<p>${story}</p>` : '<p class="story-locked">它还不愿意对你说起过去。</p>'}</details>` : ""}`;
+    },
+    // 族群往事：每族5章，按本关全部在押首领的好感等级总和逐章解锁。
+    openRaceStories() {
+      const S = CF.BondStories;
+      const sections = Object.entries(S.RACE_CHAPTERS).map(([chapter, book]) => {
+        const total = S.chapterBondTotal(Number(chapter));
+        const unlocked = S.unlockedChapters(Number(chapter));
+        const items = book.chapters.map((entry, index) => index < unlocked
+          ? `<article class="race-story"><h4>${entry.title}</h4><p>${entry.text}</p></article>`
+          : `<article class="race-story locked"><h4>${entry.title}</h4><p class="story-locked">🔒 第${chapter}关在押首领的好感等级总和达到${S.CHAPTER_THRESHOLDS[index]}后解锁（当前${total}）。</p></article>`).join("");
+        return `<section class="race-story-book"><h3>${book.race} ·《${book.title}》<small>${unlocked}/${book.chapters.length}</small></h3>${items}</section>`;
+      }).join("");
+      this.modal(`<span class="eyebrow">营地监狱 · 好感剧情</span><h2>📖 族群往事</h2><p>与同一关的在押首领结下的好感越深（全部首领的好感等级加在一起），它们就越愿意讲出本族的往事。每名首领到${CF.Restaurant.levelName(S.PERSONAL_LEVEL)} Lv${S.PERSONAL_LEVEL}时，还会讲出自己的故事。</p>${sections}<div class="menu-actions"><button class="secondary-btn" data-modal-action="close">合上</button></div>`, "training-modal");
     },
 
     visitLaborHTML(prisoner) {
@@ -714,6 +737,7 @@
 
     feedPrisonerAction(key, foodId) {
       const R = CF.Restaurant;
+      const storiesBefore = CF.BondStories.unlockedCount();
       const result = R.feed(key, foodId);
       if (!result.ok) return this.toast(result.reason, "bad");
       this.sfx(result.leveledUp ? "cardLevelUp" : "purchase");
@@ -727,6 +751,7 @@
       if (result.bossCard) this.toast(result.bossCard.from
         ? `本关全部在押首领都已达到${R.levelName(result.bossCard.to)}，最终首领卡「${CF.CARD_LIBRARY[result.bossCard.cardId].name}」升至 Lv${result.bossCard.to}！`
         : `本关全部在押首领都已结缘，最终首领卡「${CF.CARD_LIBRARY[result.bossCard.cardId].name}」现在可以出战了！`, "good");
+      if (CF.BondStories.unlockedCount() > storiesBefore) this.toast("📜 解锁了新的往事！可在探望界面或“族群往事”中阅读。", "good");
       this.openPrisonerVisit(key);
     },
 
@@ -1777,6 +1802,7 @@
     if (action === "open-inn") UI.openInn();
     if (action === "prison-visit") UI.openPrisonerVisit(el.dataset.key);
     if (action === "labor-dispatch-all") UI.dispatchAllLabor();
+    if (action === "race-stories") UI.openRaceStories();
     if (action === "backpack-page") UI.renderBackpack();
     if (action === "book-page") UI.renderBook();
     if (action === "use-queen-blood") UI.useQueenBlood();
