@@ -4,6 +4,10 @@
   // Brazilian Portuguese dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("pt", {
     "exact": {
+      "来自{0}的王都竞技场选手。{1}。": "Um competidor da arena vindo de {0}. {1}.",
+      "除罗兰外还有8名冒险英雄与63名竞技场英雄可选，每人拥有独特的英雄技能。": "Além de Roland, há 8 heróis de aventura e 63 heróis de arena, cada um com uma habilidade única.",
+      "冒险英雄": "Heróis de aventura",
+      "竞技场英雄 · {0}名": "Heróis de arena · {0}",
       "分路作战": "Combate por pistas",
       "规则说明": "Regras",
       "明白了": "Entendi",
@@ -2577,7 +2581,6 @@
       "我方英雄与随从都已是满生命。": "Seu herói e seus lacaios já estão com a vida cheia.",
       "选择任意一个敌方随从施放{0}。": "Escolha qualquer lacaio inimigo para lançar {0}.",
       "选择英雄": "Escolha seu herói",
-      "除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。": "Além de Roland, há mais 8 heróis, cada um com uma habilidade de herói única.",
       "返回封面": "Voltar ao título",
       "返回": "Voltar",
       "成就英雄，尚未开放": "Herói de conquista, ainda indisponível",

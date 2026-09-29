@@ -92,8 +92,16 @@
     { id: "locked_count", locked: true, portrait: "assets/heroes/locked-vampire-count.webp" }
   ];
 
+  // 竞技场的63名选手也可以作为英雄开始新游戏：沿用竞技场立绘，并以各自的竞技场技能作为专属英雄技能。
+  // （arena.js 先于本文件加载。）
+  const ARENA_HEROES = (CF.Arena?.heroes || []).map(hero => ({
+    id: `arena_${String(hero.id).padStart(2, "0")}`, arenaId: hero.id, arena: true,
+    name: hero.name, title: hero.faction, portrait: hero.portrait, skill: hero.skill.id,
+    bio: `来自${hero.faction}的王都竞技场选手。${hero.motto}。`
+  }));
+
   const SIGNATURE_BY_ID = Object.fromEntries(SIGNATURE_SKILLS.map(skill => [skill.id, skill]));
-  const HERO_BY_ID = Object.fromEntries(HEROES.map(hero => [hero.id, hero]));
+  const HERO_BY_ID = Object.fromEntries([...HEROES, ...ARENA_HEROES].map(hero => [hero.id, hero]));
 
   function heroById(id) {
     const hero = HERO_BY_ID[id];
@@ -109,10 +117,13 @@
   CF.HERO_SKILLS = Object.assign(CF.HERO_SKILLS || {}, SIGNATURE_BY_ID);
   Object.assign(CF, {
     HEROES,
+    ARENA_HEROES,
     SIGNATURE_SKILLS: SIGNATURE_BY_ID,
     heroById,
     currentHero,
     isSignatureSkill,
-    selectableHeroes: () => HEROES.filter(hero => !hero.locked)
+    // 冒险英雄（罗兰 + 8名）；竞技场英雄另见 ARENA_HEROES，allSelectableHeroes 包含两者。
+    selectableHeroes: () => HEROES.filter(hero => !hero.locked),
+    allSelectableHeroes: () => [...HEROES.filter(hero => !hero.locked), ...ARENA_HEROES]
   });
 })();

@@ -326,18 +326,23 @@
 
     renderHeroSelect() {
       this.screen = "hero-select"; this.battle = null; this.activeNode = null;
-      const selectable = CF.selectableHeroes?.() || [];
+      const selectable = CF.allSelectableHeroes?.() || CF.selectableHeroes?.() || [];
       if (!selectable.some(hero => hero.id === this.heroSelectId)) this.heroSelectId = "captain";
       const chosen = CF.heroById(this.heroSelectId);
       const skill = CF.HERO_SKILLS[chosen.skill] || CF.HERO_SKILLS.slash;
-      const cards = CF.HEROES.map(hero => hero.locked
+      const pickCard = hero => hero.locked
         ? `<button class="hero-pick locked" disabled aria-label="成就英雄，尚未开放"><span class="hero-pick-art"><img src="${hero.portrait}" alt=""></span><strong>？？？</strong><small>🔒 达成特殊成就后解锁</small></button>`
-        : `<button class="hero-pick ${hero.id === chosen.id ? "selected" : ""}" data-action="hero-pick" data-hero="${hero.id}" aria-pressed="${hero.id === chosen.id}"><span class="hero-pick-art"><img src="${hero.portrait}" alt="${hero.name}"></span><strong>${hero.name}</strong><small>${hero.title}</small></button>`).join("");
+        : `<button class="hero-pick ${hero.id === chosen.id ? "selected" : ""}" data-action="hero-pick" data-hero="${hero.id}" aria-pressed="${hero.id === chosen.id}"><span class="hero-pick-art"><img src="${hero.portrait}" alt="${hero.name}" loading="lazy"></span><strong>${hero.name}</strong><small>${hero.title}</small></button>`;
+      const cards = CF.HEROES.map(pickCard).join("");
+      const arenaCards = (CF.ARENA_HEROES || []).map(pickCard).join("");
       const levels = [1, 2, 3].map(level => `<li><b>Lv${level}</b> ${skill.playerDescription(level)}</li>`).join("");
       this.bare(`<section class="screen hero-select-screen">
-        <div class="page-heading"><div><span class="eyebrow">新游戏</span><h2>选择英雄</h2></div><p>除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。</p><button class="secondary-btn back" data-action="cover">返回封面</button></div>
+        <div class="page-heading"><div><span class="eyebrow">新游戏</span><h2>选择英雄</h2></div><p>除罗兰外还有8名冒险英雄与63名竞技场英雄可选，每人拥有独特的英雄技能。</p><button class="secondary-btn back" data-action="cover">返回封面</button></div>
         <div class="hero-select-layout">
-          <div class="hero-select-grid">${cards}</div>
+          <div class="hero-select-groups">
+            <h3 class="hero-select-group-title">冒险英雄</h3><div class="hero-select-grid">${cards}</div>
+            <h3 class="hero-select-group-title">竞技场英雄 · ${(CF.ARENA_HEROES || []).length}名</h3><div class="hero-select-grid">${arenaCards}</div>
+          </div>
           <aside class="panel hero-select-detail">
             <div class="hero-select-portrait"><img src="${chosen.portrait}" alt="${chosen.name}"></div>
             <span class="eyebrow">${chosen.title}</span><h3>${chosen.name}</h3><p>${chosen.bio}</p>

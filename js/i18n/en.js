@@ -4,6 +4,10 @@
   // English dictionary. Keys are the original Simplified Chinese text; {0}, {value} etc. are placeholders.
   window.CardForge.I18n.register("en", {
     "exact": {
+      "来自{0}的王都竞技场选手。{1}。": "An arena contender from {0}. {1}.",
+      "除罗兰外还有8名冒险英雄与63名竞技场英雄可选，每人拥有独特的英雄技能。": "Besides Roland, 8 adventure heroes and 63 arena heroes are available, each with a unique hero skill.",
+      "冒险英雄": "Adventure Heroes",
+      "竞技场英雄 · {0}名": "Arena Heroes · {0}",
       "分路作战": "Lane Combat",
       "规则说明": "Rules",
       "明白了": "Got it",
@@ -2577,7 +2581,6 @@
       "我方英雄与随从都已是满生命。": "Your hero and minions are already at full Health.",
       "选择任意一个敌方随从施放{0}。": "Choose any enemy minion to cast {0}.",
       "选择英雄": "Choose Your Hero",
-      "除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。": "Besides Roland, 8 more heroes are available, each with a unique Hero Skill.",
       "返回封面": "Back to Title",
       "返回": "Back",
       "成就英雄，尚未开放": "Achievement hero, not yet available",

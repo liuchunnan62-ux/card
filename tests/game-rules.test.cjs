@@ -1552,7 +1552,7 @@ assert.match(indexSource, /js\/heroes\.js/, "游戏入口应加载英雄配置")
 storage.clear();
 CF.SaveSystem.load();
 assert.equal(CF.SaveSystem.activeSlot, null, "首次进入游戏时不应占用存档栏位");
-assert.equal(CF.SaveSystem.listSlots().length, 15, "应提供15个存档栏位");
+assert.equal(CF.SaveSystem.listSlots().length, 75, "应提供75个存档栏位");
 assert.ok(CF.SaveSystem.listSlots().every(slot => slot.empty), "首次进入时所有栏位为空");
 CF.SaveSystem.newGame(3, "violet_witch");
 assert.equal(CF.SaveSystem.activeSlot, 3, "新游戏应绑定所选栏位");
@@ -1733,4 +1733,30 @@ console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
   assert.match(mainSource, /!CF\.SaveSystem\.data\.laneRulesSeen\) this\.showTutorial\(\)/, "未看过分路规则时开战应弹出讲解");
   assert.match(mainSource, /随从只能攻击自己所在这一路的敌人/, "讲解应说明只能攻击本路");
   assert.match(gameJs, /data-action="show-rules"/, "战斗中应能打开规则说明");
+}
+
+{
+  // 竞技场的63名选手都可以作为英雄开局；玩家扮演的选手不会在对阵表里再出现，由罗兰顶替席位。
+  assert.equal(CF.ARENA_HEROES.length, 63, "63名竞技场选手都应可选");
+  assert.equal(CF.allSelectableHeroes().length, 9 + 63, "可选英雄应为9名冒险英雄加63名竞技场英雄");
+  CF.ARENA_HEROES.forEach(hero => {
+    assert.ok(CF.HERO_SKILLS[hero.skill], `${hero.name}应以竞技场技能作为英雄技能`);
+    assert.ok(fs.existsSync(path.join(root, hero.portrait)), `${hero.name}的头像应存在`);
+    assert.equal(CF.heroById(hero.id).id, hero.id, "应能按编号找到竞技场英雄");
+  });
+  const pick = CF.ARENA_HEROES[4];
+  CF.SaveSystem.newGame(70, pick.id);
+  assert.equal(CF.SaveSystem.activeSlot, 70, "第70号栏位应可用");
+  assert.equal(CF.SaveSystem.data.hero.heroId, pick.id, "新游戏应记录所选竞技场英雄");
+  assert.equal(CF.SaveSystem.data.hero.equippedSkill, pick.skill, "应自动装备该选手的竞技场技能");
+  assert.equal(CF.SaveSystem.loadSlot(70).hero.heroId, pick.id, "读档后仍是所选竞技场英雄");
+  const tournament = CF.Arena.createTournament();
+  const entrants = tournament.bracket.rounds[0].flatMap(match => match.entrants);
+  assert.equal(new Set(entrants).size, 64, "对阵表仍是64名不同参赛者");
+  assert.ok(!entrants.includes(pick.arenaId), "玩家扮演的选手不应再作为对手出现");
+  assert.ok(entrants.includes(CF.Arena.standIn().id), "罗兰应顶替该选手的席位");
+  assert.equal(CF.Arena.participant(CF.Arena.standIn().id).name, "罗兰·维克");
+  CF.SaveSystem.newGame(71, "captain");
+  const normalEntrants = CF.Arena.createTournament().bracket.rounds[0].flatMap(match => match.entrants);
+  assert.ok(!normalEntrants.includes(CF.Arena.standIn().id), "以冒险英雄开局时对阵表不含罗兰替补");
 }

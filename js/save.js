@@ -2,7 +2,7 @@
   "use strict";
 
   const KEY = "rift-expedition-save-v1";
-  const SLOT_COUNT = 15;
+  const SLOT_COUNT = 75;
   const SLOT_PREFIX = "rift-expedition-slot-";
   const ACTIVE_SLOT_KEY = "rift-expedition-active-slot";
   const BACKUP_SUFFIX = "-backup";

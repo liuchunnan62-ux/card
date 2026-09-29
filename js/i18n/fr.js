@@ -4,6 +4,10 @@
   // French dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("fr", {
     "exact": {
+      "来自{0}的王都竞技场选手。{1}。": "Un concurrent de l'arène venu de {0}. {1}.",
+      "除罗兰外还有8名冒险英雄与63名竞技场英雄可选，每人拥有独特的英雄技能。": "Outre Roland, 8 héros d'aventure et 63 héros d'arène sont disponibles, chacun avec une compétence unique.",
+      "冒险英雄": "Héros d'aventure",
+      "竞技场英雄 · {0}名": "Héros d'arène · {0}",
       "分路作战": "Combat par voies",
       "规则说明": "Règles",
       "明白了": "Compris",
@@ -2577,7 +2581,6 @@
       "我方英雄与随从都已是满生命。": "Votre héros et vos serviteurs ont déjà tous leurs PV.",
       "选择任意一个敌方随从施放{0}。": "Choisissez n'importe quel serviteur ennemi pour lancer {0}.",
       "选择英雄": "Choisissez votre héros",
-      "除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。": "Outre Roland, 8 autres héros sont disponibles, chacun avec une compétence unique.",
       "返回封面": "Retour au titre",
       "返回": "Retour",
       "成就英雄，尚未开放": "Héros de succès, pas encore disponible",

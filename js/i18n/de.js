@@ -4,6 +4,10 @@
   // German dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("de", {
     "exact": {
+      "来自{0}的王都竞技场选手。{1}。": "Ein Arenakämpfer aus {0}. {1}.",
+      "除罗兰外还有8名冒险英雄与63名竞技场英雄可选，每人拥有独特的英雄技能。": "Neben Roland stehen 8 Abenteuerhelden und 63 Arenahelden zur Wahl, jeder mit einer einzigartigen Heldenfähigkeit.",
+      "冒险英雄": "Abenteuerhelden",
+      "竞技场英雄 · {0}名": "Arenahelden · {0}",
       "分路作战": "Bahnenkampf",
       "规则说明": "Regeln",
       "明白了": "Verstanden",
@@ -2577,7 +2581,6 @@
       "我方英雄与随从都已是满生命。": "Dein Held und deine Diener haben bereits volles Leben.",
       "选择任意一个敌方随从施放{0}。": "Wähle einen beliebigen feindlichen Diener, um {0} zu wirken.",
       "选择英雄": "Wähle deinen Helden",
-      "除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。": "Neben Roland stehen 8 weitere Helden zur Wahl, jeder mit einer einzigartigen Heldenfähigkeit.",
       "返回封面": "Zurück zum Titel",
       "返回": "Zurück",
       "成就英雄，尚未开放": "Erfolgsheld, noch nicht verfügbar",

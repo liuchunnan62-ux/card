@@ -4,6 +4,10 @@
   // Spanish dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("es", {
     "exact": {
+      "来自{0}的王都竞技场选手。{1}。": "Un aspirante de la arena procedente de {0}. {1}.",
+      "除罗兰外还有8名冒险英雄与63名竞技场英雄可选，每人拥有独特的英雄技能。": "Además de Roland, hay 8 héroes de aventura y 63 héroes de arena, cada uno con una habilidad única.",
+      "冒险英雄": "Héroes de aventura",
+      "竞技场英雄 · {0}名": "Héroes de arena · {0}",
       "分路作战": "Combate por carriles",
       "规则说明": "Reglas",
       "明白了": "Entendido",
@@ -2577,7 +2581,6 @@
       "我方英雄与随从都已是满生命。": "Tu héroe y tus esbirros ya tienen la salud al máximo.",
       "选择任意一个敌方随从施放{0}。": "Elige cualquier esbirro enemigo para lanzar {0}.",
       "选择英雄": "Elige a tu héroe",
-      "除罗兰外还有8名英雄可选，每人拥有独特的英雄技能。": "Además de Roland hay 8 héroes más, cada uno con una habilidad de héroe única.",
       "返回封面": "Volver al título",
       "返回": "Volver",
       "成就英雄，尚未开放": "Héroe de logro, aún no disponible",
