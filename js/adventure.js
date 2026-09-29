@@ -39,13 +39,20 @@
   // 数据表中的数量公式：min(max, base + floor(stage / per))。
   const scaledCount = (rule, stage) => Math.min(rule.max ?? Infinity, rule.base + Math.floor(stage / rule.per));
 
+  // 数据表中本关首领的英雄技能：普通/精英/最终首领按 levels 取等级，最终首领可换成 boss 指定的技能。
+  function heroSkillFor(chapter, type) {
+    const config = chapter?.heroSkill;
+    if (!config) return null;
+    return { id: type === "boss" && config.boss ? config.boss : config.id, level: config.levels?.[type] || 1 };
+  }
+
   // 第2~5关普通/精英首领：按数据表 encounter 中的公式生成；最终首领直接使用 enemies.js 中的专属配置。
   function chapterEncounter(chapter, node, stage) {
     const config = chapter.encounter;
     const dialogue = CF.bossDialogueFor?.(chapter.id, stage);
     if (node.type === "boss" && CF.enemies[node.enemyId]) {
       const boss = CF.enemies[node.enemyId];
-      return { ...boss, chapter: chapter.id, chapterStage: stage, portrait: node.portrait || boss.portrait, battlefield: config.battlefield, dialogue: dialogue || boss.dialogue || null };
+      return { ...boss, chapter: chapter.id, chapterStage: stage, portrait: node.portrait || boss.portrait, battlefield: config.battlefield, dialogue: dialogue || boss.dialogue || null, heroSkill: heroSkillFor(chapter, "boss") };
     }
     const elite = node.type === "elite";
     const fromEnemy = config.deck.from === "enemy";
@@ -71,6 +78,7 @@
       dialogue,
       skills: config.skills.map(skill => ({ ...skill })),
       battlefield: config.battlefield,
+      heroSkill: heroSkillFor(chapter, node.type),
       deck
     };
   }
@@ -331,7 +339,8 @@
           chapterStage: encounterNodeIndex,
           type: node?.type || base.type,
           title: `${node?.label || "迷雾森林"} · ${base.title}`,
-          dialogue: CF.bossDialogueFor?.(1, encounterNodeIndex) || base.dialogue || null
+          dialogue: CF.bossDialogueFor?.(1, encounterNodeIndex) || base.dialogue || null,
+          heroSkill: heroSkillFor(CF.chapterById(1), node?.type || base.type)
         };
       }
       const chapter = CF.chapterById(run?.chapter);

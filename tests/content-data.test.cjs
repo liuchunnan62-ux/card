@@ -182,3 +182,25 @@ test("剧情残页与路上事件格式有效", () => {
     });
   });
 });
+
+test("每关首领都配置了有效的英雄技能", () => {
+  CF.CHAPTERS.forEach(chapter => {
+    const config = chapter.heroSkill;
+    assert.ok(config, `第${chapter.id}关缺少 heroSkill`);
+    [config.id, config.boss].filter(Boolean).forEach(id => assert.ok(CF.HERO_SKILLS[id], `第${chapter.id}关的英雄技能 ${id} 不存在`));
+    ["normal", "elite", "boss"].forEach(type => assert.ok(config.levels[type] >= 1 && config.levels[type] <= 3, `第${chapter.id}关 heroSkill.levels.${type} 应在 1~3 之间`));
+  });
+  const data = CF.SaveSystem.data;
+  CF.CHAPTERS.forEach(chapter => {
+    data.chapterRuns[chapter.id] = CF.freshRun(data, chapter.id);
+    data.activeChapter = chapter.id;
+    chapter.nodes.forEach((node, index) => {
+      if (!BATTLE_TYPES.includes(node.type)) return;
+      const run = CF.Adventure.current(chapter.id);
+      run.activeNode = index;
+      data.run = run;
+      const enemy = CF.Adventure.encounterFor(node.type);
+      assert.ok(enemy.heroSkill && CF.HERO_SKILLS[enemy.heroSkill.id], `${where(chapter, index)}：首领没有英雄技能`);
+    });
+  });
+});
