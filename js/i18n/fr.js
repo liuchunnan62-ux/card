@@ -2638,7 +2638,21 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": " : {0} Niv{1} → {2} Niv{3} (sauvegarde actuelle)",
       "被覆盖的栏位会先自动备份一次。": "Les emplacements écrasés sont d’abord sauvegardés automatiquement.",
       "覆盖并导入": "Écraser et importer",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Effacer les données du navigateur supprime vos sauvegardes ; exportez-en régulièrement une copie."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Effacer les données du navigateur supprime vos sauvegardes ; exportez-en régulièrement une copie.",
+      "🂠 手牌 {0}": "🂠 Main {0}",
+      "敌方当前手牌数量": "Cartes dans la main de l’ennemi",
+      "{0} 打出随从「{1}」": "{0} joue le serviteur « {1} »",
+      "{0} 装备武器「{1}」": "{0} s’équipe de l’arme « {1} »",
+      "{0} 施放法术「{1}」": "{0} lance le sort « {1} »",
+      "{0} 发动「{1}」": "{0} utilise « {1} »",
+      "英雄技能 · {0} Lv{1}": "Compétence de héros · {0} Niv{1}",
+      "每回合": "Chaque tour",
+      "近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。": "Les attaques de mêlée contre des cibles de mêlée subissent une riposte ; les attaques à distance et les attaques contre des serviteurs à distance, non.",
+      "{0}从{1}近战攻击{2}的远程随从{3}，造成{4}点伤害，远程目标无法反击；目标剩余{5}/{6}生命。": "{0} attaque en mêlée depuis {1} le serviteur à distance {3} en {2} et inflige {4} dégâts ; les cibles à distance ne ripostent pas. Il lui reste {5}/{6} PV.",
+      "，远程目标无法反击": " ; les cibles à distance ne ripostent pas",
+      "没有受伤的随从，召唤了一个{0}攻/{1}血的{2}。": "Aucun serviteur blessé : invoque un {2} {0}/{1}.",
+      "为受伤最重的己方随从恢复生命；没有受伤的随从时，召唤一个{0}攻/{1}血的{2}。": "Soigne le serviteur allié le plus blessé ; si aucun n’est blessé, invoque un {2} {0}/{1}.",
+      "小史莱姆": "Petit Slime"
     },
     "joiners": {
       "": " ",

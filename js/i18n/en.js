@@ -2638,7 +2638,21 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": ": {0} Lv{1} → {2} Lv{3} (current save)",
       "被覆盖的栏位会先自动备份一次。": "Overwritten slots are backed up automatically first.",
       "覆盖并导入": "Overwrite & Import",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Clearing browser data deletes your saves; export a backup regularly from the Saves page."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Clearing browser data deletes your saves; export a backup regularly from the Saves page.",
+      "🂠 手牌 {0}": "🂠 Hand {0}",
+      "敌方当前手牌数量": "Cards in the enemy's hand",
+      "{0} 打出随从「{1}」": "{0} plays minion “{1}”",
+      "{0} 装备武器「{1}」": "{0} equips weapon “{1}”",
+      "{0} 施放法术「{1}」": "{0} casts spell “{1}”",
+      "{0} 发动「{1}」": "{0} uses “{1}”",
+      "英雄技能 · {0} Lv{1}": "Hero Skill · {0} Lv{1}",
+      "每回合": "Every turn",
+      "近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。": "Melee attacks on melee targets take counterattacks; ranged attacks and attacks on ranged minions don't.",
+      "{0}从{1}近战攻击{2}的远程随从{3}，造成{4}点伤害，远程目标无法反击；目标剩余{5}/{6}生命。": "{0} makes a melee attack from {1} on the ranged minion {3} in {2}, dealing {4} damage; ranged targets can't counterattack. Target has {5}/{6} health left.",
+      "，远程目标无法反击": "; ranged targets can't counterattack",
+      "没有受伤的随从，召唤了一个{0}攻/{1}血的{2}。": "No wounded minions, so it summoned a {0}/{1} {2}.",
+      "为受伤最重的己方随从恢复生命；没有受伤的随从时，召唤一个{0}攻/{1}血的{2}。": "Heals the most wounded allied minion; if none are wounded, summons a {0}/{1} {2}.",
+      "小史莱姆": "Little Slime"
     },
     "joiners": {
       "": " ",

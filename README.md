@@ -32,7 +32,7 @@
 
 - 点击手牌，再点击合法空格或目标。
 - 点击带绿色边框的己方随从，攻击箭头会指向鼠标或合法目标；再点击高亮的敌人或敌方英雄。
-- 近战攻击随从时会承受反击；远程攻击随从时不会受到反击。
+- 近战攻击近战随从时会承受反击；远程攻击随从、以及近战随从主动攻击远程随从时都不会受到反击。
 - 前排会保护同列后排；同列前后排都为空时，路线被突破。
 - 世界地图下方海港可进入七关“统领试炼”；每关首次通关永久增加1点最大法力。
 - 第一关第一个首领会掉落“含有女王血液的河水”，用于开启第七场女王低语试炼。
@@ -69,5 +69,13 @@ node tests/run-all.cjs
 - `tests/game-rules.test.cjs`：玩法规则回归测试。
 - `tests/save-system.test.cjs`：存档版本迁移、自动备份、损坏恢复与导出/导入。
 - `tests/project-integrity.test.cjs`：脚本清单、语法、素材路径、卡牌数据引用与翻译词典检查。
+
+- `tests/content-data.test.cjs`：关卡数据表、经济数值表、剧情与事件的格式和引用检查。
+- `tests/simulation.test.cjs`：平衡模拟工具的冒烟测试。
+
+## 内容数据表与平衡模拟
+
+- 关卡（首领、敌人强度公式、奖励、地图坐标与文案）集中在 `js/data/chapters.js`，经济数值（粮食、食物、好感、客栈、派遣收益）集中在 `js/data/economy.js`，剧情残页与路上事件在 `js/data/lore.js`、`js/data/road-events.js`。调数值只改这些表。
+- `npm run simulate` 让机器人玩家与每个首领反复对战并输出胜率曲线；`--sweep mana` 查看各关对最大法力的依赖；`--economy` 按天推演金币与粮食。玩家成长假设在 `tools/sim/profiles.cjs`，用法见 `node tools/simulate.cjs --help`。
 
 推送到 GitHub 后，`.github/workflows/tests.yml` 会在每次推送 main 和每个 Pull Request 上自动运行测试。开发约定见 `CLAUDE.md`。

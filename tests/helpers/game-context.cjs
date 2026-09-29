@@ -17,13 +17,14 @@ function gameScripts() {
   return indexScripts().filter(file => !file.startsWith("js/i18n") && !DOM_ONLY_SCRIPTS.has(file));
 }
 
-function createGameContext({ storage = new Map(), scripts = gameScripts() } = {}) {
+// 可选参数：math 替换 Math（例如注入可复现的随机数），timers 替换 setTimeout/clearTimeout（例如让战斗动画延时立即结束）。
+function createGameContext({ storage = new Map(), scripts = gameScripts(), math = Math, timers = { setTimeout, clearTimeout } } = {}) {
   const events = [];
   const context = vm.createContext({
     console,
-    setTimeout,
-    clearTimeout,
-    Math,
+    setTimeout: timers.setTimeout,
+    clearTimeout: timers.clearTimeout,
+    Math: math,
     Date,
     JSON,
     window: null,

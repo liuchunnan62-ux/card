@@ -6,13 +6,9 @@
   //   哥布林下矿挖金币；熊族种田产面粉（粮食）；史莱姆熬药给卡组里的卡牌加经验；狼族打猎带回带骨肉与少量粮食。
   // 派遣在外的首领不在牢里，当天无法投喂。
   const CF = window.CardForge;
-  const JOB_HOURS = 6;
-  const JOBS = {
-    2: { id: "mine", race: "哥布林", name: "下矿", icon: "⛏️", detail: "钻进褐石矿坑挖金子，按好感等级带回金币。" },
-    3: { id: "farm", race: "熊族", name: "种田", icon: "🌾", detail: "去营地外的麦田耕种，收获的麦子直接磨成面粉，补充队伍粮食。" },
-    4: { id: "brew", race: "史莱姆", name: "熬药", icon: "⚗️", detail: "用身体慢慢熬出药水，给卡组里随机一张未满级的卡牌增加经验。" },
-    5: { id: "hunt", race: "狼族", name: "打猎", icon: "🏹", detail: "去林子里打猎，带回炙烤带骨肉（狼族最爱）和一些粮食。" }
-  };
+  // 各族分工与每级收获来自经济数值表 js/data/economy.js。
+  const JOB_HOURS = CF.ECONOMY.labor.jobHours;
+  const JOBS = CF.ECONOMY.labor.jobs;
 
   const save = () => CF.SaveSystem.data;
   const laborMap = () => save().labor || (save().labor = {});
@@ -28,10 +24,12 @@
       const lv = Math.max(1, Number(level) || 1);
       const job = JOBS[chapter];
       if (!job) return null;
-      if (job.id === "mine") return { coins: 5 + 5 * lv };
-      if (job.id === "farm") return { rations: 4 + 4 * lv };
-      if (job.id === "brew") return { cardXp: lv };
-      return { rations: 2 * lv, foods: { bone_roast: lv >= 3 ? 2 : 1 } };
+      const at = values => values[Math.min(lv, values.length) - 1];
+      const result = {};
+      Object.entries(job.yields).forEach(([key, values]) => {
+        result[key] = key === "foods" ? Object.fromEntries(Object.entries(values).map(([id, counts]) => [id, at(counts)])) : at(values);
+      });
+      return result;
     },
     yieldText(result) {
       if (!result) return "";

@@ -6,10 +6,11 @@
   //   · 每名在押首领又可以投喂一次（每只首领每天只能靠投喂增加一次好感度）；
   //   · 队伍日常口粮消耗 DAILY_BATTLES 场战斗的粮食量（出战随从 + 在押犯人），不够则吃光。
   const CF = window.CardForge;
-  const DAY_MS = 24 * 60 * 1000;
+  // 数值来自经济数值表 js/data/economy.js。
+  const DAY_MS = CF.ECONOMY.clock.dayMinutes * 60 * 1000;
   // 赤龙客栈住一晚的价格：直接进入第二天早上，照常结算一天的口粮。
-  const INN_PRICE = 30;
-  const DAILY_BATTLES = 3;
+  const INN_PRICE = CF.ECONOMY.clock.innPrice;
+  const DAILY_BATTLES = CF.ECONOMY.clock.dailyBattles;
   // 单次计时最多记入的毫秒数：电脑休眠、标签页被冻结时不会一下子跳过好几天。
   const MAX_TICK_MS = 5000;
 
