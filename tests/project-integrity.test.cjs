@@ -84,9 +84,25 @@ test("译文与原文的占位符一致", () => {
   });
 });
 
+// 剧情长文（《源血纪元》残页、好感剧情）只要求英文译文，其他语言显示中文原文。
+function englishOnlyStoryTexts() {
+  const { CF } = createGameContext();
+  const texts = new Set();
+  CF.LORE_PAGES.forEach(page => { texts.add(page.title); page.paragraphs.forEach(text => texts.add(text)); });
+  Object.values(CF.BOND_PERSONAL_STORIES).forEach(text => texts.add(text));
+  Object.entries(CF.BondStories.RACE_CHAPTERS).forEach(([chapter, book]) => {
+    texts.add(book.title);
+    texts.add(`《${book.title}》`);
+    book.chapters.forEach(entry => { texts.add(entry.title); texts.add(entry.text); });
+    for (let level = 1; level <= 5; level++) texts.add(CF.BondStories.voice(Number(chapter), level));
+  });
+  return texts;
+}
+
 test("每种非中文语言都覆盖英文词典的绝大部分条目", () => {
   const dictionaries = loadDictionaries();
-  const reference = Object.keys(dictionaries.en.exact);
+  const storyTexts = englishOnlyStoryTexts();
+  const reference = Object.keys(dictionaries.en.exact).filter(key => !storyTexts.has(key));
   Object.entries(dictionaries).filter(([code]) => !code.startsWith("zh") && code !== "en").forEach(([code, dict]) => {
     const missing = reference.filter(key => !(key in dict.exact));
     // 允许少量差异（个别语言单独合并了句式），大面积缺失说明新文本漏翻了。
