@@ -1816,11 +1816,29 @@
       this.cleanDead(); this.checkOutcome();
     }
 
+    // 敌方攻击目标：远程单位不会受到反击，优先点杀我方随从（能击杀时挑威胁最大的，其次是我方远程单位与残血单位），
+    // 只有场上没有可攻击的随从、或这一击就能击杀英雄时才打脸；近战单位有突破口就突脸，否则攻击生命最低的随从。
+    aiPickUnitTarget(attacker, targets) {
+      const ranged = attacker.combatStyle === "ranged" || attacker.keywords.includes("远程");
+      if (!ranged) return [...targets].sort((a, b) => a.unit.health - b.unit.health)[0];
+      const damage = this.currentAttack(attacker);
+      const score = ({ unit }) => {
+        const dealt = this.mitigatedDamage(unit, damage);
+        const kills = dealt >= unit.health;
+        const unitRanged = unit.combatStyle === "ranged" || unit.keywords?.includes("远程");
+        return (kills ? 1000 + this.currentAttack(unit) * 10 : dealt * 10 - unit.health) + (unitRanged ? 50 : 0);
+      };
+      return [...targets].sort((a, b) => score(b) - score(a))[0];
+    }
+
     aiAttack(row, column) {
       const attacker = this.state.enemy.board[row][column];
       if (!attacker || attacker.role === "healer") return;
       const targets = Rules.legalUnitTargets(attacker, this.state.player.board);
-      const canHitHero = !attacker.justSummoned && Rules.canAttackHero(this.state.player.board);
+      const ranged = attacker.combatStyle === "ranged" || attacker.keywords.includes("远程");
+      const heroOpen = !attacker.justSummoned && Rules.canAttackHero(this.state.player.board);
+      const lethal = heroOpen && this.currentAttack(attacker) >= this.state.player.hp;
+      const canHitHero = heroOpen && (!ranged || lethal || !targets.length);
       if (canHitHero) {
         const lanes = Rules.openLanes(this.state.player.board);
         const damage = this.currentAttack(attacker);
@@ -1837,20 +1855,24 @@
         this.addLog(`${attacker.name}在第${column + 1}路${row === "front" ? "前排" : "后排"}找不到合法目标，放弃本次攻击。`, "enemy");
         return;
       }
-      targets.sort((a, b) => a.unit.health - b.unit.health);
-      const target = targets[0];
+      const target = this.aiPickUnitTarget(attacker, targets);
       this.performUnitAttack("enemy", row, column, "player", target.row, target.column);
     }
 
+    // 敌方武器与随从同样的规则：远程武器优先攻击我方随从，近战武器有突破口就打脸。
     aiWeaponAttack() {
       const weapon = this.state.enemy.weapon;
       if (!weapon?.ready) return;
-      if (Rules.canAttackHero(this.state.player.board)) {
+      const targets = Rules.legalUnitTargets(weapon, this.state.player.board);
+      const ranged = weapon.combatStyle === "ranged" || weapon.keywords.includes("远程");
+      const heroOpen = Rules.canAttackHero(this.state.player.board);
+      const lethal = heroOpen && weapon.attack >= this.state.player.hp;
+      if (heroOpen && (!ranged || lethal || !targets.length)) {
         this.performWeaponAttackHero("enemy", "player");
         return;
       }
-      const targets = Rules.legalUnitTargets(weapon, this.state.player.board).sort((a, b) => a.unit.health - b.unit.health);
-      if (targets[0]) this.performWeaponAttack("enemy", "player", targets[0].row, targets[0].column);
+      const target = targets.length ? this.aiPickUnitTarget(weapon, targets) : null;
+      if (target) this.performWeaponAttack("enemy", "player", target.row, target.column);
       else weapon.ready = false;
     }
 
