@@ -157,7 +157,9 @@
         if (!pattern.regex.test(text)) continue;
         const values = this.bindSlots(dict, pattern.parts, text, 0, 0, {}, depth);
         if (!values) continue;
-        return pattern.target.replace(/\{(\w+)\}/g, (_, slot) => values[slot] ?? "")
+        // 保留译文开头的空格：像 " and draw {0} cards" 这样的后缀要接在上一个词后面。
+        const leading = pattern.target.match(/^ */)[0];
+        return leading + pattern.target.replace(/\{(\w+)\}/g, (_, slot) => values[slot] ?? "")
           .replace(/ {2,}/g, " ").replace(/ +([.,;:!?)）])/g, "$1").trim();
       }
       for (const splitter of SPLITTERS) {
