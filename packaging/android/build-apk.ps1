@@ -4,6 +4,8 @@ param(
     [string]$OutputApk = "",
     [string]$WebAssetsRoot = "",
     [string]$KeystorePath = "",
+    # Signing password: this parameter > env RIFT_KEYSTORE_PASSWORD > keystore-password.txt next to the keystore.
+    [string]$KeystorePassword = "",
     [string]$BuildToolsVersion = "35.0.0",
     [string]$PlatformVersion = "android-35"
 )
@@ -87,16 +89,33 @@ if ($LASTEXITCODE -ne 0) { throw "Adding offline web assets failed." }
 & $zipalign -f 4 $unsignedApk $alignedApk
 if ($LASTEXITCODE -ne 0) { throw "zipalign failed." }
 
+# The signing key lives only on this machine (.keys is git-ignored). Never commit it.
+$passwordFile = Join-Path (Split-Path -Parent $KeystorePath) "keystore-password.txt"
+if ([string]::IsNullOrWhiteSpace($KeystorePassword)) { $KeystorePassword = $env:RIFT_KEYSTORE_PASSWORD }
+if ([string]::IsNullOrWhiteSpace($KeystorePassword) -and (Test-Path -LiteralPath $passwordFile -PathType Leaf)) {
+    $KeystorePassword = (Get-Content -LiteralPath $passwordFile -Raw).Trim()
+}
 if (-not (Test-Path -LiteralPath $KeystorePath -PathType Leaf)) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $KeystorePath) | Out-Null
-    & $keytool -genkeypair -v -keystore $KeystorePath -storepass "riftlocal1" -keypass "riftlocal1" -alias "rift-expedition" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Rift Expedition, OU=Game, O=Rift Expedition, L=Taipei, ST=Taiwan, C=TW"
+    if ([string]::IsNullOrWhiteSpace($KeystorePassword)) {
+        # First build: generate a random password and keep it next to the new keystore.
+        $randomBytes = New-Object byte[] 18
+        [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($randomBytes)
+        $KeystorePassword = -join ($randomBytes | ForEach-Object { $_.ToString("x2") })
+        Set-Content -LiteralPath $passwordFile -Value $KeystorePassword -NoNewline -Encoding ASCII
+    }
+    & $keytool -genkeypair -v -keystore $KeystorePath -storepass $KeystorePassword -keypass $KeystorePassword -alias "rift-expedition" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Rift Expedition, OU=Game, O=Rift Expedition"
     if ($LASTEXITCODE -ne 0) { throw "keytool failed." }
+    Write-Warning "Generated a new signing key: $KeystorePath (password in $passwordFile). Back up both files; without them new APKs cannot update installed ones."
+}
+if ([string]::IsNullOrWhiteSpace($KeystorePassword)) {
+    throw "Signing password not found. Pass -KeystorePassword, set RIFT_KEYSTORE_PASSWORD, or put keystore-password.txt next to the keystore."
 }
 
 $outputDirectory = Split-Path -Parent $OutputApk
 New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 $signedApk = Join-Path $buildRoot "signed.apk"
-& $apksigner sign --ks $KeystorePath --ks-pass "pass:riftlocal1" --key-pass "pass:riftlocal1" --ks-key-alias "rift-expedition" --out $signedApk $alignedApk
+& $apksigner sign --ks $KeystorePath --ks-pass "pass:$KeystorePassword" --key-pass "pass:$KeystorePassword" --ks-key-alias "rift-expedition" --out $signedApk $alignedApk
 if ($LASTEXITCODE -ne 0) { throw "apksigner failed." }
 & $apksigner verify --verbose --print-certs $signedApk
 if ($LASTEXITCODE -ne 0) { throw "APK verification failed." }
