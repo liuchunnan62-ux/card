@@ -590,7 +590,7 @@
         if (!prisoner.cardId) return `<div class="prison-inmate${prisoner.type === "elite" ? " elite" : ""}">${label}</div>`;
         const value = R.affinity(prisoner.key);
         const level = R.levelFor(value);
-        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${level ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span><em>${level ? "💞 " : ""}${R.tier(value)} · ${value}</em>${R.fedToday(prisoner.key) ? '<em class="fed-today">🍽️ 今日已喂</em>' : ""}</button>`;
+        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${level ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span><em>${level ? "💞 " : ""}${R.tier(value)} · ${value}</em>${R.fedToday(prisoner.key) ? '<em class="fed-today">🍽️ 今日已喂</em>' : ""}${this.laborBadge(prisoner)}</button>`;
       }).join("");
       // 各关最终首领卡：本关全部在押首领结缘后才能使用，等级取其中最低的一位。
       const bossRows = Object.values(CF.Adventure.bondCardOwners()).filter(owner => owner.boss && CF.SaveSystem.data.collection[owner.cardId]).map(owner => {
@@ -602,10 +602,50 @@
         <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>已关押 ${inmates.length}/${roster.length} 名觉醒者。各关的最终首领不在此列：森林狼王战死于密林，其余首领都在最后关头被同族救走。</p></div>
         <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
         <p class="prison-bond-hint">第二关起击败的首领，其首杀奖励卡要与牢里的本人结缘（好感度${R.BOND_THRESHOLD}）后才能出战；继续投喂，每${R.BOND_STEP}点好感升一级（最高${R.levelName(R.MAX_BOND_LEVEL)} Lv${R.MAX_BOND_LEVEL}），结缘后每高一级：随从+${CF.BOND_UNIT_ATTACK}攻击、+${CF.BOND_UNIT_HEALTH}生命，法术效果提升${CF.BOND_SPELL_LEVELS}级。最终首领的卡牌要等本关全部在押首领结缘才能使用，等级取其中最低的一位。每名首领每天（现实${CF.GameClock.DAY_MS / 60000}分钟）只能投喂一次，距离新的一天还有${CF.GameClock.untilNextDayLabel()}。背包里共有 ${R.totalFood()} 份食物。</p>
+        ${this.laborPanel()}
         ${bossRows ? `<div class="prison-boss-cards"><h3>最终首领卡牌</h3><ul>${bossRows}</ul></div>` : ""}
         ${tiles ? `<div class="prison-roster">${tiles}</div>` : '<p class="prison-empty">牢房还空着。击败冒险中的首领，它们就会被押回这里。</p>'}
         <div class="menu-actions"><button class="secondary-btn" data-action="town-shop-page">前往城镇商店</button><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
+    },
+
+    // 派遣劳动：头像上的状态标记（在外干活 / 今日已干活）。
+    laborBadge(prisoner) {
+      const L = CF.Labor;
+      const job = L.jobFor(prisoner.chapter);
+      if (!job) return "";
+      if (L.isAway(prisoner.key)) return `<em class="labor-away">${job.icon} ${job.name}中 · <span data-labor-timer="${prisoner.key}">${L.returnLabel(prisoner.key)}</span>后回营</em>`;
+      if (L.workedToday(prisoner.key)) return '<em class="labor-done">✅ 今日已干活</em>';
+      return "";
+    },
+    // 派遣劳动面板：各族工种与一键派遣。
+    laborPanel() {
+      const L = CF.Labor;
+      const idle = L.idleCount();
+      const away = L.awayCount();
+      const jobs = Object.entries(L.JOBS).map(([chapter, job]) => `<li><strong>${job.icon} ${job.race}·${job.name}</strong><span>${job.detail} 结缘Lv1：${L.yieldText(L.yieldFor(Number(chapter), 1))}；誓约Lv5：${L.yieldText(L.yieldFor(Number(chapter), 5))}</span></li>`).join("");
+      return `<div class="prison-labor"><div class="prison-labor-head"><div><h3>派遣劳动</h3><small>结缘后的首领每天可以派出去干一次活，${L.JOB_HOURS}小时（现实${L.JOB_HOURS}分钟）后带着收获回营；干活期间不能投喂。可派 ${idle} 名 · 在外 ${away} 名</small></div><button class="primary-btn" data-action="labor-dispatch-all" ${idle ? "" : "disabled"}>一键派遣（${idle}）</button></div><ul>${jobs}</ul></div>`;
+    },
+    // 首领回营：汇总收获提示，刷新顶栏与监狱。
+    handleLaborReturns(results) {
+      if (!results.length) return;
+      const lines = results.map(result => `${result.name}${result.job.name}归来：${CF.Labor.yieldText(result.reward)}${result.reward.cardId ? `（${CF.CARD_LIBRARY[result.reward.cardId].name}${result.cardLevel ? ` 升至Lv${result.cardLevel.to}` : ""}）` : ""}`);
+      this.toast(lines.length > 3 ? `${lines.length}名首领干活归来：${lines.slice(0, 2).join("；")}……` : lines.join("；"), "good");
+      this.sfx("coins");
+      if (this.screen === "prison" && !modalRoot.innerHTML) this.renderPrison();
+      else this.refreshTopbar();
+    },
+    dispatchLabor(key, fromModal = false) {
+      const result = CF.Labor.dispatch(key);
+      if (!result.ok) return this.toast(result.reason, "bad");
+      this.toast(`${result.prisoner.name}出发去${result.job.name}了，${CF.Labor.JOB_HOURS}小时后回营。`, "good");
+      if (fromModal) this.openPrisonerVisit(key); else this.renderPrison();
+    },
+    dispatchAllLabor() {
+      const sent = CF.Labor.dispatchAll();
+      if (!sent.length) return this.toast("没有可以派遣的首领：需要已结缘、今天还没干过活且在牢里。", "bad");
+      this.toast(`派出了${sent.length}名首领去干活，${CF.Labor.JOB_HOURS}小时后回营。`, "good");
+      this.renderPrison();
     },
 
     // 卡牌的好感状态说明：未结缘时写明解锁条件，结缘后写明等级与加成。null 表示该卡不需要结缘。
@@ -651,11 +691,25 @@
           <p>好感度：<strong>${R.tier(value)} · ${value}/${maxed ? R.MAX_AFFINITY : level ? next : R.BOND_THRESHOLD}</strong></p>
           <span class="affinity-bar large" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span>
           <p>${status}${race && !maxed ? `${race.name}最爱吃${favorite?.name || "美食"}，投喂时好感翻倍。` : ""}</p>
+          ${this.visitLaborHTML(prisoner)}
           ${bossText ? `<p class="prisoner-boss-hint">本关最终首领卡「${CF.CARD_LIBRARY[bossOwner.cardId].name}」：${bossText}</p>` : ""}
           ${this.cardPreview(prisoner.cardId, true)}
         </div></div>
         ${maxed ? "" : `<h3>投喂食物</h3>${fedToday ? `<p class="fed-today-hint">🍽️ ${prisoner.name}今天已经吃饱了，${CF.GameClock.untilNextDayLabel()}后的新一天才能再投喂。</p>` : '<p class="fed-today-hint">每名首领每天只能投喂一次，挑一道好菜吧。</p>'}<div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
         <div class="menu-actions">${maxed ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
+    },
+
+    visitLaborHTML(prisoner) {
+      const L = CF.Labor;
+      const job = L.jobFor(prisoner.chapter);
+      if (!job) return "";
+      const level = CF.Restaurant.bondLevel(prisoner.key);
+      const status = L.isAway(prisoner.key) ? `正在外面${job.name}，${L.returnLabel(prisoner.key)}后带着收获回营。`
+        : L.workedToday(prisoner.key) ? "今天已经干过活了，明天再派吧。"
+        : !level ? "结缘后才肯替你干活。"
+        : `派去${job.name}：${L.JOB_HOURS}小时后带回 ${L.yieldText(L.yieldFor(prisoner.chapter, level))}。`;
+      const canGo = L.canDispatch(prisoner.key).ok;
+      return `<p class="prisoner-labor">${job.icon} <strong>派遣劳动</strong> · ${status}${canGo ? ` <button class="mini-btn" data-modal-action="dispatch-prisoner" data-key="${prisoner.key}">派去${job.name}</button>` : ""}</p>`;
     },
 
     feedPrisonerAction(key, foodId) {
@@ -820,6 +874,7 @@
       this.sfx("rescue");
       this.toast(`在赤龙客栈美美睡了一晚（-${result.cost}金币）。`, "good");
       this.handleNewDays([result.report]);
+      this.handleLaborReturns(CF.Labor.collectReturned());
       this.renderTownShop();
     },
 
@@ -1721,6 +1776,7 @@
     if (action === "open-restaurant") UI.openRestaurant();
     if (action === "open-inn") UI.openInn();
     if (action === "prison-visit") UI.openPrisonerVisit(el.dataset.key);
+    if (action === "labor-dispatch-all") UI.dispatchAllLabor();
     if (action === "backpack-page") UI.renderBackpack();
     if (action === "book-page") UI.renderBook();
     if (action === "use-queen-blood") UI.useQueenBlood();
@@ -1836,6 +1892,7 @@
     if (action === "buy-food") UI.buyFoodAction(el.dataset.food);
     if (action === "buy-flour") UI.buyFlourAction(Number(el.dataset.bags));
     if (action === "inn-sleep") UI.sleepAtInn();
+    if (action === "dispatch-prisoner") UI.dispatchLabor(el.dataset.key, true);
     if (action === "ration-buy-go" && UI.pendingRationStart) {
       const pending = UI.pendingRationStart; UI.pendingRationStart = null;
       const bought = CF.Restaurant.buyFlour(pending.bags);
@@ -1902,6 +1959,9 @@
     if (paused) return;
     const reports = CF.GameClock.tick(delta);
     if (reports.length) { clockSaveAt = now; UI.handleNewDays(reports); }
+    const returned = CF.Labor.collectReturned();
+    if (returned.length) { clockSaveAt = now; UI.handleLaborReturns(returned); }
+    else if (UI.screen === "prison" && !modalRoot.innerHTML) app.querySelectorAll("[data-labor-timer]").forEach(el => { el.textContent = CF.Labor.returnLabel(el.dataset.laborTimer); });
     else if (now - clockSaveAt > 15000) { clockSaveAt = now; CF.SaveSystem.save(); }
     UI.updateClockChip();
   }, 1000);

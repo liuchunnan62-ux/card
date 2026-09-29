@@ -102,6 +102,8 @@
       affinity: {},
       rations: 60,
       fedDay: {},
+      labor: {},
+      laborDay: {},
       clock: { day: 1, elapsed: 0 },
       commanderTrials: { completed: [] },
       levelMapLayout: {},
@@ -193,6 +195,8 @@
       foods: cleanCounts(raw.foods),
       affinity: cleanCounts(raw.affinity),
       fedDay: cleanCounts(raw.fedDay),
+      labor: raw.labor && typeof raw.labor === "object" ? Object.fromEntries(Object.entries(raw.labor).filter(([, job]) => job && Number.isFinite(Number(job.returnAt)) && [2, 3, 4, 5].includes(Number(job.chapter))).map(([key, job]) => [key, { chapter: Number(job.chapter), startedAt: Number(job.startedAt) || 0, returnAt: Number(job.returnAt) }])) : {},
+      laborDay: cleanCounts(raw.laborDay),
       rations: Number.isFinite(Number(raw.rations)) ? Math.max(0, Math.floor(Number(raw.rations))) : base.rations,
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {

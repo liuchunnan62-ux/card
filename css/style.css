@@ -1345,3 +1345,15 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
 .prison-inmate .fed-today { color: #9fd49a; }
 .fed-today-hint { margin: 0 0 8px; color: #cbbd9f; font-size: 13px; }
 .inn-offer { display: flex; align-items: center; gap: 12px; margin: 8px 0 14px; padding: 12px 14px; border: 1px solid #c99b4e; border-radius: 12px; background: rgba(201,155,78,.1); }
+/* 犯人派遣劳动 */
+.prison-labor { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #6f9a5c; border-radius: 10px; background: rgba(10,12,8,.8); }
+.prison-labor-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.prison-labor h3 { margin: 0 0 2px; color: #b8e0a0; font-size: 15px; }
+.prison-labor-head small { color: #cbbd9f; line-height: 1.5; }
+.prison-labor ul { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.prison-labor li { display: flex; flex-wrap: wrap; gap: 2px 10px; color: #cbbd9f; font-size: 12px; line-height: 1.5; }
+.prison-labor li strong { color: var(--gold-bright); }
+.prison-inmate .labor-away { color: #9fc8f0; }
+.prison-inmate .labor-done { color: #b8e0a0; }
+.prisoner-labor { padding: 8px 10px; border-radius: 8px; background: rgba(111,154,92,.15); font-size: 13px; }
+.prisoner-labor .mini-btn { margin-left: 6px; }

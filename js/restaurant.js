@@ -134,6 +134,7 @@
       if (!prisoner?.captured || !prisoner.cardId) return { ok: false, reason: "这名觉醒者不在押，或没有需要结缘的卡牌。" };
       if (!food) return { ok: false, reason: "没有这道菜。" };
       if (this.affinity(key) >= MAX_AFFINITY) return { ok: false, reason: `${prisoner.name}的好感度已经达到最高的${BOND_LEVEL_NAMES[MAX_BOND_LEVEL]}。` };
+      if (CF.Labor?.isAway(key)) return { ok: false, reason: `${prisoner.name}正在外面干活，回营后再来投喂吧。` };
       if (this.fedToday(key)) return { ok: false, reason: `${prisoner.name}今天已经吃饱了，明天再来吧（${CF.GameClock.untilNextDayLabel()}后是新的一天）。` };
       if (this.foodCount(foodId) < 1) return { ok: false, reason: `背包里没有${food.name}，先去城镇的金杯餐馆买一些吧。` };
       const from = this.affinity(key);

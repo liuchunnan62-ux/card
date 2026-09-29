@@ -29,6 +29,8 @@
     INN_PRICE,
     MAX_TICK_MS,
     day() { return clock().day; },
+    // 从第1天早上6点起累计的游戏时间（毫秒），用于派遣劳动等跨天计时。
+    now() { const state = clock(); return (state.day - 1) * DAY_MS + state.elapsed; },
     // 当天已过去的比例（0~1）与剩余毫秒。
     progress() { return clock().elapsed / DAY_MS; },
     msUntilNextDay() { return DAY_MS - clock().elapsed; },

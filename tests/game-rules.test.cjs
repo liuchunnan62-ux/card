@@ -36,6 +36,7 @@ load("js/save.js");
 load("js/adventure.js");
 load("js/restaurant.js");
 load("js/clock.js");
+load("js/labor.js");
 load("js/trials.js");
 load("js/arena.js");
 load("js/heroes.js");
@@ -504,7 +505,7 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   // 每名首领每天只能投喂一次：测试好感成长时先把时间推进到下一天。
   const feedNextDay = (key, foodId) => { CF.GameClock.advance(CF.GameClock.DAY_MS); return R.feed(key, foodId); };
   const data = CF.SaveSystem.data;
-  const saved = { coins: data.coins, rations: data.rations, clock: { ...data.clock }, fedDay: { ...data.fedDay }, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
+  const saved = { coins: data.coins, rations: data.rations, clock: { ...data.clock }, fedDay: { ...data.fedDay }, labor: { ...data.labor }, laborDay: { ...data.laborDay }, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
   const goblinCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[0];
   const queenCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[19];
   const owners = CF.Adventure.bondCardOwners();
@@ -631,6 +632,31 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   assert.equal(G.sleepAtInn().ok, false, "金币不足时不能住店");
   assert.equal(G.day(), 6, "住不起店时时间不变");
   assert.match(mainSource, /action: "open-inn"/, "城镇商店应开放赤龙客栈");
+  // 犯人派遣劳动：结缘首领每天干一次活，6小时后回营交出收获。
+  const L = CF.Labor;
+  data.clock = { day: 1, elapsed: 0 }; data.labor = {}; data.laborDay = {}; data.fedDay = {};
+  data.prisoners = { "2-0": true, "3-0": true, "4-0": true, "5-0": true, "2-1": true };
+  data.affinity = { "2-0": 100, "3-0": 300, "4-0": 500, "5-0": 300, "2-1": 50 };
+  data.coins = 0; data.rations = 0; data.foods = {};
+  assert.equal(L.dispatch("2-1").ok, false, "未结缘的首领不肯干活");
+  assert.equal(L.idleCount(), 4, "已结缘且在牢里的首领可以派遣");
+  assert.equal(L.dispatchAll().length, 4, "一键派遣全部空闲首领");
+  assert.equal(L.dispatch("2-0").ok, false, "在外干活的首领不能重复派遣");
+  data.foods = { wheat_bread: 1 };
+  assert.equal(R.feed("2-0", "wheat_bread").ok, false, "干活期间不能投喂");
+  G.advance(G.DAY_MS * L.JOB_HOURS / 24 - 1000);
+  assert.equal(L.collectReturned().length, 0, "未满6小时不会回营");
+  G.advance(1000);
+  const back = L.collectReturned();
+  assert.equal(back.length, 4, "满6小时全部回营");
+  assert.equal(data.coins, 10, "哥布林结缘Lv1下矿带回10金币");
+  assert.equal(R.rations(), 16 + 6, "熊族Lv3种田16份粮食 + 狼族Lv3打猎6份粮食");
+  assert.equal(R.foodCount("bone_roast"), 2, "狼族Lv3打猎带回2份带骨肉");
+  assert.equal(back.find(item => item.key === "4-0").reward.cardXp, 5, "史莱姆誓约Lv5熬药给卡牌5点经验");
+  assert.equal(L.dispatch("2-0").ok, false, "同一天不能再次派遣");
+  G.advance(G.DAY_MS);
+  assert.equal(L.dispatch("2-0").ok, true, "新的一天可以再派遣");
+  assert.ok(indexSource.indexOf("js/labor.js") > indexSource.indexOf("js/clock.js"), "游戏入口应加载派遣劳动模块");
   assert.ok(indexSource.indexOf("js/clock.js") > indexSource.indexOf("js/restaurant.js"), "游戏入口应加载时间系统");
   assert.match(mainSource, /clockChip\(\)/, "顶栏应显示游戏时间");
   Object.assign(data, saved);
