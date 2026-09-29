@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -93,6 +94,8 @@ public final class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
 
+        // 开始界面的“结束游戏”按钮通过 window.RiftAndroid.exitGame() 关闭应用。
+        webView.addJavascriptInterface(new GameBridge(), "RiftAndroid");
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -131,6 +134,16 @@ public final class MainActivity extends Activity {
         setContentView(webView);
         if (savedInstanceState == null) webView.loadUrl(GAME_URL);
         else webView.restoreState(savedInstanceState);
+    }
+
+    private final class GameBridge {
+        @JavascriptInterface
+        public void exitGame() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() { finishAndRemoveTask(); }
+            });
+        }
     }
 
     private void enterImmersiveMode() {

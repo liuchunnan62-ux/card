@@ -3971,7 +3971,14 @@
       "法术效果提升{0}级": "Efecto del hechizo +{0} niveles",
       "累计奖金": "Premio total",
       "{0}场": "{0} combates",
-      "{0} {1}：Lv{2}：{3}": "{0} {1}: Nv{2}: {3}"
+      "{0} {1}：Lv{2}：{3}": "{0} {1}: Nv{2}: {3}",
+      "返回开始界面": "Volver a la pantalla de título",
+      "⏏ 开始界面": "⏏ Pantalla de título",
+      "返回开始界面？": "¿Volver a la pantalla de título?",
+      "进度已保存": "Progreso guardado",
+      "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Los navegadores no permiten que una página cierre su propia pestaña. Cierra tú mismo esta ventana o pestaña. La próxima vez que abras el juego podrás continuar desde la pantalla de título.",
+      "结束游戏": "Salir del juego",
+      "保存进度并退出": "Guardar el progreso y salir"
     },
     "joiners": {
       "": " ",
