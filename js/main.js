@@ -744,12 +744,13 @@
       const next = R.nextThreshold(value);
       const maxed = next === null;
       const fedToday = R.fedToday(key);
+      const away = CF.Labor.isAway(key);
       const race = R.RACES[prisoner.chapter];
       const favorite = R.food(race?.favorite);
       const foods = R.FOODS.map(food => {
         const owned = R.foodCount(food.id);
         const isFavorite = race?.favorite === food.id;
-        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !maxed && !fedToday ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
+        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !maxed && !fedToday && !away ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
       }).join("");
       const card = CF.CARD_LIBRARY[prisoner.cardId];
       const bonus = R.bonusText(prisoner.cardId);
@@ -769,7 +770,7 @@
           ${bossText ? `<p class="prisoner-boss-hint">本关最终首领卡「${CF.CARD_LIBRARY[bossOwner.cardId].name}」：${bossText}</p>` : ""}
           ${this.cardPreview(prisoner.cardId, true)}
         </div></div>
-        ${maxed ? "" : `<h3>投喂食物</h3>${fedToday ? `<p class="fed-today-hint">🍽️ ${prisoner.name}今天已经吃饱了，${CF.GameClock.untilNextDayLabel()}后的新一天才能再投喂。</p>` : '<p class="fed-today-hint">每名首领每天只能投喂一次，挑一道好菜吧。</p>'}<div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
+        ${maxed ? "" : `<h3>投喂食物</h3>${away ? `<p class="fed-today-hint">⏳ ${prisoner.name}正在外面干活，回营后再来投喂吧。</p>` : fedToday ? `<p class="fed-today-hint">🍽️ ${prisoner.name}今天已经吃饱了，${CF.GameClock.untilNextDayLabel()}后的新一天才能再投喂。</p>` : '<p class="fed-today-hint">每名首领每天只能投喂一次，挑一道好菜吧。</p>'}<div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
         <div class="menu-actions">${maxed ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
     },
 
@@ -2132,8 +2133,11 @@
     if (CF.NightEvents.pending() && !UI.battle && UI.screen !== "battle" && !modalRoot.innerHTML) UI.showNightEvent();
     const returned = CF.Labor.collectReturned();
     if (returned.length) { clockSaveAt = now; UI.handleLaborReturns(returned); }
-    else if (UI.screen === "prison" && !modalRoot.innerHTML) app.querySelectorAll("[data-labor-timer]").forEach(el => { el.textContent = CF.Labor.returnLabel(el.dataset.laborTimer); });
-    else if (now - clockSaveAt > 15000) { clockSaveAt = now; CF.SaveSystem.save(); }
+    else {
+      if (UI.screen === "prison" && !modalRoot.innerHTML) app.querySelectorAll("[data-labor-timer]").forEach(el => { el.textContent = CF.Labor.returnLabel(el.dataset.laborTimer); });
+      // 停留在监狱界面时也要定期保存游戏时间，否则关闭页面会丢失这段时间。
+      if (now - clockSaveAt > 15000) { clockSaveAt = now; CF.SaveSystem.save(); }
+    }
     UI.updateClockChip();
   }, 1000);
   if (new URLSearchParams(window.location.search).get("prepareChapterFiveFinale") === "1") {
