@@ -79,6 +79,14 @@
     riftmoon_blade: C("riftmoon_blade", "裂月王刃", "weapon", 7, { attack: 6, durability: 3, rarity: "传说", weaponEffect: "hero_echo", image: "assets/cards/weapons/riftmoon-blade.png", description: "近战。每次攻击后，额外对敌方英雄造成2点伤害。" })
   });
 
+  // 第二至五关的关卡武器：击败该关第一个首领后获得；该关的首领也手持同款武器（见 data/chapters.js 的 chapterWeapon）。
+  Object.assign(CARD_LIBRARY, {
+    goblin_venom_crossbow: C("goblin_venom_crossbow", "翠影毒针弩", "weapon", 3, { attack: 2, durability: 3, keywords: ["远程"], rarity: "稀有", weaponEffect: "venom", image: "assets/cards/weapons/goblin-venom-crossbow.svg", description: "远程。命中的随从永久失去1点攻击。" }),
+    harvest_maul: C("harvest_maul", "丰穗碾地锤", "weapon", 5, { attack: 4, durability: 3, rarity: "稀有", weaponEffect: "quake", image: "assets/cards/weapons/harvest-maul.svg", description: "近战。攻击随从后，震波对同一路另一排的敌方随从造成2点伤害。" }),
+    moonpool_lash: C("moonpool_lash", "月潭吸露鞭", "weapon", 4, { attack: 3, durability: 3, rarity: "稀有", weaponEffect: "lifesteal", image: "assets/cards/weapons/moonpool-lash.svg", description: "近战。攻击后为英雄恢复等同于所造成伤害的生命。" }),
+    silvermoon_fang: C("silvermoon_fang", "银月狼牙刃", "weapon", 6, { attack: 4, durability: 3, rarity: "传说", weaponEffect: "twin_strike", image: "assets/cards/weapons/silvermoon-fang.svg", description: "近战。每回合可以攻击两次。" })
+  });
+
   Object.assign(CARD_LIBRARY, {
     pebble_scout: C("pebble_scout", "石子斥候", "unit", 1, { attack: 1, health: 1, keywords: ["远程"], unitEffect: "scout_draw", image: "assets/cards/chapter2/pebble-scout.png", description: "远程。登场时抽1张牌。" }),
     mudfang_guard: C("mudfang_guard", "泥牙盾卫", "unit", 2, { attack: 1, health: 5, keywords: ["守卫"], image: "assets/cards/chapter2/mudfang-guard.png", description: "守卫。部署在前排时额外获得2点生命。" }),
@@ -190,6 +198,8 @@
   ];
   const NEW_CARD_IDS = ["twilight_lancer", "silver_feather_scout", "iron_oath_sister", "storm_rune_brawler", "griffin_knight", "sanctum_warden", "chain_lightning", "mirror_shift", "frost_bulwark", "royal_muster", "holy_spring", "judgment_spear"];
   const WEAPON_CARD_IDS = ["mist_dagger", "bridge_oathblade", "silverfeather_bow", "redscar_axe", "moonwood_crossbow", "royal_breaker", "riftmoon_blade"];
+  const CHAPTER_WEAPON_IDS = ["goblin_venom_crossbow", "harvest_maul", "moonpool_lash", "silvermoon_fang"];
+  const HERO_WEAPON_IDS = [...WEAPON_CARD_IDS, ...CHAPTER_WEAPON_IDS];
   const CHAPTER_TWO_UNIT_CARD_IDS = ["pebble_scout", "mudfang_guard", "spore_alchemist", "redfang_rider", "formation_breaker", "thorn_troll", "twinbolt_hunter", "war_drum_ogre", "royal_war_machine", "emerald_drake_commander"];
   const CHAPTER_TWO_SPELL_CARD_IDS = ["flash_powder", "marsh_venom", "bait_switch", "powder_keg", "green_tide_rally", "venomous_feast", "shadow_kidnap", "royal_rocket_rain", "treasury_ransom", "queens_final_trick"];
   const CHAPTER_TWO_REWARD_CARD_IDS = [...CHAPTER_TWO_UNIT_CARD_IDS, ...CHAPTER_TWO_SPELL_CARD_IDS];
@@ -272,5 +282,5 @@
   }
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { CARD_LIBRARY, STARTER_DECK, STARTER_IDS, REWARD_CARD_IDS, NEW_CARD_IDS, WEAPON_CARD_IDS, CHAPTER_TWO_UNIT_CARD_IDS, CHAPTER_TWO_SPELL_CARD_IDS, CHAPTER_TWO_REWARD_CARD_IDS, CHAPTER_THREE_UNIT_CARD_IDS, CHAPTER_THREE_SPELL_CARD_IDS, CHAPTER_THREE_REWARD_CARD_IDS, CHAPTER_FOUR_UNIT_CARD_IDS, CHAPTER_FOUR_SPELL_CARD_IDS, CHAPTER_FOUR_REWARD_CARD_IDS, CHAPTER_FIVE_UNIT_CARD_IDS, CHAPTER_FIVE_SPELL_CARD_IDS, CHAPTER_FIVE_REWARD_CARD_IDS, getCard, makeDeck, valuesFor, BOND_UNIT_ATTACK, BOND_UNIT_HEALTH, BOND_SPELL_LEVELS });
+  Object.assign(window.CardForge, { CARD_LIBRARY, STARTER_DECK, STARTER_IDS, REWARD_CARD_IDS, NEW_CARD_IDS, WEAPON_CARD_IDS, CHAPTER_WEAPON_IDS, HERO_WEAPON_IDS, CHAPTER_TWO_UNIT_CARD_IDS, CHAPTER_TWO_SPELL_CARD_IDS, CHAPTER_TWO_REWARD_CARD_IDS, CHAPTER_THREE_UNIT_CARD_IDS, CHAPTER_THREE_SPELL_CARD_IDS, CHAPTER_THREE_REWARD_CARD_IDS, CHAPTER_FOUR_UNIT_CARD_IDS, CHAPTER_FOUR_SPELL_CARD_IDS, CHAPTER_FOUR_REWARD_CARD_IDS, CHAPTER_FIVE_UNIT_CARD_IDS, CHAPTER_FIVE_SPELL_CARD_IDS, CHAPTER_FIVE_REWARD_CARD_IDS, getCard, makeDeck, valuesFor, BOND_UNIT_ATTACK, BOND_UNIT_HEALTH, BOND_SPELL_LEVELS });
 })();

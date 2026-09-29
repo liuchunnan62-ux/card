@@ -4,6 +4,17 @@
   // Spanish dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("es", {
     "exact": {
+      "翠影毒针弩": "Ballesta venenosa de Sombra Jade",
+      "丰穗碾地锤": "Mazo terrestre de Espiga Dorada",
+      "月潭吸露鞭": "Látigo de rocío del Estanque Lunar",
+      "银月狼牙刃": "Colmillos de Luna Plateada",
+      "远程。命中的随从永久失去1点攻击。": "A distancia. Los esbirros alcanzados pierden 1 de ataque permanentemente.",
+      "近战。攻击随从后，震波对同一路另一排的敌方随从造成2点伤害。": "Cuerpo a cuerpo. Tras atacar a un esbirro, una onda inflige 2 de daño al esbirro enemigo de la otra fila del mismo carril.",
+      "近战。攻击后为英雄恢复等同于所造成伤害的生命。": "Cuerpo a cuerpo. Tras atacar, restaura al héroe tanta salud como el daño infligido.",
+      "近战。每回合可以攻击两次。": "Cuerpo a cuerpo. Puede atacar dos veces por turno.",
+      "{0}的毒针让{1}永久失去1点攻击。": "El veneno de {0} hace que {1} pierda 1 de ataque permanentemente.",
+      "{0}震荡大地，波及同一路的另一排。": "{0} sacude el suelo y golpea la otra fila del mismo carril.",
+      "{0}吸取露水，为英雄恢复{1}点生命。": "{0} absorbe el rocío y restaura {1} de salud al héroe.",
       "{0}重新洗入牌组。": "{0} vuelve a barajar su mazo.",
       "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} empuña {1} ({2} de ataque) y puede atacar una vez cada turno.",
       "随从只能攻击同一路线的敌人。": "Los esbirros solo pueden atacar a enemigos de su propio carril.",

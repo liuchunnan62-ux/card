@@ -50,7 +50,7 @@ function createSimulator() {
     Object.values(hero.skillProgress).forEach(progress => { progress.level = profile.skillLevel; });
 
     const earlier = CF.CHAPTERS.filter(chapter => chapter.id < chapterId);
-    const weapons = earlier.flatMap(chapter => chapter.nodes.map(node => node.weaponId).filter(Boolean));
+    const weapons = earlier.flatMap(chapter => [...chapter.nodes.map(node => node.weaponId), chapter.chapterWeapon].filter(Boolean));
     const rewards = earlier.flatMap(chapter => chapter.rewardCardIds || []);
     const cost = id => CF.CARD_LIBRARY[id].cost;
     const affordable = id => cost(id) <= profile.maxMana;

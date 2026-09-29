@@ -599,7 +599,7 @@
     },
     // 已获得的英雄武器（首杀武器奖励），按费用排列。
     ownedWeapons() {
-      return (CF.WEAPON_CARD_IDS || []).filter(id => isOwnedWeapon(this.data, id));
+      return (CF.HERO_WEAPON_IDS || []).filter(id => isOwnedWeapon(this.data, id));
     },
     equippedWeapon() {
       const id = this.data.hero.equippedWeapon;

@@ -399,7 +399,7 @@
         cardId: card.id, name: card.name, image: card.image, icon: card.icon,
         attack: card.attack, durability: card.durability, maxDurability: card.durability,
         combatStyle: card.combatStyle, keywords: [...card.keywords], effect: card.weaponEffect,
-        level: card.level, ready: true, permanent
+        level: card.level, ready: true, strikes: 0, permanent
       };
     }
 
@@ -1338,7 +1338,7 @@
       const counter = noCounter ? 0 : this.currentAttack(target) + (target.keywords.includes("荆棘") ? 2 : 0);
       target.health -= damage;
       if (!noCounter) actor.hp -= counter;
-      weapon.ready = false;
+      this.spendWeaponStrike(weapon);
       if (!weapon.permanent) weapon.durability -= 1;
       const killed = target.health <= 0;
       this.sound(ranged ? "ranged" : "melee");
@@ -1347,7 +1347,7 @@
       this.addLog(weapon.permanent
         ? `${attackerName}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${counterText}；英雄武器不消耗耐久。`
         : `${attackerName}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${counterText}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
-      this.applyWeaponAfterAttack(attackerSide, targetSide, killed);
+      this.applyWeaponAfterAttack(attackerSide, targetSide, killed, { row: targetRow, column: targetColumn, unit: target, damage });
       this.cleanDead();
       this.finishWeaponUse(attackerSide);
       this.checkOutcome();
@@ -1360,7 +1360,7 @@
       const weapon = actor.weapon;
       if (!weapon || !weapon.ready || !Rules.canAttackHero(target.board)) return false;
       target.hp -= weapon.attack;
-      weapon.ready = false;
+      this.spendWeaponStrike(weapon);
       if (!weapon.permanent) weapon.durability -= 1;
       this.sound(weapon.combatStyle === "ranged" ? "ranged" : "melee");
       this.sound("heroHit");
@@ -1369,16 +1369,39 @@
       this.addLog(weapon.permanent
         ? `${attackerName}使用${weapon.name}突破战线，对${targetName}造成${weapon.attack}点伤害；英雄武器不消耗耐久。`
         : `${attackerName}使用${weapon.name}突破战线，对${targetName}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
-      this.applyWeaponAfterAttack(attackerSide, targetSide, false);
+      this.applyWeaponAfterAttack(attackerSide, targetSide, false, { damage: weapon.attack });
       this.finishWeaponUse(attackerSide);
       this.checkOutcome();
       return true;
     }
 
-    applyWeaponAfterAttack(attackerSide, targetSide, killed) {
+    // 银月狼牙刃（twin_strike）每回合可以攻击两次，其余武器一次。
+    spendWeaponStrike(weapon) {
+      weapon.strikes = (weapon.strikes || 0) + 1;
+      weapon.ready = weapon.effect === "twin_strike" && weapon.strikes < 2;
+    }
+
+    // hit：攻击随从时为 { row, column, unit, damage }（结算前目标仍在场上），攻击英雄时为 { damage }。
+    applyWeaponAfterAttack(attackerSide, targetSide, killed, hit = null) {
       const actor = this.state[attackerSide];
       const weapon = actor.weapon;
       if (!weapon) return;
+      if (weapon.effect === "venom" && hit?.unit && hit.unit.health > 0 && hit.unit.attack > 0) {
+        hit.unit.attack -= 1;
+        this.addLog(`${weapon.name}的毒针让${hit.unit.name}永久失去1点攻击。`, attackerSide);
+      }
+      if (weapon.effect === "quake" && hit?.unit) {
+        const otherRow = hit.row === "front" ? "back" : "front";
+        if (this.state[targetSide].board[otherRow][hit.column]) {
+          this.addLog(`${weapon.name}震荡大地，波及同一路的另一排。`, attackerSide);
+          this.damageUnit(targetSide, otherRow, hit.column, 2, weapon.name, false, attackerSide);
+        }
+      }
+      if (weapon.effect === "lifesteal" && hit?.damage > 0) {
+        const healed = Math.min(hit.damage, actor.maxHp - actor.hp);
+        actor.hp += healed;
+        if (healed) this.addLog(`${weapon.name}吸取露水，为英雄恢复${healed}点生命。`, attackerSide);
+      }
       if (weapon.effect === "kill_draw" && killed) {
         this.draw(attackerSide, 1);
         this.addLog(`${weapon.name}触发：消灭随从，抽1张牌。`, attackerSide);
@@ -1506,7 +1529,7 @@
       this.state.enemyTurns += 1;
       this.state.battleNotices = [];
       enemy.mana = enemy.maxMana;
-      if (enemy.weapon) enemy.weapon.ready = true;
+      if (enemy.weapon) { enemy.weapon.ready = true; enemy.weapon.strikes = 0; }
       this.addLog(`${this.enemyConfig.name}第${this.state.enemyTurns}个行动回合开始：法力恢复为${enemy.mana}/${enemy.maxMana}，场上有${[...enemy.board.front, ...enemy.board.back].filter(Boolean).length}个随从。`, "enemy");
       this.bossTurnDialogue();
       [...enemy.board.front, ...enemy.board.back].filter(Boolean).forEach(unit => {
@@ -1609,7 +1632,7 @@
         this.render();
         await wait(BOSS_ACTION_DELAY);
       }
-      if (!this.state.ended && !this.state.rescueEpilogue && enemy.weapon?.ready) {
+      for (let strike = 0; strike < 2 && !this.state.ended && !this.state.rescueEpilogue && enemy.weapon?.ready; strike += 1) {
         this.aiWeaponAttack();
         this.render();
         await wait(BOSS_ACTION_DELAY);
@@ -2353,7 +2376,7 @@
       if (!initial) { this.state.round += 1; this.sound("turnStart"); }
       this.expireBattleNotices();
       player.mana = player.maxMana;
-      if (player.weapon) player.weapon.ready = true;
+      if (player.weapon) { player.weapon.ready = true; player.weapon.strikes = 0; }
       player.skillCooldown = Math.max(0, player.skillCooldown - 1);
       [...player.board.front, ...player.board.back].filter(Boolean).forEach(unit => {
         unit.ready = unit.role !== "healer"; unit.justSummoned = false; unit.tempAttack = 0; unit.healUsed = false;

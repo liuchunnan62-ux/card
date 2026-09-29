@@ -4,6 +4,17 @@
   // Brazilian Portuguese dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("pt", {
     "exact": {
+      "翠影毒针弩": "Besta venenosa da Sombra Jade",
+      "丰穗碾地锤": "Marreta terrestre da Espiga Dourada",
+      "月潭吸露鞭": "Chicote de orvalho do Lago Lunar",
+      "银月狼牙刃": "Presas da Lua Prateada",
+      "远程。命中的随从永久失去1点攻击。": "À distância. Lacaios atingidos perdem 1 de ataque permanentemente.",
+      "近战。攻击随从后，震波对同一路另一排的敌方随从造成2点伤害。": "Corpo a corpo. Após atacar um lacaio, uma onda causa 2 de dano ao lacaio inimigo na outra fileira da mesma pista.",
+      "近战。攻击后为英雄恢复等同于所造成伤害的生命。": "Corpo a corpo. Após atacar, restaura ao herói vida igual ao dano causado.",
+      "近战。每回合可以攻击两次。": "Corpo a corpo. Pode atacar duas vezes por turno.",
+      "{0}的毒针让{1}永久失去1点攻击。": "O veneno de {0} faz {1} perder 1 de ataque permanentemente.",
+      "{0}震荡大地，波及同一路的另一排。": "{0} faz a terra tremer e atinge a outra fileira da mesma pista.",
+      "{0}吸取露水，为英雄恢复{1}点生命。": "{0} absorve o orvalho e restaura {1} de vida ao herói.",
       "{0}重新洗入牌组。": "{0} embaralha o baralho novamente.",
       "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} empunha {1} ({2} de ataque) e pode atacar uma vez a cada turno.",
       "随从只能攻击同一路线的敌人。": "Lacaios só podem atacar inimigos da própria pista.",

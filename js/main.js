@@ -1644,13 +1644,19 @@
       if (cardUpgraded) this.sfx("cardLevelUp", fanfare + (levelUp ? 1100 : 0));
       CF.SaveSystem.save();
       const bossCardReward = CF.Adventure.claimActiveWeaponReward() || CF.Adventure.claimActiveChapterTwoCardReward() || CF.Adventure.claimActiveChapterThreeCardReward() || CF.Adventure.claimActiveChapterFourCardReward() || CF.Adventure.claimActiveChapterFiveCardReward();
+      const chapterWeaponReward = CF.Adventure.claimActiveChapterWeaponReward();
       const questItemReward = CF.Adventure.claimActiveQueenBloodWaterReward();
       const loot = CF.Adventure.claimVictoryLoot(battle.state.enemyUnitsKilled);
-      this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward, loot);
+      this.showRewards(type, baseGold, baseXp, bossCardReward, questItemReward, loot, chapterWeaponReward);
     },
 
     // 每场战斗（普通/精英/Boss）胜利后都翻开三张固定战利品牌：女王精血、粗糙装备、笔记残页。
-    showRewards(type, baseGold, baseXp, bossCardReward = null, questItemReward = null, loot) {
+    // 首杀固定奖励（卡牌或武器）的展示块。
+    bossRewardHTML(bossCardReward) {
+      return `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}${bossCardReward.weapon ? "已放进背包" : "已永久加入收藏"}</strong>${bossCardReward.weapon ? `<small>${bossCardReward.autoEquipped ? "已自动装备为英雄武器。" : "可在英雄档案或背包中更换英雄武器。"}冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。</small>` : ""}${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${CF.Restaurant.bondOwner(bossCardReward.cardId).boss ? `${bossCardReward.nodeLabel}被同族救走了。本关全部在押首领都在营地监狱结缘后，才能使用这张卡。` : `${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。`}</small>` : ""}</div>`;
+    },
+
+    showRewards(type, baseGold, baseXp, bossCardReward = null, questItemReward = null, loot, chapterWeaponReward = null) {
       const bossFight = type === "boss";
       const bossName = this.battle?.enemyConfig?.name || "";
       const storyDefeat = this.battle?.state?.storyDefeat;
@@ -1668,7 +1674,8 @@
       const heading = bossFight ? (storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`) : "战斗胜利";
       const intro = storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : "";
       this.modal(`<span class="eyebrow">${eyebrow}</span><h2>${heading}</h2><p>${intro}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
-        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}${bossCardReward.weapon ? "已放进背包" : "已永久加入收藏"}</strong>${bossCardReward.weapon ? `<small>${bossCardReward.autoEquipped ? "已自动装备为英雄武器。" : "可在英雄档案或背包中更换英雄武器。"}冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。</small>` : ""}${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${CF.Restaurant.bondOwner(bossCardReward.cardId).boss ? `${bossCardReward.nodeLabel}被同族救走了。本关全部在押首领都在营地监狱结缘后，才能使用这张卡。` : `${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。`}</small>` : ""}</div>` : ""}
+        ${bossCardReward ? this.bossRewardHTML(bossCardReward) : ""}
+        ${chapterWeaponReward ? this.bossRewardHTML(chapterWeaponReward) : ""}
         ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
         <p class="boss-loot-hint">翻开三张战利品牌：</p>
         <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>

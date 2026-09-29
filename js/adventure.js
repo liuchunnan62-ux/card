@@ -381,6 +381,27 @@
       CF.SaveSystem.save();
       return { ...reward, weapon: true, autoEquipped: CF.SaveSystem.equippedWeapon() === reward.cardId };
     },
+    // 第二关起的关卡武器：击败本关第一个首领（第一个战斗节点）后获得一次，见 chapters.js 的 chapterWeapon。
+    activeChapterWeaponReward() {
+      const run = this.current();
+      const chapter = CF.chapterById(run?.chapter);
+      const cardId = chapter?.chapterWeapon;
+      if (!run || !cardId || CF.SaveSystem.data.weaponBossRewards?.[cardId]) return null;
+      const nodeIndex = Number.isInteger(run.activeNode) ? run.activeNode : run.stage;
+      const firstBattle = chapter.nodes.findIndex(node => ["normal", "elite", "boss"].includes(node.type));
+      if (nodeIndex !== firstBattle) return null;
+      return { nodeIndex, cardId, nodeLabel: chapter.nodes[nodeIndex].label };
+    },
+    claimActiveChapterWeaponReward() {
+      const reward = this.activeChapterWeaponReward();
+      if (!reward) return null;
+      CF.SaveSystem.data.weaponBossRewards ||= {};
+      CF.SaveSystem.data.weaponBossRewards[reward.cardId] = true;
+      CF.SaveSystem.addCardToCollection(reward.cardId, 1);
+      if (!CF.SaveSystem.equippedWeapon()) CF.SaveSystem.data.hero.equippedWeapon = reward.cardId;
+      CF.SaveSystem.save();
+      return { ...reward, weapon: true, autoEquipped: CF.SaveSystem.equippedWeapon() === reward.cardId };
+    },
     activeChapterTwoCardReward() {
       const run = this.current();
       if (!run || run.chapter !== 2) return null;

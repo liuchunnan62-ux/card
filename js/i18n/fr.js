@@ -4,6 +4,17 @@
   // French dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("fr", {
     "exact": {
+      "翠影毒针弩": "Arbalète venimeuse de l'Ombre de jade",
+      "丰穗碾地锤": "Masse terrestre de l'Épi doré",
+      "月潭吸露鞭": "Fouet de rosée du Bassin lunaire",
+      "银月狼牙刃": "Crocs de Lune d'argent",
+      "远程。命中的随从永久失去1点攻击。": "À distance. Les serviteurs touchés perdent définitivement 1 d'attaque.",
+      "近战。攻击随从后，震波对同一路另一排的敌方随从造成2点伤害。": "Mêlée. Après avoir attaqué un serviteur, une onde inflige 2 dégâts au serviteur ennemi de l'autre rangée de la même voie.",
+      "近战。攻击后为英雄恢复等同于所造成伤害的生命。": "Mêlée. Après une attaque, rend au héros autant de points de vie que les dégâts infligés.",
+      "近战。每回合可以攻击两次。": "Mêlée. Peut attaquer deux fois par tour.",
+      "{0}的毒针让{1}永久失去1点攻击。": "Le venin de {0} fait perdre définitivement 1 d'attaque à {1}.",
+      "{0}震荡大地，波及同一路的另一排。": "{0} fait trembler le sol et frappe l'autre rangée de la même voie.",
+      "{0}吸取露水，为英雄恢复{1}点生命。": "{0} absorbe la rosée et rend {1} points de vie au héros.",
       "{0}重新洗入牌组。": "{0} remélange son deck.",
       "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} manie {1} ({2} d'attaque) et peut attaquer une fois par tour.",
       "随从只能攻击同一路线的敌人。": "Les serviteurs ne peuvent attaquer que les ennemis de leur propre voie.",

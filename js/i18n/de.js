@@ -4,6 +4,17 @@
   // German dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("de", {
     "exact": {
+      "翠影毒针弩": "Jadeschatten-Giftarmbrust",
+      "丰穗碾地锤": "Goldähren-Erdhammer",
+      "月潭吸露鞭": "Mondteich-Tauranke",
+      "银月狼牙刃": "Silbermond-Fangklingen",
+      "远程。命中的随从永久失去1点攻击。": "Fernkampf. Getroffene Diener verlieren dauerhaft 1 Angriff.",
+      "近战。攻击随从后，震波对同一路另一排的敌方随从造成2点伤害。": "Nahkampf. Nach dem Angriff auf einen Diener fügt eine Schockwelle dem gegnerischen Diener in der anderen Reihe derselben Bahn 2 Schaden zu.",
+      "近战。攻击后为英雄恢复等同于所造成伤害的生命。": "Nahkampf. Heilt deinen Helden nach dem Angriff um den verursachten Schaden.",
+      "近战。每回合可以攻击两次。": "Nahkampf. Kann jeden Zug zweimal angreifen.",
+      "{0}的毒针让{1}永久失去1点攻击。": "Das Gift von {0} lässt {1} dauerhaft 1 Angriff verlieren.",
+      "{0}震荡大地，波及同一路的另一排。": "{0} erschüttert den Boden und trifft die andere Reihe derselben Bahn.",
+      "{0}吸取露水，为英雄恢复{1}点生命。": "{0} saugt Tau auf und heilt den Helden um {1}.",
       "{0}重新洗入牌组。": "{0} mischt das Deck neu.",
       "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} führt {1} ({2} Angriff) und kann jeden Zug einmal angreifen.",
       "随从只能攻击同一路线的敌人。": "Diener können nur Gegner auf ihrer eigenen Bahn angreifen.",

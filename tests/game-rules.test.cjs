@@ -1333,6 +1333,65 @@ assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入�
   assert.equal(new CF.Battle(CF.enemies.goblin_warband, {}).state.enemy.weapon, null, "不经过冒险配置的敌人不带首领武器");
 }
 
+{
+  // 第二至五关的关卡武器：击败本关第一个首领获得；四种特效。
+  const data = CF.SaveSystem.data;
+  const previousChapter = data.activeChapter;
+  const previousRuns = data.completedRuns;
+  data.completedRuns = 4; // 解锁全部章节
+  [[2, "goblin_venom_crossbow"], [3, "harvest_maul"], [4, "moonpool_lash"], [5, "silvermoon_fang"]].forEach(([chapterId, weaponId]) => {
+    data.chapterRuns[chapterId] = CF.freshRun(data, chapterId);
+    data.activeChapter = chapterId;
+    const run = CF.Adventure.current(chapterId);
+    data.run = run;
+    run.activeNode = 1;
+    assert.equal(CF.Adventure.claimActiveChapterWeaponReward(), null, `第${chapterId}关只有第一个首领掉落关卡武器`);
+    run.activeNode = 0;
+    const reward = CF.Adventure.claimActiveChapterWeaponReward();
+    assert.equal(reward?.cardId, weaponId, `击败第${chapterId}关第一个首领应获得关卡武器`);
+    assert.ok(CF.SaveSystem.ownedWeapons().includes(weaponId), "关卡武器应可在英雄档案装备");
+    assert.equal(CF.Adventure.claimActiveChapterWeaponReward(), null, "关卡武器不可重复领取");
+    assert.equal(CF.Adventure.encounterFor("normal").weapon.id, weaponId, `第${chapterId}关的首领应手持本关武器`);
+  });
+  data.activeChapter = previousChapter;
+  data.completedRuns = previousRuns;
+  data.run = data.chapterRuns[previousChapter];
+
+  const effectBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+  const es = effectBattle.state;
+  const equip = id => { es.player.weapon = effectBattle.weaponFromCard(CF.getCard(id, { level: 1 }), true); };
+  const reset = () => { es.player.board = CF.emptyBoard(); es.enemy.board = CF.emptyBoard(); };
+  reset();
+  equip("goblin_venom_crossbow");
+  const venomTarget = combatUnit("orc_grunt", { attack: 3, health: 9, maxHealth: 9 });
+  es.enemy.board.front[0] = venomTarget;
+  effectBattle.performWeaponAttack("player", "enemy", "front", 0);
+  assert.equal(venomTarget.attack, 2, "毒针弩命中后目标永久-1攻击");
+  reset();
+  equip("harvest_maul");
+  const behind = combatUnit("goblin_archer", { attack: 2, health: 5, maxHealth: 5 });
+  es.enemy.board.front[1] = combatUnit("orc_grunt", { attack: 3, health: 9, maxHealth: 9 });
+  es.enemy.board.back[1] = behind;
+  es.enemy.board.back[2] = combatUnit("goblin_archer", { attack: 2, health: 5, maxHealth: 5 });
+  effectBattle.performWeaponAttack("player", "enemy", "front", 1);
+  assert.equal(behind.health, 3, "碾地锤震波应伤到同一路另一排");
+  assert.equal(es.enemy.board.back[2].health, 5, "震波不波及其他路线");
+  reset();
+  equip("moonpool_lash");
+  es.player.hp = 10;
+  es.enemy.board.front[0] = combatUnit("goblin_archer", { attack: 2, health: 9, maxHealth: 9 });
+  effectBattle.performWeaponAttack("player", "enemy", "front", 0);
+  assert.equal(es.player.hp, 13, "吸露鞭按造成的伤害为英雄回血（远程目标不反击）");
+  reset();
+  equip("silvermoon_fang");
+  es.enemy.board.front[0] = combatUnit("orc_grunt", { attack: 0, health: 20, maxHealth: 20 });
+  assert.equal(effectBattle.performWeaponAttack("player", "enemy", "front", 0), true);
+  assert.equal(es.player.weapon.ready, true, "狼牙刃第一次攻击后还能再攻击");
+  assert.equal(effectBattle.performWeaponAttack("player", "enemy", "front", 0), true);
+  assert.equal(es.player.weapon.ready, false, "狼牙刃每回合最多攻击两次");
+  assert.equal(es.enemy.board.front[0].health, 12, "两次攻击都应造成伤害");
+}
+
 const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
 const heroWeapon = heroWeaponBattle.state.player.weapon;
 assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");

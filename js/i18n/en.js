@@ -4,6 +4,17 @@
   // English dictionary. Keys are the original Simplified Chinese text; {0}, {value} etc. are placeholders.
   window.CardForge.I18n.register("en", {
     "exact": {
+      "翠影毒针弩": "Jade Shadow Venom Crossbow",
+      "丰穗碾地锤": "Golden Sheaf Earthmaul",
+      "月潭吸露鞭": "Moonpool Dewlash",
+      "银月狼牙刃": "Silvermoon Fangblades",
+      "远程。命中的随从永久失去1点攻击。": "Ranged. Minions it hits permanently lose 1 Attack.",
+      "近战。攻击随从后，震波对同一路另一排的敌方随从造成2点伤害。": "Melee. After attacking a minion, a shockwave deals 2 damage to the enemy minion in the other row of the same lane.",
+      "近战。攻击后为英雄恢复等同于所造成伤害的生命。": "Melee. After attacking, restore Health to your hero equal to the damage dealt.",
+      "近战。每回合可以攻击两次。": "Melee. Can attack twice each turn.",
+      "{0}的毒针让{1}永久失去1点攻击。": "{0}'s venom makes {1} permanently lose 1 Attack.",
+      "{0}震荡大地，波及同一路的另一排。": "{0} shakes the ground, striking the other row of the same lane.",
+      "{0}吸取露水，为英雄恢复{1}点生命。": "{0} drinks the dew, restoring {1} Health to the hero.",
       "{0}重新洗入牌组。": "{0} reshuffles their deck.",
       "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} wields {1} ({2} Attack) and can attack once every turn.",
       "随从只能攻击同一路线的敌人。": "Minions can only attack enemies in their own lane.",

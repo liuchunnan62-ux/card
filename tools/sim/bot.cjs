@@ -231,6 +231,11 @@ class PlayerBot {
   }
 
   attackWithWeapon() {
+    // 银月狼牙刃每回合可以攻击两次。
+    for (let strike = 0; strike < 2 && this.player.weapon?.ready && this.battle.canPlayerAct(); strike += 1) this.attackWithWeaponOnce();
+  }
+
+  attackWithWeaponOnce() {
     const battle = this.battle;
     const weapon = this.player.weapon;
     if (!weapon?.ready) return;
