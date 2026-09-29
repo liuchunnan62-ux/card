@@ -1723,3 +1723,14 @@ console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
   assert.match(wolfKing.skill.playerDescription(wolfKing.level), /造成1点伤害。$/, "狼王的寒牙撕咬也只造成1点伤害、不再回血");
   assert.deepEqual([...CF.HERO_SKILLS.frost_fang.amount], [3, 4, 5], "其他地方的同名技能数值不受影响");
 }
+
+{
+  // 分路规则讲解：新存档与老存档（已看过旧教程）都要看一次；战斗中可随时重看。
+  assert.equal(CF.freshSave().laneRulesSeen, false, "新存档应显示分路规则讲解");
+  storage.set("rift-expedition-save-v1", JSON.stringify({ deck: CF.STARTER_DECK, tutorialSeen: true }));
+  CF.SaveSystem.load();
+  assert.equal(CF.SaveSystem.data.laneRulesSeen, false, "看过旧教程的老存档也应再看一次分路规则");
+  assert.match(mainSource, /!CF\.SaveSystem\.data\.laneRulesSeen\) this\.showTutorial\(\)/, "未看过分路规则时开战应弹出讲解");
+  assert.match(mainSource, /随从只能攻击自己所在这一路的敌人/, "讲解应说明只能攻击本路");
+  assert.match(gameJs, /data-action="show-rules"/, "战斗中应能打开规则说明");
+}

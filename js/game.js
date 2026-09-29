@@ -2637,7 +2637,7 @@
           <aside class="battle-sidebar">
             <div class="turn-badge">${s.phase === "player" ? `你的回合 · 第${s.round}回合` : `${s.enemy.name}的回合`}</div>
             <div class="deck-remaining-panel"><div class="battle-log-heading"><h3>我方牌库</h3><small>剩余${s.player.deck.length}张</small></div>${this.deckRemainingHTML(s.player.deck)}</div>
-            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。</p><p>随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。</p><p>狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
+            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><button class="mini-btn rules-btn" data-action="show-rules">📖 规则说明</button><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。</p><p>随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。</p><p>狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
           </aside>
         </div>
       </section>`;

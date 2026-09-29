@@ -4,6 +4,19 @@
   // English dictionary. Keys are the original Simplified Chinese text; {0}, {value} etc. are placeholders.
   window.CardForge.I18n.register("en", {
     "exact": {
+      "分路作战": "Lane Combat",
+      "规则说明": "Rules",
+      "明白了": "Got it",
+      "📖 规则说明": "📖 Rules",
+      "③ 敌方英雄": "③ Enemy Hero",
+      "⚔ 第2路的随从：先打 ① 本路前排，再打 ② 本路后排，最后 ③ 攻击敌方英雄。": "⚔ A minion in Lane 2: first hit ① the front row of its lane, then ② the back row, and finally ③ the enemy hero.",
+      "战场分为4路，每一路都有前排和后排。": "The battlefield has 4 lanes, each with a front row and a back row.",
+      "随从只能攻击自己所在这一路的敌人，不能攻击其他路。": "Minions can only attack enemies in their own lane, never in other lanes.",
+      "必须先击败本路前排，才能攻击本路后排（狙击随从可以越过本路前排）。": "Defeat the front row of your lane before attacking its back row (Sniper minions can skip the front row of their lane).",
+      "本路前排和后排都被清空后，这一路的随从才能攻击敌方英雄。": "Once both rows of a lane are clear, minions in that lane can attack the enemy hero.",
+      "法术和英雄技能不受分路限制；英雄武器可以攻击任意一路。": "Spells and hero skills ignore lanes; the hero weapon can attack any lane.",
+      "敌人遵守同样的规则：你哪一路空着，对面这一路的随从就能打到你的英雄。": "Enemies follow the same rules: if one of your lanes is empty, enemy minions in that lane can hit your hero.",
+      "你的最大法力不会每回合增加；统领试炼是永久提高最大法力的唯一途径。": "Your max mana doesn't grow each turn; Commander Trials are the only way to raise it permanently.",
       "翠影毒针弩": "Jade Shadow Venom Crossbow",
       "丰穗碾地锤": "Golden Sheaf Earthmaul",
       "月潭吸露鞭": "Moonpool Dewlash",

@@ -4,6 +4,19 @@
   // French dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("fr", {
     "exact": {
+      "分路作战": "Combat par voies",
+      "规则说明": "Règles",
+      "明白了": "Compris",
+      "📖 规则说明": "📖 Règles",
+      "③ 敌方英雄": "③ Héros ennemi",
+      "⚔ 第2路的随从：先打 ① 本路前排，再打 ② 本路后排，最后 ③ 攻击敌方英雄。": "⚔ Un serviteur de la voie 2 : il frappe d'abord ① la ligne avant de sa voie, puis ② la ligne arrière, et enfin ③ le héros ennemi.",
+      "战场分为4路，每一路都有前排和后排。": "Le champ de bataille compte 4 voies, chacune avec une ligne avant et une ligne arrière.",
+      "随从只能攻击自己所在这一路的敌人，不能攻击其他路。": "Les serviteurs ne peuvent attaquer que les ennemis de leur propre voie, jamais ceux des autres voies.",
+      "必须先击败本路前排，才能攻击本路后排（狙击随从可以越过本路前排）。": "Battez la ligne avant de votre voie avant d'attaquer sa ligne arrière (les tireurs d'élite peuvent ignorer la ligne avant de leur voie).",
+      "本路前排和后排都被清空后，这一路的随从才能攻击敌方英雄。": "Quand les deux lignes d'une voie sont vides, les serviteurs de cette voie peuvent attaquer le héros ennemi.",
+      "法术和英雄技能不受分路限制；英雄武器可以攻击任意一路。": "Les sorts et compétences de héros ignorent les voies ; l'arme du héros peut attaquer n'importe quelle voie.",
+      "敌人遵守同样的规则：你哪一路空着，对面这一路的随从就能打到你的英雄。": "Les ennemis suivent les mêmes règles : si l'une de vos voies est vide, les serviteurs ennemis de cette voie peuvent frapper votre héros.",
+      "你的最大法力不会每回合增加；统领试炼是永久提高最大法力的唯一途径。": "Votre mana maximum n'augmente pas à chaque tour ; les Épreuves du Commandant sont le seul moyen de l'augmenter définitivement.",
       "翠影毒针弩": "Arbalète venimeuse de l'Ombre de jade",
       "丰穗碾地锤": "Masse terrestre de l'Épi doré",
       "月潭吸露鞭": "Fouet de rosée du Bassin lunaire",

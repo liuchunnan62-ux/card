@@ -1124,6 +1124,17 @@ html:not(:lang(zh)):not(:lang(ja)) .game-card:not(.spell) .card-name { margin-le
 .tutorial-steps { display: grid; gap: 10px; margin: 18px 0; }
 .tutorial-step { display: grid; grid-template-columns: 35px 1fr; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,.24); border-radius: 8px; }
 .tutorial-step b { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #7f5a2b; }
+.lane-diagram { margin: 14px 0 6px; padding: 12px; border: 1px solid rgba(228,183,93,.3); border-radius: 10px; background: rgba(0,0,0,.25); text-align: center; }
+.lane-diagram p { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.lane-hero { display: inline-block; margin-bottom: 8px; padding: 4px 14px; border: 1px solid #c9564a; border-radius: 999px; color: #ffb3a8; background: rgba(120,30,25,.35); font-weight: bold; }
+.lane-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-width: 320px; margin: 0 auto; }
+.lane-col { display: grid; gap: 5px; padding: 5px; border-radius: 8px; opacity: .45; }
+.lane-col.focus { opacity: 1; background: rgba(230,189,95,.14); box-shadow: 0 0 0 2px rgba(230,189,95,.55); }
+.lane-cell { height: 30px; display: grid; place-items: center; border-radius: 6px; font-weight: bold; }
+.lane-cell.enemy { background: rgba(160,60,50,.35); border: 1px solid rgba(220,110,90,.4); color: #ffd2c8; }
+.lane-cell.mine { margin-top: 8px; background: rgba(60,110,160,.35); border: 1px solid rgba(110,160,220,.45); color: #d6e8ff; }
+.lane-col small { color: var(--muted); font-size: 11px; }
+.objective .rules-btn { float: right; margin-top: -2px; }
 .reward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .reward-card { min-height: 175px; border: 1px solid #87663d; border-radius: 10px; background: linear-gradient(#473224, #201714); padding: 18px; cursor: pointer; text-align: center; }
 .reward-card:hover { border-color: #ffd77d; transform: translateY(-4px); }

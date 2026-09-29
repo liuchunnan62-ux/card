@@ -92,6 +92,8 @@
       deck: [...CF.STARTER_DECK],
       injuredCards: [],
       tutorialSeen: false,
+      // 分路规则上线后，老玩家也要看一次新的规则讲解。
+      laneRulesSeen: false,
       totalVictories: 0,
       completedRuns: 0,
       qianzhiGarrisonUnlocked: false,
@@ -261,6 +263,7 @@
       progress.unlocked = progress.unlocked !== false;
       result.hero.skillProgress[id] = progress;
     });
+    result.laneRulesSeen = raw.laneRulesSeen === true;
     result.hero.heroId = base.hero.heroId;
     const signature = signatureSkillOf(result.hero.heroId);
     if (!result.hero.skillProgress[signature]?.unlocked) result.hero.skillProgress[signature] = { level: 1, xp: 0, unlocked: true };

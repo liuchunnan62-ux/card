@@ -4,6 +4,19 @@
   // Brazilian Portuguese dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("pt", {
     "exact": {
+      "分路作战": "Combate por pistas",
+      "规则说明": "Regras",
+      "明白了": "Entendi",
+      "📖 规则说明": "📖 Regras",
+      "③ 敌方英雄": "③ Herói inimigo",
+      "⚔ 第2路的随从：先打 ① 本路前排，再打 ② 本路后排，最后 ③ 攻击敌方英雄。": "⚔ Um lacaio da pista 2: primeiro ataca ① a fileira da frente da sua pista, depois ② a de trás e por fim ③ o herói inimigo.",
+      "战场分为4路，每一路都有前排和后排。": "O campo de batalha tem 4 pistas, cada uma com fileira da frente e de trás.",
+      "随从只能攻击自己所在这一路的敌人，不能攻击其他路。": "Lacaios só podem atacar inimigos da própria pista, nunca de outras pistas.",
+      "必须先击败本路前排，才能攻击本路后排（狙击随从可以越过本路前排）。": "Derrote a fileira da frente da sua pista antes de atacar a de trás (atiradores podem pular a da frente da própria pista).",
+      "本路前排和后排都被清空后，这一路的随从才能攻击敌方英雄。": "Quando as duas fileiras de uma pista estão vazias, os lacaios dessa pista podem atacar o herói inimigo.",
+      "法术和英雄技能不受分路限制；英雄武器可以攻击任意一路。": "Feitiços e habilidades de herói ignoram as pistas; a arma do herói pode atacar qualquer pista.",
+      "敌人遵守同样的规则：你哪一路空着，对面这一路的随从就能打到你的英雄。": "Os inimigos seguem as mesmas regras: se uma das suas pistas estiver vazia, lacaios inimigos dessa pista podem atingir seu herói.",
+      "你的最大法力不会每回合增加；统领试炼是永久提高最大法力的唯一途径。": "Sua mana máxima não aumenta a cada turno; as Provas do Comandante são a única forma de aumentá-la permanentemente.",
       "翠影毒针弩": "Besta venenosa da Sombra Jade",
       "丰穗碾地锤": "Marreta terrestre da Espiga Dourada",
       "月潭吸露鞭": "Chicote de orvalho do Lago Lunar",

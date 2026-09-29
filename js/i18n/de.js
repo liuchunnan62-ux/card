@@ -4,6 +4,19 @@
   // German dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("de", {
     "exact": {
+      "分路作战": "Bahnenkampf",
+      "规则说明": "Regeln",
+      "明白了": "Verstanden",
+      "📖 规则说明": "📖 Regeln",
+      "③ 敌方英雄": "③ Gegnerischer Held",
+      "⚔ 第2路的随从：先打 ① 本路前排，再打 ② 本路后排，最后 ③ 攻击敌方英雄。": "⚔ Ein Diener auf Bahn 2: zuerst ① die vordere Reihe seiner Bahn, dann ② die hintere Reihe, zuletzt ③ den gegnerischen Helden.",
+      "战场分为4路，每一路都有前排和后排。": "Das Schlachtfeld hat 4 Bahnen, jede mit einer vorderen und einer hinteren Reihe.",
+      "随从只能攻击自己所在这一路的敌人，不能攻击其他路。": "Diener können nur Gegner auf ihrer eigenen Bahn angreifen, niemals auf anderen Bahnen.",
+      "必须先击败本路前排，才能攻击本路后排（狙击随从可以越过本路前排）。": "Besiege die vordere Reihe deiner Bahn, bevor du die hintere angreifst (Scharfschützen können die vordere Reihe ihrer Bahn überspringen).",
+      "本路前排和后排都被清空后，这一路的随从才能攻击敌方英雄。": "Sind beide Reihen einer Bahn leer, können Diener dieser Bahn den gegnerischen Helden angreifen.",
+      "法术和英雄技能不受分路限制；英雄武器可以攻击任意一路。": "Zauber und Heldenfähigkeiten ignorieren Bahnen; die Heldenwaffe kann jede Bahn angreifen.",
+      "敌人遵守同样的规则：你哪一路空着，对面这一路的随从就能打到你的英雄。": "Gegner folgen denselben Regeln: Ist eine deiner Bahnen leer, können gegnerische Diener dieser Bahn deinen Helden treffen.",
+      "你的最大法力不会每回合增加；统领试炼是永久提高最大法力的唯一途径。": "Dein maximales Mana wächst nicht jeden Zug; nur die Kommandanten-Prüfungen erhöhen es dauerhaft.",
       "翠影毒针弩": "Jadeschatten-Giftarmbrust",
       "丰穗碾地锤": "Goldähren-Erdhammer",
       "月潭吸露鞭": "Mondteich-Tauranke",

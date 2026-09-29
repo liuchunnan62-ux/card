@@ -4,6 +4,19 @@
   // Spanish dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("es", {
     "exact": {
+      "分路作战": "Combate por carriles",
+      "规则说明": "Reglas",
+      "明白了": "Entendido",
+      "📖 规则说明": "📖 Reglas",
+      "③ 敌方英雄": "③ Héroe enemigo",
+      "⚔ 第2路的随从：先打 ① 本路前排，再打 ② 本路后排，最后 ③ 攻击敌方英雄。": "⚔ Un esbirro del carril 2: primero golpea ① la fila delantera de su carril, luego ② la trasera y por último ③ al héroe enemigo.",
+      "战场分为4路，每一路都有前排和后排。": "El campo de batalla tiene 4 carriles, cada uno con fila delantera y trasera.",
+      "随从只能攻击自己所在这一路的敌人，不能攻击其他路。": "Los esbirros solo pueden atacar a enemigos de su propio carril, nunca de otros carriles.",
+      "必须先击败本路前排，才能攻击本路后排（狙击随从可以越过本路前排）。": "Derrota la fila delantera de tu carril antes de atacar la trasera (los francotiradores pueden saltarse la delantera de su carril).",
+      "本路前排和后排都被清空后，这一路的随从才能攻击敌方英雄。": "Cuando ambas filas de un carril están vacías, los esbirros de ese carril pueden atacar al héroe enemigo.",
+      "法术和英雄技能不受分路限制；英雄武器可以攻击任意一路。": "Los hechizos y habilidades de héroe ignoran los carriles; el arma del héroe puede atacar cualquier carril.",
+      "敌人遵守同样的规则：你哪一路空着，对面这一路的随从就能打到你的英雄。": "Los enemigos siguen las mismas reglas: si uno de tus carriles está vacío, los esbirros enemigos de ese carril pueden golpear a tu héroe.",
+      "你的最大法力不会每回合增加；统领试炼是永久提高最大法力的唯一途径。": "Tu maná máximo no crece cada turno; las Pruebas de Comandante son la única forma de aumentarlo permanentemente.",
       "翠影毒针弩": "Ballesta venenosa de Sombra Jade",
       "丰穗碾地锤": "Mazo terrestre de Espiga Dorada",
       "月潭吸露鞭": "Látigo de rocío del Estanque Lunar",

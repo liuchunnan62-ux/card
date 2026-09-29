@@ -1564,7 +1564,7 @@
       this.battle.state.hungry = hungry;
       this.battle.startPlayerTurn(true);
       requestAnimationFrame(() => window.scrollTo(0, 0));
-      if (!CF.SaveSystem.data.tutorialSeen) this.showTutorial();
+      if (!CF.SaveSystem.data.tutorialSeen || !CF.SaveSystem.data.laneRulesSeen) this.showTutorial();
     },
     startChapterFivePostgame() {
       const run = CF.Adventure.current(5);
@@ -1592,10 +1592,31 @@
       requestAnimationFrame(() => window.scrollTo(0, 0));
     },
 
-    showTutorial() {
-      this.modal(`<span class="eyebrow">首次战斗</span><h2>六条战场要诀</h2><div class="tutorial-steps">
-        ${["每一列的前排会保护其身后的后排。","击败前排后，才能普通攻击该列后排。","前后排全部为空时，该路线被突破。","通过突破路线可以直接攻击敌方英雄。","你的最大法力不会每回合增加。","海港的统领试炼是永久提高最大法力的唯一途径。"].map((text, index) => `<div class="tutorial-step"><b>${index + 1}</b><span>${text}</span></div>`).join("")}
-        </div><button class="primary-btn" data-modal-action="tutorial-done">开始战斗</button>`);
+    // 战场规则讲解：首次战斗（以及分路规则上线后老玩家的第一场战斗）自动弹出，战斗中也可以随时点“规则说明”再看。
+    showTutorial(reopen = false) {
+      const steps = [
+        "战场分为4路，每一路都有前排和后排。",
+        "随从只能攻击自己所在这一路的敌人，不能攻击其他路。",
+        "必须先击败本路前排，才能攻击本路后排（狙击随从可以越过本路前排）。",
+        "本路前排和后排都被清空后，这一路的随从才能攻击敌方英雄。",
+        "法术和英雄技能不受分路限制；英雄武器可以攻击任意一路。",
+        "敌人遵守同样的规则：你哪一路空着，对面这一路的随从就能打到你的英雄。",
+        "你的最大法力不会每回合增加；统领试炼是永久提高最大法力的唯一途径。"
+      ];
+      const lane = (column, focus) => `<div class="lane-col ${focus ? "focus" : ""}">
+          <span class="lane-cell enemy">${focus ? "②" : ""}</span>
+          <span class="lane-cell enemy">${focus ? "①" : ""}</span>
+          <span class="lane-cell mine">${focus ? "⚔" : ""}</span>
+          <small>${column}</small>
+        </div>`;
+      this.modal(`<span class="eyebrow">${reopen ? "规则说明" : "首次战斗"}</span><h2>分路作战</h2>
+        <div class="lane-diagram" aria-hidden="true">
+          <div class="lane-hero">③ 敌方英雄</div>
+          <div class="lane-grid">${[1, 2, 3, 4].map(column => lane(column, column === 2)).join("")}</div>
+          <p>⚔ 第2路的随从：先打 ① 本路前排，再打 ② 本路后排，最后 ③ 攻击敌方英雄。</p>
+        </div>
+        <div class="tutorial-steps">${steps.map((text, index) => `<div class="tutorial-step"><b>${index + 1}</b><span>${text}</span></div>`).join("")}</div>
+        <button class="primary-btn" data-modal-action="tutorial-done">${reopen ? "明白了" : "开始战斗"}</button>`);
     },
 
     grantRandomCardXp(amount, type = null) {
@@ -1879,6 +1900,7 @@
     if (action === "trial-start") UI.startTrialBattle(Number(el.dataset.trial));
     if (action === "arena-start" || action === "arena-restart") { CF.Arena.start(); UI.renderArena(); }
     if (action === "arena-battle") UI.startArenaBattle();
+    if (action === "show-rules") UI.showTutorial(true);
     if (action === "hero-page") UI.renderHero();
     if (action === "hero-skill-equip") {
       if (CF.SaveSystem.equipHeroSkill(el.dataset.skill)) { UI.toast(`已装备「${CF.HERO_SKILLS[el.dataset.skill].name}」。`, "good"); UI.sfx("equip"); }
@@ -2003,7 +2025,7 @@
       if (closingTraining && UI.screen === "training") UI.renderTraining();
       else if (closingTraining && UI.screen === "menu") UI.renderMenu();
     }
-    if (action === "tutorial-done") { CF.SaveSystem.data.tutorialSeen = true; CF.SaveSystem.save(); UI.closeModal(); }
+    if (action === "tutorial-done") { CF.SaveSystem.data.tutorialSeen = true; CF.SaveSystem.data.laneRulesSeen = true; CF.SaveSystem.save(); UI.closeModal(); }
     if (action === "confirm-new-run") UI.startNewRun();
     if (action === "confirm-leave-battle") { UI.closeModal(); UI.leaveCurrentRun(); }
     if (action === "confirm-slot-new") UI.startNewGame(Number(el.dataset.slot));
