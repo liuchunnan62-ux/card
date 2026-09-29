@@ -592,9 +592,9 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   assert.match(mainSource, /withRations\(isHungry => this\.enterNode/, "冒险战斗节点开战前应检查粮食");
   assert.match(mainSource, /withRations\(isHungry => this\.startArenaBattle/, "竞技场开战前应检查粮食");
   assert.match(mainSource, /rationChip\(\)/, "顶栏应显示粮食");
-  // 游戏时间：12分钟一天；每只首领每天只能投喂一次；每天扣除三场战斗的口粮。
+  // 游戏时间：24分钟一天；每只首领每天只能投喂一次；每天扣除三场战斗的口粮。
   const G = CF.GameClock;
-  assert.equal(G.DAY_MS, 12 * 60 * 1000, "现实12分钟为游戏里的一天");
+  assert.equal(G.DAY_MS, 24 * 60 * 1000, "现实24分钟为游戏里的一天");
   data.clock = { day: 1, elapsed: 0 };
   data.prisoners = { "2-0": true, "2-1": true }; data.affinity = { "2-1": 0 }; data.fedDay = {};
   data.foods = { wheat_bread: 5 };
@@ -610,7 +610,7 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   assert.equal(G.tick(60 * 1000).length, 0, "未满一天不会结算");
   assert.equal(G.tick(10 * 60 * 1000).length, 0, "单次计时有上限，休眠或冻结不会一下跳过一天");
   const reports = G.advance(G.DAY_MS);
-  assert.equal(reports.length, 1, "满12分钟进入新的一天");
+  assert.equal(reports.length, 1, "满24分钟进入新的一天");
   assert.equal(G.day(), 2, "天数应加一");
   assert.equal(R.rations(), 7, "新的一天扣除三场战斗的口粮");
   assert.equal(R.feed("2-1", "wheat_bread").ok, true, "新的一天可以再次投喂");
@@ -618,6 +618,19 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   const hungryDay = G.advance(G.DAY_MS)[0];
   assert.equal(hungryDay.hungry, true, "口粮不够时当天挨饿");
   assert.equal(R.rations(), 0, "口粮不够时库存吃光");
+  // 赤龙客栈：30金币睡一晚，直接进入第二天，照常结算一天的口粮。
+  data.clock = { day: 5, elapsed: 60 * 1000 };
+  data.rations = dailyNeed + 3; data.coins = 40; data.fedDay = { "2-1": 5 };
+  const slept = G.sleepAtInn();
+  assert.equal(slept.ok, true, "金币足够时可以在客栈住一晚");
+  assert.equal(data.coins, 10, "住一晚花费30金币");
+  assert.equal(G.day(), 6, "睡一晚直接进入第二天");
+  assert.equal(G.progress(), 0, "醒来是新一天的开始");
+  assert.equal(R.rations(), 3, "睡一晚照常扣除一天的口粮");
+  assert.equal(R.fedToday("2-1"), false, "睡一晚后在押首领又可以投喂");
+  assert.equal(G.sleepAtInn().ok, false, "金币不足时不能住店");
+  assert.equal(G.day(), 6, "住不起店时时间不变");
+  assert.match(mainSource, /action: "open-inn"/, "城镇商店应开放赤龙客栈");
   assert.ok(indexSource.indexOf("js/clock.js") > indexSource.indexOf("js/restaurant.js"), "游戏入口应加载时间系统");
   assert.match(mainSource, /clockChip\(\)/, "顶栏应显示游戏时间");
   Object.assign(data, saved);

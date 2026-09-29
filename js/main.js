@@ -93,7 +93,7 @@
   const TOWN_SHOPS = [
     { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [32, 42, 11.5, 27], crop: [600, 600, 150] },
     { id: "tavern", action: "open-restaurant", name: "金杯餐馆", title: "🍽️ 餐馆 · 新开业", detail: "出售各式菜肴。带去营地监狱投喂在押首领，提升好感度，结缘后才能使用它们的卡牌。", enabled: true, hotspot: [5, 27, 19, 17], crop: [165, 300, 150] },
-    { id: "inn", name: "赤龙客栈", title: "🏨 客栈", detail: "敬请期待。", enabled: false, hotspot: [68, 16, 9, 19], crop: [1235, 250, 150] },
+    { id: "inn", action: "open-inn", name: "赤龙客栈", title: "🏨 客栈 · 新开业", detail: "花30金币睡一晚，直接进入第二天早上；口粮照常按一天消耗，在押首领又可以投喂了。", enabled: true, hotspot: [68, 16, 9, 19], crop: [1235, 250, 150] },
     { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [88, 36, 11.3, 14], crop: [1590, 400, 180] }
   ];
   const EQUIPMENT_TIER_NAMES = {
@@ -174,7 +174,7 @@
       const daily = total * CF.GameClock.DAILY_BATTLES;
       return `<span class="resource-chip ration-chip${have < total ? " short" : ""}" title="每场战斗消耗：随从${units} + 犯人${prisoners} = ${total}份粮食；每天日常消耗${CF.GameClock.DAILY_BATTLES}场的量，共${daily}份">🌾 <strong data-resource-rations>${have}</strong> 粮食 <small>每战-${total} · 每天-${daily}</small></span>`;
     },
-    // 顶栏时钟：现实12分钟为一天，每秒由计时器刷新文字与进度条，不重绘整个界面。
+    // 顶栏时钟：现实24分钟为一天，每秒由计时器刷新文字与进度条，不重绘整个界面。
     clockChip() {
       const clock = CF.GameClock;
       return `<span class="resource-chip clock-chip" title="现实${clock.DAY_MS / 60000}分钟为游戏里的一天；新的一天可以再投喂每名在押首领一次，队伍会吃掉${clock.DAILY_BATTLES}场战斗的粮食。">🕰️ <strong data-clock-day>第${clock.day()}天</strong> <small data-clock-time>${clock.timeLabel()}</small><span class="clock-progress" aria-hidden="true"><span data-clock-bar style="width:${clock.progress() * 100}%"></span></span></span>`;
@@ -510,7 +510,7 @@
         </div>
         <div class="menu-tiles">
           <button class="menu-tile" data-action="level-select"><span class="menu-tile-art" style="background-image: url('assets/maps/world-map.png')" aria-hidden="true"></span><strong>关卡选择</strong><small>远征世界</small></button>
-          <button class="menu-tile" data-action="town-shop-page"><span class="menu-tile-art" style="background-image: url('${TOWN_ART}')" aria-hidden="true"></span><strong>城镇商店</strong><small>装备店 · 餐馆已开放</small></button>
+          <button class="menu-tile" data-action="town-shop-page"><span class="menu-tile-art" style="background-image: url('${TOWN_ART}')" aria-hidden="true"></span><strong>城镇商店</strong><small>装备店 · 餐馆 · 客栈已开放</small></button>
           <button class="menu-tile" data-action="deck-page"><span class="menu-tile-art" style="background-image: url('assets/cards/kingdom-knight.png')" aria-hidden="true"></span><strong>卡组编辑</strong><small>收藏 ${collected} 张</small></button>
           <button class="menu-tile" data-action="training-page"><span class="menu-tile-art" style="background-image: url('${TRAINING_GROUNDS_ART}')" aria-hidden="true"></span>${trainingReady ? '<span class="menu-tile-dot" aria-hidden="true"></span>' : ""}<strong>队伍营地</strong><small>${injuredCount ? `伤员 ${injuredCount} 名` : "营地"}</small></button>
         </div>
@@ -774,7 +774,7 @@
       }).join("");
       const cards = TOWN_SHOPS.map(shop => `<button class="choice-btn camp-service training-npc-card${shop.enabled ? " ready" : " locked"}" ${actionAttrs(shop)}>${avatar(shop)}<span class="training-npc-copy"><span class="training-npc-name">${shop.name}</span><strong>${shop.title}</strong><small>${shop.detail}</small>${shop.enabled ? "" : '<em class="camp-service-hint">敬请期待</em>'}</span></button>`).join("");
       this.frame(`<section class="screen training-screen">
-        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工：装备店可将战场缴获的粗糙武器、盔甲重锻为更高品质；新开业的金杯餐馆出售各式菜肴，用来和营地监狱里的在押首领建立好感。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工：装备店可将战场缴获的粗糙武器、盔甲重锻为更高品质；金杯餐馆出售面粉与各式菜肴；赤龙客栈可以住一晚，直接进入第二天。</p></div>
         <div class="training-scene" style="background-image: url('${TOWN_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
           ${hotspots}
         </div>
@@ -800,6 +800,27 @@
         <h3>投喂菜肴</h3>
         <div class="restaurant-menu">${rows}</div>
         <div class="menu-actions"><button class="primary-btn" data-modal-action="restaurant-to-prison">带上食物去营地监狱</button><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
+    },
+
+    // 赤龙客栈：花钱睡一晚，直接跳到第二天早上。
+    openInn() {
+      const clock = CF.GameClock;
+      const daily = clock.dailyRations();
+      const have = CF.Restaurant.rations();
+      const canPay = CF.SaveSystem.data.coins >= clock.INN_PRICE;
+      this.modal(`<div class="page-heading"><div><span class="eyebrow">城镇商店 · 新开业</span><h2>赤龙客栈</h2></div><p>现在是第${clock.day()}天 ${clock.timeLabel()}，自然等到第二天早上还要现实时间${clock.untilNextDayLabel()}。当前金币：<strong>${CF.SaveSystem.data.coins}</strong>。</p></div>
+        <div class="inn-offer"><span class="restaurant-food-icon" aria-hidden="true">🛏️</span><div class="restaurant-food-copy"><strong>住一晚 · ${clock.INN_PRICE}金币</strong><small>一觉睡到第${clock.day() + 1}天早上6:00。和自然过一天一样：队伍吃掉${clock.DAILY_BATTLES}场战斗的口粮（${daily}份，现有${have}份${have < daily ? "，不够吃" : ""}），每名在押首领又可以投喂一次。</small></div></div>
+        <div class="menu-actions"><button class="primary-btn" data-modal-action="inn-sleep" ${canPay ? "" : "disabled"}>${canPay ? `付${clock.INN_PRICE}金币，睡到天亮` : `金币不足（需要${clock.INN_PRICE}）`}</button><button class="secondary-btn" data-modal-action="close">离开</button></div>`, "training-modal");
+    },
+
+    sleepAtInn() {
+      const result = CF.GameClock.sleepAtInn();
+      if (!result.ok) return this.toast(result.reason, "bad");
+      this.closeModal();
+      this.sfx("rescue");
+      this.toast(`在赤龙客栈美美睡了一晚（-${result.cost}金币）。`, "good");
+      this.handleNewDays([result.report]);
+      this.renderTownShop();
     },
 
     buyFlourAction(bags) {
@@ -1632,7 +1653,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "inn-sleep", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1698,6 +1719,7 @@
     if (action === "town-shop-page") UI.renderTownShop();
     if (action === "open-equipment-shop") UI.openEquipmentShop();
     if (action === "open-restaurant") UI.openRestaurant();
+    if (action === "open-inn") UI.openInn();
     if (action === "prison-visit") UI.openPrisonerVisit(el.dataset.key);
     if (action === "backpack-page") UI.renderBackpack();
     if (action === "book-page") UI.renderBook();
@@ -1813,6 +1835,7 @@
     if (action === "forge-item") UI.forgeItemAction(el.dataset.kind, Number(el.dataset.tier));
     if (action === "buy-food") UI.buyFoodAction(el.dataset.food);
     if (action === "buy-flour") UI.buyFlourAction(Number(el.dataset.bags));
+    if (action === "inn-sleep") UI.sleepAtInn();
     if (action === "ration-buy-go" && UI.pendingRationStart) {
       const pending = UI.pendingRationStart; UI.pendingRationStart = null;
       const bought = CF.Restaurant.buyFlour(pending.bags);
