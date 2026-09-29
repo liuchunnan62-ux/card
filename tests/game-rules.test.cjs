@@ -1392,6 +1392,26 @@ assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入�
   assert.equal(es.enemy.board.front[0].health, 12, "两次攻击都应造成伤害");
 }
 
+{
+  // 盔甲防御只挡普通攻击，法术与技能伤害无视防御。
+  const armorBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+  const ab = armorBattle.state;
+  ab.player.board = CF.emptyBoard();
+  ab.enemy.board = CF.emptyBoard();
+  const armored = combatUnit("orc_grunt", { attack: 0, health: 20, maxHealth: 20, armorValue: 2 });
+  ab.enemy.board.front[0] = armored;
+  armorBattle.damageUnit("enemy", "front", 0, 5, "火焰瓶", false, "player");
+  assert.equal(armored.health, 15, "法术伤害应无视盔甲防御");
+  const striker = combatUnit("vanguard", { attack: 5, health: 20, maxHealth: 20, ready: true, justSummoned: false });
+  ab.player.board.front[0] = striker;
+  armorBattle.performUnitAttack("player", "front", 0, "enemy", "front", 0);
+  assert.equal(armored.health, 12, "普通攻击仍受盔甲防御减免");
+  const heavy = combatUnit("royal_war_machine", { attack: 0, health: 20, maxHealth: 20, keywords: ["重甲"], armorValue: 2 });
+  ab.enemy.board.front[1] = heavy;
+  armorBattle.damageUnit("enemy", "front", 1, 5, "火焰瓶", false, "player");
+  assert.equal(heavy.health, 17, "重甲关键词对法术仍然生效，但盔甲防御不生效");
+}
+
 const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
 const heroWeapon = heroWeaponBattle.state.player.weapon;
 assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");

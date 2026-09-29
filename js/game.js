@@ -1463,16 +1463,18 @@
       this.checkOutcome();
     }
 
-    mitigatedDamage(unit, amount) {
+    // 盔甲防御只抵挡普通攻击（随从攻击、反击、武器攻击）；法术、技能等效果伤害传 ignoreArmor 无视防御。
+    // 重甲是卡牌自身的关键词，对所有伤害都生效。
+    mitigatedDamage(unit, amount, { ignoreArmor = false } = {}) {
       if (!unit) return Math.max(0, amount);
-      const reduced = amount - (unit.armorValue || 0);
+      const reduced = amount - (ignoreArmor ? 0 : unit.armorValue || 0);
       return unit.keywords?.includes("重甲") ? Math.max(1, reduced - 2) : Math.max(0, reduced);
     }
 
     damageUnit(side, row, column, amount, source, clean = true, kind = "system") {
       const unit = this.state[side].board[row][column];
       if (!unit) return;
-      const dealt = this.mitigatedDamage(unit, amount);
+      const dealt = this.mitigatedDamage(unit, amount, { ignoreArmor: true });
       unit.health -= dealt;
       this.addLog(`${source}对第${column + 1}路${row === "front" ? "前排" : "后排"}的${unit.name}造成${dealt}点伤害${dealt < amount ? "（重甲减免）" : ""}；目标剩余${Math.max(0, unit.health)}/${unit.maxHealth}生命。`, kind);
       if (clean) { this.cleanDead(); this.checkOutcome(); }

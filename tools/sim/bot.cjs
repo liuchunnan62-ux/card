@@ -110,8 +110,8 @@ class PlayerBot {
   enemyTargetsFor(card) {
     const value = Number(card.value) || 0;
     return units(this.enemy.board).sort((a, b) => {
-      const killA = value && this.battle.mitigatedDamage(a.unit, value) >= a.unit.health ? 1 : 0;
-      const killB = value && this.battle.mitigatedDamage(b.unit, value) >= b.unit.health ? 1 : 0;
+      const killA = value && this.battle.mitigatedDamage(a.unit, value, { ignoreArmor: true }) >= a.unit.health ? 1 : 0;
+      const killB = value && this.battle.mitigatedDamage(b.unit, value, { ignoreArmor: true }) >= b.unit.health ? 1 : 0;
       return killB - killA || this.battle.currentAttack(b.unit) - this.battle.currentAttack(a.unit) || a.unit.health - b.unit.health;
     });
   }
