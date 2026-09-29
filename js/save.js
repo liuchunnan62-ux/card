@@ -5,6 +5,13 @@
   const SLOT_COUNT = 15;
   const SLOT_PREFIX = "rift-expedition-slot-";
   const ACTIVE_SLOT_KEY = "rift-expedition-active-slot";
+  const BACKUP_SUFFIX = "-backup";
+  // 自动备份间隔：备份保存的是上一次写入前的栏位内容，最多每10分钟轮换一次。
+  const BACKUP_INTERVAL = 10 * 60 * 1000;
+  // 当前存档结构版本。改动存档结构时 +1，并在 MIGRATIONS 中补上对应的升级步骤。
+  const SAVE_VERSION = 2;
+  const EXPORT_GAME_ID = "rift-expedition";
+  const EXPORT_FORMAT = 1;
   const CF = window.CardForge;
   const CHAPTER_IDS = [1, 2, 3, 4, 5];
   const CHAPTER_NODE_COUNTS = { 1: 13, 2: 20, 3: 20, 4: 20, 5: 20 };
@@ -70,7 +77,7 @@
     const skillProgress = { slash: { level: 1, xp: 0, unlocked: true } };
     skillProgress[signature] = { level: 1, xp: 0, unlocked: true };
     return {
-      version: 2,
+      version: SAVE_VERSION,
       hero: {
         heroId: hero?.id || "captain",
         level: 1, xp: 0, maxHealth: 30, maxMana: 3,
@@ -161,6 +168,27 @@
       .filter(([, count]) => count > 0));
   }
 
+  // 存档结构升级：键是旧版本号，函数把该版本的数据改写成下一版本（返回新对象）。
+  // 以后改动存档结构时：把 SAVE_VERSION +1，并在这里补一步，例如
+  //   2: raw => ({ ...raw, version: 3, reputation: raw.fame || 0 })
+  // normalize() 只负责补默认值、清洗非法数据；一次性的结构改名/搬迁写在这里，
+  // 这样每一步只需面对上一版本的数据，不必兼容所有历史格式。
+  // （版本1→2的旧逻辑历史上写在 normalize() 里，保持不动。）
+  const MIGRATIONS = {};
+
+  function migrate(raw) {
+    if (!raw || typeof raw !== "object") return raw;
+    let current = raw;
+    let version = Math.max(1, Math.floor(Number(raw.version)) || 1);
+    while (version < SAVE_VERSION) {
+      if (MIGRATIONS[version]) current = MIGRATIONS[version](current);
+      version += 1;
+    }
+    return current;
+  }
+
+  const isFutureVersion = raw => Number(raw?.version) > SAVE_VERSION;
+
   function normalize(raw) {
     const base = freshSave(raw?.hero?.heroId);
     if (!raw || typeof raw !== "object") return base;
@@ -247,22 +275,85 @@
     const fallbackChapter = Number(legacyRun?.chapter) || (Number(result.completedRuns) >= 4 ? 5 : Number(result.completedRuns) >= 3 ? 4 : Number(result.completedRuns) >= 2 ? 3 : Number(result.completedRuns) >= 1 ? 2 : 1);
     result.activeChapter = CHAPTER_IDS.includes(Number(raw.activeChapter)) ? Number(raw.activeChapter) : fallbackChapter;
     result.run = result.chapterRuns[result.activeChapter] || null;
-    result.version = 2;
+    result.version = SAVE_VERSION;
+    delete result.savedAt;
     delete result.hero.skillLevel;
     delete result.hero.manaShards;
     return result;
   }
 
+  const loadSaveData = raw => normalize(migrate(raw));
   const slotKey = slot => `${SLOT_PREFIX}${slot}`;
+  const backupKey = slot => `${SLOT_PREFIX}${slot}${BACKUP_SUFFIX}`;
   const validSlot = slot => Number.isInteger(Number(slot)) && Number(slot) >= 1 && Number(slot) <= SLOT_COUNT;
-  function readJSON(key) {
-    try { const text = localStorage.getItem(key); return text ? JSON.parse(text) : null; }
+  function readText(key) {
+    try { return localStorage.getItem(key); }
     catch (error) { return null; }
   }
+  function parseObject(text) {
+    if (!text) return null;
+    try {
+      const value = JSON.parse(text);
+      return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+    } catch (error) { return null; }
+  }
+  const readJSON = key => parseObject(readText(key));
   function writeRaw(key, value) {
     try { localStorage.setItem(key, value); return true; }
     catch (error) { console.warn("存档写入失败", error); return false; }
   }
+  function removeKey(key) {
+    try { localStorage.removeItem(key); return true; }
+    catch (error) { return false; }
+  }
+
+  // 读取栏位：主存档缺失或损坏（例如写到一半浏览器崩溃）时改用自动备份。
+  function readSlot(slot) {
+    if (!validSlot(slot)) return { raw: null, fromBackup: false };
+    const raw = readJSON(slotKey(slot));
+    if (raw) return { raw, fromBackup: false };
+    const backup = readJSON(backupKey(slot));
+    return { raw: backup, fromBackup: Boolean(backup) };
+  }
+
+  // 覆盖栏位前先把旧内容复制为备份；force 为 false 时同一栏位每10分钟最多轮换一次，
+  // 这样备份始终比当前进度旧一些，误操作或数据损坏时还有退路。
+  const lastBackupAt = {};
+  function refreshBackup(slot, force = false) {
+    const now = Date.now();
+    if (!force && now - (lastBackupAt[slot] || 0) < BACKUP_INTERVAL) return;
+    const current = readText(slotKey(slot));
+    if (!parseObject(current)) return;
+    if (writeRaw(backupKey(slot), current)) lastBackupAt[slot] = now;
+  }
+
+  function summarize(raw, slot) {
+    const hero = typeof CF.heroById === "function" ? CF.heroById(raw.hero?.heroId) : null;
+    const chapter = CHAPTER_IDS.includes(Number(raw.activeChapter)) ? Number(raw.activeChapter) : 1;
+    const run = raw.chapterRuns?.[chapter] || null;
+    return {
+      slot: Number(slot),
+      empty: false,
+      heroId: hero?.id || "captain",
+      heroName: hero?.name || "罗兰·维克",
+      heroTitle: hero?.title || "",
+      portrait: hero?.portrait || "assets/hero/novice-swordsman.png",
+      level: Math.max(1, Number(raw.hero?.level) || 1),
+      coins: Math.max(0, Number(raw.coins) || 0),
+      completedRuns: Math.max(0, Number(raw.completedRuns) || 0),
+      chapter,
+      chapterCompleted: Array.isArray(run?.completed) ? run.completed.length : 0,
+      chapterTotal: CHAPTER_NODE_COUNTS[chapter],
+      savedAt: Number(raw.savedAt) || 0
+    };
+  }
+
+  // 导出文件的外层结构：{ game, format, kind: "slot"|"all", exportedAt, saves: [{ slot, data }] }。
+  // 导入时也接受直接粘贴的单个存档对象（没有外层结构）。
+  function exportEnvelope(kind, saves) {
+    return JSON.stringify({ game: EXPORT_GAME_ID, format: EXPORT_FORMAT, kind, exportedAt: Date.now(), saveVersion: SAVE_VERSION, saves });
+  }
+  const looksLikeSave = value => Boolean(value && typeof value === "object" && value.hero && typeof value.hero === "object" && Array.isArray(value.deck));
 
   const SaveSystem = {
     data: null,
@@ -271,26 +362,38 @@
     levelCap() { return this.data?.completedRuns >= 4 ? 25 : this.data?.completedRuns >= 3 ? 20 : this.data?.completedRuns >= 2 ? 15 : this.data?.completedRuns >= 1 ? 10 : 5; },
     deckLimit() { return 24 + Math.max(0, (this.data?.hero?.level || 1) - 5); },
     load() {
-      const raw = readJSON(KEY);
-      try { this.data = normalize(raw); }
-      catch (error) { this.data = freshSave(); }
-      const storedSlot = Number(readJSON(ACTIVE_SLOT_KEY));
-      this.activeSlot = validSlot(storedSlot) && readJSON(slotKey(storedSlot)) ? storedSlot : null;
+      const storedSlot = Number(readText(ACTIVE_SLOT_KEY));
+      const slotRaw = validSlot(storedSlot) ? readSlot(storedSlot).raw : null;
+      this.activeSlot = slotRaw ? storedSlot : null;
+      let raw = readJSON(KEY);
+      try { this.data = loadSaveData(raw); }
+      catch (error) { raw = null; }
+      // 自动存档损坏时改用当前栏位（或其备份），避免用全新存档覆盖栏位里的进度。
+      if (!raw && slotRaw) {
+        try { this.data = loadSaveData(slotRaw); raw = slotRaw; }
+        catch (error) { this.activeSlot = null; }
+      }
+      if (!raw) this.data = freshSave();
       // 旧版只有一个自动存档：首次升级时把已有进度迁移到1号栏位，避免新游戏覆盖老玩家的进度。
       if (!this.activeSlot && raw && typeof raw === "object" && this.listSlots().every(slot => slot.empty)) this.activeSlot = 1;
       this.save(false);
       return this.data;
     },
+    // 返回是否全部写入成功；失败（通常是浏览器存储空间已满）时派发 savefailed 事件，由界面提示玩家导出存档。
     save(notify = true) {
       const text = JSON.stringify(this.data);
-      writeRaw(KEY, text);
+      let ok = writeRaw(KEY, text);
       if (this.activeSlot) {
-        writeRaw(slotKey(this.activeSlot), JSON.stringify({ ...this.data, savedAt: Date.now() }));
+        refreshBackup(this.activeSlot);
+        ok = writeRaw(slotKey(this.activeSlot), JSON.stringify({ ...this.data, savedAt: Date.now() })) && ok;
         writeRaw(ACTIVE_SLOT_KEY, String(this.activeSlot));
       } else {
-        try { localStorage.removeItem(ACTIVE_SLOT_KEY); } catch (error) { /* 可选 */ }
+        removeKey(ACTIVE_SLOT_KEY);
       }
+      this.lastWriteFailed = !ok;
+      if (!ok) window.dispatchEvent(new CustomEvent("savefailed", { detail: { slot: this.activeSlot } }));
       if (notify) window.dispatchEvent(new CustomEvent("savechange", { detail: this.data }));
+      return ok;
     },
     reset() {
       this.data = freshSave(this.data?.hero?.heroId);
@@ -298,27 +401,10 @@
       return this.data;
     },
     slotSummary(slot) {
-      const raw = validSlot(slot) ? readJSON(slotKey(slot)) : null;
-      if (!raw || typeof raw !== "object") return { slot: Number(slot), empty: true, active: this.activeSlot === Number(slot) };
-      const hero = typeof CF.heroById === "function" ? CF.heroById(raw.hero?.heroId) : null;
-      const chapter = CHAPTER_IDS.includes(Number(raw.activeChapter)) ? Number(raw.activeChapter) : 1;
-      const run = raw.chapterRuns?.[chapter] || null;
-      return {
-        slot: Number(slot),
-        empty: false,
-        active: this.activeSlot === Number(slot),
-        heroId: hero?.id || "captain",
-        heroName: hero?.name || "罗兰·维克",
-        heroTitle: hero?.title || "",
-        portrait: hero?.portrait || "assets/hero/novice-swordsman.png",
-        level: Math.max(1, Number(raw.hero?.level) || 1),
-        coins: Math.max(0, Number(raw.coins) || 0),
-        completedRuns: Math.max(0, Number(raw.completedRuns) || 0),
-        chapter,
-        chapterCompleted: Array.isArray(run?.completed) ? run.completed.length : 0,
-        chapterTotal: CHAPTER_NODE_COUNTS[chapter],
-        savedAt: Number(raw.savedAt) || 0
-      };
+      const { raw, fromBackup } = readSlot(slot);
+      const active = this.activeSlot === Number(slot);
+      if (!raw) return { slot: Number(slot), empty: true, active };
+      return { ...summarize(raw, slot), active, fromBackup, future: isFutureVersion(raw) };
     },
     listSlots() {
       return Array.from({ length: SLOT_COUNT }, (_, index) => this.slotSummary(index + 1));
@@ -333,10 +419,10 @@
       return this.data;
     },
     loadSlot(slot) {
-      const raw = validSlot(slot) ? readJSON(slotKey(slot)) : null;
-      if (!raw) return null;
-      delete raw.savedAt;
-      this.data = normalize(raw);
+      const { raw } = readSlot(slot);
+      // 更新版本游戏写入的存档可能含有当前版本不认识的数据，读取后再保存会把它们弄丢，因此拒绝读取。
+      if (!raw || isFutureVersion(raw)) return null;
+      this.data = loadSaveData(raw);
       this.activeSlot = Number(slot);
       this.save();
       return this.data;
@@ -350,12 +436,62 @@
     },
     deleteSlot(slot) {
       if (!validSlot(slot)) return false;
-      try { localStorage.removeItem(slotKey(slot)); } catch (error) { return false; }
+      if (!removeKey(slotKey(slot))) return false;
+      removeKey(backupKey(slot));
+      delete lastBackupAt[slot];
       if (this.activeSlot === Number(slot)) {
         this.activeSlot = null;
         this.save(false);
       }
       return true;
+    },
+    // 导出单个栏位为文本（JSON）；空栏位返回 null。
+    exportSlot(slot) {
+      const { raw } = readSlot(slot);
+      return raw ? exportEnvelope("slot", [{ slot: Number(slot), data: raw }]) : null;
+    },
+    // 导出全部非空栏位，用于换设备或整体备份；没有任何存档时返回 null。
+    exportAll() {
+      const saves = Array.from({ length: SLOT_COUNT }, (_, index) => index + 1)
+        .map(slot => ({ slot, raw: readSlot(slot).raw }))
+        .filter(entry => entry.raw)
+        .map(entry => ({ slot: entry.slot, data: entry.raw }));
+      return saves.length ? exportEnvelope("all", saves) : null;
+    },
+    // 解析导入文本。成功：{ ok: true, kind, saves: [{ slot, data, summary }] }（slot 可能为 null）；
+    // 失败：{ ok: false, error: "empty" | "format" | "future" | "damaged" }。不会写入任何数据。
+    parseImport(text) {
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return { ok: false, error: "empty" };
+      const parsed = parseObject(trimmed);
+      if (!parsed) return { ok: false, error: "format" };
+      let kind = "slot";
+      let entries;
+      if (parsed.game === EXPORT_GAME_ID && Array.isArray(parsed.saves)) {
+        kind = parsed.kind === "all" ? "all" : "slot";
+        entries = parsed.saves.map(entry => ({ slot: validSlot(entry?.slot) ? Number(entry.slot) : null, data: entry?.data }));
+      } else if (looksLikeSave(parsed)) {
+        entries = [{ slot: null, data: parsed }];
+      } else return { ok: false, error: "format" };
+      if (!entries.length || !entries.every(entry => looksLikeSave(entry.data))) return { ok: false, error: "format" };
+      if (entries.some(entry => isFutureVersion(entry.data))) return { ok: false, error: "future" };
+      try {
+        entries.forEach(entry => loadSaveData(entry.data));
+        const saves = entries.map(entry => ({ slot: entry.slot, data: entry.data, summary: summarize(entry.data, entry.slot || 0) }));
+        return { ok: true, kind, saves };
+      } catch (error) { return { ok: false, error: "damaged" }; }
+    },
+    // 把导入的存档写入栏位。栏位原有内容会先强制备份一次；写入当前栏位时同时替换正在进行的进度。
+    importToSlot(slot, rawData) {
+      if (!validSlot(slot) || !looksLikeSave(rawData) || isFutureVersion(rawData)) return false;
+      const target = Number(slot);
+      const data = loadSaveData(rawData);
+      refreshBackup(target, true);
+      if (this.activeSlot === target) {
+        this.data = data;
+        return this.save();
+      }
+      return writeRaw(slotKey(target), JSON.stringify({ ...data, savedAt: Date.now() }));
     },
     addHeroXp(amount) {
       const hero = this.data.hero;
@@ -516,5 +652,5 @@
   }
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, equipDotHTML });
+  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, SAVE_VERSION, equipDotHTML });
 })();

@@ -1,0 +1,11 @@
+{
+  "name": "rift-expedition",
+  "private": true,
+  "description": "裂隙征途：原生 HTML/CSS/JavaScript 单机卡牌冒险（无构建步骤、无运行时依赖）",
+  "scripts": {
+    "test": "node tests/run-all.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

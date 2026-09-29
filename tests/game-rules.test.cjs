@@ -1,52 +1,11 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const vm = require("node:vm");
+const { createGameContext } = require("./helpers/game-context.cjs");
 
 const root = path.resolve(__dirname, "..");
 const storage = new Map();
-const context = vm.createContext({
-  console,
-  setTimeout,
-  clearTimeout,
-  Math,
-  Date,
-  JSON,
-  window: null,
-  CustomEvent: class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } },
-  localStorage: {
-    getItem(key) { return storage.has(key) ? storage.get(key) : null; },
-    setItem(key, value) { storage.set(key, String(value)); },
-    removeItem(key) { storage.delete(key); }
-  }
-});
-context.window = context;
-context.dispatchEvent = () => {};
-
-function load(file) {
-  const source = fs.readFileSync(path.join(root, file), "utf8");
-  vm.runInContext(source, context, { filename: file });
-}
-
-load("js/cards.js");
-load("js/enemies.js");
-load("js/boss-dialogues.js");
-load("js/emotes.js");
-load("js/save.js");
-load("js/adventure.js");
-load("js/restaurant.js");
-load("js/clock.js");
-load("js/labor.js");
-load("js/bond-stories.js");
-load("js/night-events.js");
-load("js/trials.js");
-load("js/arena.js");
-load("js/heroes.js");
-load("js/sound.js");
-load("js/music.js");
-load("js/game.js");
-
-const CF = context.CardForge;
+const { CF } = createGameContext({ storage });
 const board = CF.emptyBoard();
 assert.ok(CF.SoundFX, "程序化战斗音效系统应加载");
 assert.equal(CF.SoundFX.play("melee"), false, "缺少浏览器音频上下文时音效应安全跳过");
