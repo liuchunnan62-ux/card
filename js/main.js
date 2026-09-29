@@ -113,7 +113,10 @@
           ${this.clockChip()}
           ${this.rationChip()}
         </div>
-        ${showHome ? '<button class="icon-btn" data-action="home" title="返回主菜单">⌂ 主菜单</button>' : ""}
+        <div class="topbar-actions">
+          ${showHome ? '<button class="icon-btn" data-action="home" title="返回主菜单">⌂ 主菜单</button>' : ""}
+          <button class="icon-btn" data-action="cover-return" title="返回开始界面">⏏ 开始界面</button>
+        </div>
       </header>`;
     },
     // 顶栏粮食：现有粮食 / 每场战斗消耗（出战随从 + 在押犯人），不够时标红。
@@ -290,12 +293,31 @@
       if (!this.battle || this.battle.state.ended) return this.leaveCurrentRun();
       this.modal(`<h2>返回主菜单？</h2><p>当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-leave-battle">放弃战斗并返回</button><button class="secondary-btn" data-modal-action="close">继续战斗</button></div>`);
     },
-    leaveCurrentRun() {
+    leaveCurrentRun(toCover = false) {
       this.battle?.abandon();
-      if (this.screen === "battle" && CF.Adventure.current()) CF.Adventure.pause();
+      if (["battle", "camp", "event", "shop"].includes(this.screen) && CF.Adventure.current()) CF.Adventure.pause();
       this.battle = null;
       this.activeNode = null;
-      this.renderMenu();
+      CF.SaveSystem.save();
+      if (toCover) this.renderCover(); else this.renderMenu();
+    },
+    // 顶栏“开始界面”按钮：任何界面都能回到封面；战斗进行中先确认，冒险进度与“保存并退出”一样保留。
+    returnToCover() {
+      if (this.battle && !this.battle.state.ended) {
+        return this.modal(`<h2>返回开始界面？</h2><p>当前这场战斗会被放弃，需要重新挑战；已击败的节点、收藏和其他进度都会保留。</p><div class="menu-actions"><button class="danger-btn" data-modal-action="confirm-cover-return">放弃战斗并返回</button><button class="secondary-btn" data-modal-action="close">继续战斗</button></div>`);
+      }
+      this.closeModal();
+      this.leaveCurrentRun(true);
+    },
+    // 开始界面“结束游戏”：先保存；安卓包由原生层关闭应用，浏览器里尝试关闭窗口，关不掉时提示玩家手动关闭。
+    quitGame() {
+      CF.SaveSystem.save();
+      CF.Music?.setTrack(null);
+      if (window.RiftAndroid?.exitGame) return window.RiftAndroid.exitGame();
+      window.close();
+      setTimeout(() => {
+        if (!window.closed) this.modal(`<h2>进度已保存</h2><p>浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。</p><div class="menu-actions"><button class="secondary-btn" data-modal-action="close">好的</button></div>`);
+      }, 300);
     },
 
     renderCover() {
@@ -317,6 +339,7 @@
             <button class="cover-button" data-action="cover-continue" ${canContinue ? "" : "disabled"}><span>继续游戏</span><small>${canContinue ? `栏位${activeSlot.slot} · ${activeSlot.heroName} Lv${activeSlot.level}` : "暂无进行中的存档"}</small></button>
             <button class="cover-button" data-action="load-slots"><span>读取存档</span><small>${hasSaves ? `共${CF.SAVE_SLOT_COUNT}个存档栏位` : "暂无存档 · 可导入存档文件"}</small></button>
             <button class="cover-button" data-action="settings-page"><span>游戏设置</span><small>音效与本地存档</small></button>
+            <button class="cover-button cover-quit" data-action="quit-game"><span>结束游戏</span><small>保存进度并退出</small></button>
           </div>
         </div>
       </section>`;
@@ -1877,6 +1900,8 @@
       else UI.renderMenu();
     }
     if (action === "cover") UI.renderCover();
+    if (action === "cover-return") UI.returnToCover();
+    if (action === "quit-game") UI.quitGame();
     if (action === "hero-select") UI.renderHeroSelect();
     if (action === "hero-pick") { UI.heroSelectId = el.dataset.hero; UI.renderHeroSelect(); }
     if (action === "hero-select-confirm") UI.renderSaveSlots("new");
@@ -2034,6 +2059,7 @@
     if (action === "tutorial-done") { CF.SaveSystem.data.tutorialSeen = true; CF.SaveSystem.data.laneRulesSeen = true; CF.SaveSystem.save(); UI.closeModal(); }
     if (action === "confirm-new-run") UI.startNewRun();
     if (action === "confirm-leave-battle") { UI.closeModal(); UI.leaveCurrentRun(); }
+    if (action === "confirm-cover-return") { UI.closeModal(); UI.leaveCurrentRun(true); }
     if (action === "confirm-slot-new") UI.startNewGame(Number(el.dataset.slot));
     if (action === "confirm-slot-load") UI.finishSlotLoad(Number(el.dataset.slot));
     if (action === "confirm-slot-save") UI.finishSlotSave(Number(el.dataset.slot));

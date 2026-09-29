@@ -3971,7 +3971,14 @@
       "法术效果提升{0}级": "Efeito do feitiço +{0} níveis",
       "累计奖金": "Prêmio total",
       "{0}场": "{0} partidas",
-      "{0} {1}：Lv{2}：{3}": "{0} {1}: Nv{2}: {3}"
+      "{0} {1}：Lv{2}：{3}": "{0} {1}: Nv{2}: {3}",
+      "返回开始界面": "Voltar à tela inicial",
+      "⏏ 开始界面": "⏏ Tela inicial",
+      "返回开始界面？": "Voltar à tela inicial?",
+      "进度已保存": "Progresso salvo",
+      "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Os navegadores não permitem que uma página feche a própria aba. Feche esta janela ou aba você mesmo. Da próxima vez que abrir o jogo, poderá continuar pela tela inicial.",
+      "结束游戏": "Sair do jogo",
+      "保存进度并退出": "Salvar o progresso e sair"
     },
     "joiners": {
       "": " ",

@@ -4460,7 +4460,14 @@
       "月潭的长梦": "The Long Dream of the Moonpool",
       "千枝城的灰牙": "The Greyfang of Thousand Branch City",
       "{0} ·《{1}》": "{0} · “{1}”",
-      "《源血纪元》{0}": "The Bloodsource Chronicle · {0}"
+      "《源血纪元》{0}": "The Bloodsource Chronicle · {0}",
+      "返回开始界面": "Back to title screen",
+      "⏏ 开始界面": "⏏ Title Screen",
+      "返回开始界面？": "Return to the title screen?",
+      "进度已保存": "Progress saved",
+      "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Browsers don't let a page close its own tab. Please close this window or tab yourself. Next time you open the game, you can continue from the title screen.",
+      "结束游戏": "Quit Game",
+      "保存进度并退出": "Save progress and exit"
     },
     "joiners": {
       "": " ",

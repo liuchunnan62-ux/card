@@ -3971,7 +3971,14 @@
       "法术效果提升{0}级": "Effet du sort +{0} niveaux",
       "累计奖金": "Prix total",
       "{0}场": "{0} matchs",
-      "{0} {1}：Lv{2}：{3}": "{0} {1} : Niv{2} : {3}"
+      "{0} {1}：Lv{2}：{3}": "{0} {1} : Niv{2} : {3}",
+      "返回开始界面": "Retour à l'écran titre",
+      "⏏ 开始界面": "⏏ Écran titre",
+      "返回开始界面？": "Revenir à l'écran titre ?",
+      "进度已保存": "Progression sauvegardée",
+      "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Les navigateurs ne permettent pas à une page de fermer son propre onglet. Fermez vous-même cette fenêtre ou cet onglet. La prochaine fois, vous pourrez reprendre depuis l'écran titre.",
+      "结束游戏": "Quitter le jeu",
+      "保存进度并退出": "Sauvegarder et quitter"
     },
     "joiners": {
       "": " ",
