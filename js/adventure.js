@@ -428,6 +428,7 @@
   const PRISONER_NODE_TYPES = ["normal", "elite"];
   // 第一关起点“林道遭遇”没有固定敌人，作为第一场战斗时总会遇到哥布林战团。
   const CHAPTER_ONE_PRISONER_FALLBACK = { 0: "goblin_warband" };
+  let bondOwnerCache = null;
   const MAP_STAGES = [
     [{ type: "normal", label: "林道遭遇", icon: "⚔️" }],
     [{ type: "normal", label: "断桥之战", icon: "⚔️", weaponBoss: true, weaponId: "mist_dagger", enemyId: "goblin_warband", portrait: "assets/enemies/goblin-warband.png" }, { type: "event", label: "迷雾岔路", icon: "❓" }],
@@ -800,9 +801,28 @@
           const enemy = CF.enemies?.[node.enemyId || (chapter === 1 ? CHAPTER_ONE_PRISONER_FALLBACK[stage] : "")];
           const isCaptured = captured(chapter, stage);
           if (isCaptured) save.prisoners[`${chapter}-${stage}`] = true;
-          return { key: `${chapter}-${stage}`, chapter, stage, name: chapter === 1 ? (enemy?.name || node.label) : node.label, portrait: node.portrait || enemy?.portrait || "", type: node.type, captured: isCaptured };
+          return { key: `${chapter}-${stage}`, chapter, stage, name: chapter === 1 ? (enemy?.name || node.label) : node.label, portrait: node.portrait || enemy?.portrait || "", type: node.type, captured: isCaptured, cardId: chapter >= 2 ? node.rewardCardId || null : null };
         });
       });
+    },
+    // 第二关起，普通/精英首领的首杀奖励卡需要与监狱中的对应首领结缘后才能出战（见 restaurant.js）。
+    // 最终首领不在监狱中：它的卡牌要等本关全部在押首领都结缘才能使用，等级取其中最低的好感等级（members）。
+    bondCardOwners() {
+      if (bondOwnerCache) return bondOwnerCache;
+      bondOwnerCache = {};
+      [[2, CHAPTER_TWO_STAGES], [3, CHAPTER_THREE_STAGES], [4, CHAPTER_FOUR_STAGES], [5, CHAPTER_FIVE_STAGES]].forEach(([chapter, stages]) => {
+        const members = [];
+        let bossNode = null;
+        stages.forEach((options, stage) => {
+          const node = options[0];
+          if (node.type === "boss") bossNode = node;
+          if (!PRISONER_NODE_TYPES.includes(node.type) || !node.rewardCardId) return;
+          members.push(`${chapter}-${stage}`);
+          bondOwnerCache[node.rewardCardId] = { cardId: node.rewardCardId, key: `${chapter}-${stage}`, chapter, stage, name: node.label, portrait: node.portrait };
+        });
+        if (bossNode?.rewardCardId) bondOwnerCache[bossNode.rewardCardId] = { cardId: bossNode.rewardCardId, key: `${chapter}-boss`, chapter, boss: true, name: bossNode.label, portrait: bossNode.portrait, members };
+      });
+      return bondOwnerCache;
     },
     recordDefeat(nodeIndexOverride = null) {
       const run = this.current();

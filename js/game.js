@@ -80,7 +80,7 @@
           hp: enemy.mode === "trial" ? save.hero.maxHealth : (run?.hp ?? save.hero.maxHealth),
           maxHp: enemy.mode === "trial" ? save.hero.maxHealth : (run?.maxHp ?? save.hero.maxHealth),
           mana: save.hero.maxMana, maxMana: save.hero.maxMana, board: emptyBoard(), hand: [], weapon: null,
-          deck: shuffle(CF.makeDeck(availablePlayerDeck, save.cardProgress)), fatigue: 0, skillCooldown: 0
+          deck: shuffle(CF.makeDeck(availablePlayerDeck, save.cardProgress, id => CF.Restaurant?.cardBondBonus(id) || 0)), fatigue: 0, skillCooldown: 0
         },
         enemy: {
           id: enemy.id, name: enemy.name, icon: enemy.icon, portrait: enemy.portrait || "", battlefield: enemy.battlefield || "forest",
@@ -443,7 +443,7 @@
         uid: `${side}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         cardId: card.id, name: card.name, icon: card.icon, image: card.image, portrait: card.portrait,
         attack: card.attack, health: card.health, maxHealth: card.health,
-        level: card.level, keywords: [...card.keywords], combatStyle: card.combatStyle, role: card.role || "",
+        level: card.level, bond: card.bond || 0, keywords: [...card.keywords], combatStyle: card.combatStyle, role: card.role || "",
         ready: card.role !== "healer" && card.keywords.includes("突袭"), justSummoned: true, tempAttack: 0, healUsed: false
       };
       if (row === "front" && unit.keywords.includes("守卫")) { unit.health += 2; unit.maxHealth += 2; }
@@ -461,6 +461,8 @@
       }
       if (unit.weaponTier) unit.attack += unit.weaponTier;
       if (unit.armorTier) unit.armorValue = unit.armorTier;
+      // 粮食不足时饿着肚子出战：本场我方随从攻击-1（最低为0）。
+      if (side === "player" && this.state.hungry) unit.attack = Math.max(0, unit.attack - 1);
       actor.board[row][column] = unit;
       this.sound("summon");
       this.recordCardPlayed(side, card);
@@ -670,7 +672,7 @@
         if (side !== "player" || row === "hero" || !target || !CF.CARD_LIBRARY[target.cardId]) return this.toast("请选择一个可以撤回的友方随从。", "bad");
         const cost = this.spendCard(selected.index);
         this.state.player.board[row][column] = null;
-        this.state.player.hand.push({ ...CF.getCard(target.cardId, { level: target.level }), instanceId: `${target.cardId}-rescued-${Date.now()}` });
+        this.state.player.hand.push({ ...CF.getCard(target.cardId, { level: target.level }, target.bond), instanceId: `${target.cardId}-rescued-${Date.now()}` });
         this.draw("player", 1);
         this.sound("buff");
         this.addLog(`你施放${card.name}（${cost}费），将${target.name}撤回手牌并抽1张牌。`, "player");
@@ -1731,7 +1733,7 @@
         playerTargets.sort((a, b) => b.unit.attack - a.unit.attack);
         const target = playerTargets[0]; spend();
         this.state.player.board[target.row][target.column] = null;
-        if (this.state.player.hand.length < 10 && CF.CARD_LIBRARY[target.unit.cardId]) this.state.player.hand.push({ ...CF.getCard(target.unit.cardId, { level: target.unit.level }), instanceId: `${target.unit.cardId}-ai-banished-${Date.now()}` });
+        if (this.state.player.hand.length < 10 && CF.CARD_LIBRARY[target.unit.cardId]) this.state.player.hand.push({ ...CF.getCard(target.unit.cardId, { level: target.unit.level }, target.unit.bond), instanceId: `${target.unit.cardId}-ai-banished-${Date.now()}` });
       } else if (card.effect === "enemy_aoe" && playerTargets.length) {
         spend(); playerTargets.forEach(target => this.damageUnit("player", target.row, target.column, card.value, card.name, false, "enemy"));
       } else if (card.effect === "treasury") {

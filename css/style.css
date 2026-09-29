@@ -1294,3 +1294,84 @@ html:not(:lang(zh)):not(:lang(ja)) .game-card:not(.spell) .card-name { margin-le
   .hero-select-portrait { height: 180px; }
   .save-slot-grid { grid-template-columns: 1fr; }
 }
+
+/* 金杯餐馆与在押首领好感度 */
+.restaurant-menu { display: grid; gap: 10px; margin: 8px 0 14px; }
+.restaurant-food { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.25); }
+.restaurant-food-icon { flex: 0 0 auto; font-size: 30px; line-height: 1; }
+.restaurant-food-copy { display: grid; gap: 3px; flex: 1 1 auto; min-width: 0; }
+.restaurant-food-copy strong { color: var(--gold-bright); }
+.restaurant-food-copy small { color: var(--muted); line-height: 1.5; }
+.restaurant-food-copy .restaurant-food-stats { color: #cbbd9f; }
+.restaurant-food .secondary-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; }
+.prison-bond-hint { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: rgba(10,8,12,.72); color: #cbbd9f; line-height: 1.6; }
+button.prison-inmate { font: inherit; color: inherit; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
+button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--gold-bright); }
+.prison-inmate.bonded { border-color: #e28bb0; box-shadow: 0 0 0 1px rgba(226,139,176,.5), 0 6px 16px rgba(0,0,0,.45); }
+.prison-inmate em { color: #e7b6c9; font-size: 11px; font-style: normal; }
+.affinity-bar { display: block; width: 100%; height: 6px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.12); }
+.affinity-bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #b8506f, #f19ac0); }
+.affinity-bar.large { height: 10px; margin: 6px 0 10px; }
+.bond-badge { background: #8a3d5c; }
+.prisoner-visit { display: flex; gap: 16px; align-items: flex-start; margin: 8px 0 12px; }
+.prisoner-visit-portrait { width: 150px; aspect-ratio: 1; flex: 0 0 auto; object-fit: cover; border-radius: 12px; border: 1px solid #a98244; }
+.prisoner-visit-info { flex: 1 1 auto; min-width: 0; }
+.prisoner-visit-info p { margin: 0 0 6px; line-height: 1.6; }
+.feed-grid .feed-choice { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.feed-choice.favorite { border-color: #e28bb0; }
+@media (max-width: 640px) {
+  .prisoner-visit { flex-direction: column; align-items: center; }
+  .restaurant-food { flex-wrap: wrap; }
+}
+.bond-badge.bonded { background: #b8506f; color: #fff0f6; }
+.card-inspect-injured.card-inspect-bond { background: rgba(184,80,111,.85); }
+.prison-boss-cards { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #c99b4e; border-radius: 10px; background: rgba(10,8,12,.78); }
+.prison-boss-cards h3 { margin: 0 0 6px; color: var(--gold-bright); font-size: 15px; }
+.prison-boss-cards ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.prison-boss-cards li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: #cbbd9f; font-size: 13px; }
+.prisoner-boss-hint { color: #e7b6c9; font-size: 13px; }
+/* 队伍粮食 */
+.ration-chip small { margin-left: 3px; color: var(--muted); font-size: 11px; }
+.ration-chip.short { border-color: rgba(224,72,58,.7); }
+.ration-chip.short strong, .ration-chip.short small { color: #ff8a7a; }
+.restaurant-flour { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0 14px; padding: 12px 14px; border: 1px solid #c99b4e; border-radius: 12px; background: rgba(201,155,78,.1); }
+.restaurant-flour-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.restaurant-flour-buttons .secondary-btn { display: inline-flex; align-items: center; gap: 4px; }
+/* 游戏时间 */
+.clock-chip { position: relative; overflow: hidden; }
+.clock-chip small { margin-left: 3px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.clock-progress { position: absolute; left: 10px; right: 10px; bottom: 2px; height: 2px; border-radius: 999px; background: rgba(255,255,255,.08); }
+.clock-progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f2c86b, #7aa7e0); }
+.prison-inmate .fed-today { color: #9fd49a; }
+.fed-today-hint { margin: 0 0 8px; color: #cbbd9f; font-size: 13px; }
+.inn-offer { display: flex; align-items: center; gap: 12px; margin: 8px 0 14px; padding: 12px 14px; border: 1px solid #c99b4e; border-radius: 12px; background: rgba(201,155,78,.1); }
+/* 犯人派遣劳动 */
+.prison-labor { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #6f9a5c; border-radius: 10px; background: rgba(10,12,8,.8); }
+.prison-labor-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.prison-labor h3 { margin: 0 0 2px; color: #b8e0a0; font-size: 15px; }
+.prison-labor-head small { color: #cbbd9f; line-height: 1.5; }
+.prison-labor ul { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.prison-labor li { display: flex; flex-wrap: wrap; gap: 2px 10px; color: #cbbd9f; font-size: 12px; line-height: 1.5; }
+.prison-labor li strong { color: var(--gold-bright); }
+.prison-inmate .labor-away { color: #9fc8f0; }
+.prison-inmate .labor-done { color: #b8e0a0; }
+.prisoner-labor { padding: 8px 10px; border-radius: 8px; background: rgba(111,154,92,.15); font-size: 13px; }
+.prisoner-labor .mini-btn { margin-left: 6px; }
+/* 好感剧情 */
+.prisoner-voice { margin: 4px 0 8px; padding-left: 10px; border-left: 3px solid #e28bb0; color: #f0d6e0; font-style: italic; }
+.prisoner-story { margin: 0 0 8px; padding: 6px 10px; border: 1px solid rgba(226,139,176,.35); border-radius: 8px; background: rgba(0,0,0,.25); }
+.prisoner-story summary { cursor: pointer; color: var(--gold-bright); font-size: 13px; }
+.prisoner-story p { margin: 6px 0 2px; line-height: 1.7; color: #e3d6bd; font-size: 13px; }
+.story-locked { color: var(--muted) !important; font-style: italic; }
+.race-story-book { margin: 12px 0; }
+.race-story-book h3 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 6px; color: var(--gold-bright); }
+.race-story-book h3 small { color: var(--muted); font-size: 12px; }
+.race-story { margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: rgba(0,0,0,.25); border: 1px solid var(--line); }
+.race-story h4 { margin: 0 0 4px; color: #f0d6e0; font-size: 14px; }
+.race-story p { margin: 0; line-height: 1.75; color: #e3d6bd; font-size: 13px; }
+.race-story.locked { opacity: .7; }
+/* 夜晚事件 */
+.clock-chip.night { border-color: rgba(122,167,224,.6); background: rgba(20,28,52,.55); }
+.night-event .prison-warden-intro p { margin: 4px 0 0; color: #d8cdb6; line-height: 1.7; }
+.night-choices .choice-btn { display: grid; gap: 4px; text-align: left; }
+.night-result { line-height: 1.8; color: #e3d6bd; }
