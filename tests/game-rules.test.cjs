@@ -686,16 +686,15 @@ assert.ok(indexSource.indexOf("js/restaurant.js") > indexSource.indexOf("js/adve
 assert.ok(fs.existsSync(path.join(root, "assets/ui/prison-hall.webp")) && fs.existsSync(path.join(root, "assets/ui/prison-warden.webp")), "营地监狱场景图与典狱长立绘应位于项目资源目录");
 assert.match(mainSource, /camp-warden[\s\S]*data-action="prison-page"/, "点击队伍营地门口的典狱长应进入营地监狱");
 assert.match(mainSource, /prison-screen" style="background-image: url\('\$\{PRISON_ART\}'\)"[\s\S]*prison-roster/, "营地监狱应以监狱场景图为整页背景，直接列出在押者头像");
-assert.equal(CF.Adventure.generateVictoryLoot(4).gearCount, 4, "战斗胜利的粗糙武器/盔甲数量应等于击杀的敌方随从数");
-assert.equal(CF.Adventure.generateVictoryLoot(0).gearCount, 0, "未击杀随从时不应获得粗糙武器/盔甲");
+assert.equal(CF.Adventure.generateVictoryLoot(4).gearCount, 4, "战斗胜利的粗糙武器数量应等于击杀的敌方随从数");
+assert.equal(CF.Adventure.generateVictoryLoot(0).gearCount, 0, "未击杀随从时不应获得粗糙武器");
 const priorNotes = CF.SaveSystem.data.notesUnlocked;
 const priorWater = CF.SaveSystem.data.inventory.queenEssenceBlood || 0;
 const priorWeapons = CF.SaveSystem.data.inventory.weaponT1 || 0;
-const priorArmors = CF.SaveSystem.data.inventory.armorT1 || 0;
 const loot = CF.Adventure.claimVictoryLoot(5);
 assert.equal(loot.gearCount, 5, "翻牌第二张应按击杀数发放白装");
 assert.equal(CF.SaveSystem.data.inventory.weaponT1, priorWeapons + 5, "击杀5个随从应获得5件粗糙武器");
-assert.equal(CF.SaveSystem.data.inventory.armorT1, priorArmors + 5, "击杀5个随从应获得5件粗糙盔甲");
+assert.equal(CF.SaveSystem.data.inventory.armorT1, undefined, "盔甲已取消，不应再获得盔甲材料");
 assert.match(mainSource, /claimVictoryLoot\(battle\.state\.enemyUnitsKilled\)/, "胜利结算应把本场击杀数传给战利品翻牌");
 assert.equal(CF.SaveSystem.data.inventory.queenEssenceBlood, priorWater + 1, "每场战斗胜利（不限普通/精英/Boss）都应获得1瓶女王精血");
 {
@@ -1392,26 +1391,6 @@ assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入�
   assert.equal(es.enemy.board.front[0].health, 12, "两次攻击都应造成伤害");
 }
 
-{
-  // 盔甲防御只挡普通攻击，法术与技能伤害无视防御。
-  const armorBattle = new CF.Battle(CF.enemies.goblin_warband, {});
-  const ab = armorBattle.state;
-  ab.player.board = CF.emptyBoard();
-  ab.enemy.board = CF.emptyBoard();
-  const armored = combatUnit("orc_grunt", { attack: 0, health: 20, maxHealth: 20, armorValue: 2 });
-  ab.enemy.board.front[0] = armored;
-  armorBattle.damageUnit("enemy", "front", 0, 5, "火焰瓶", false, "player");
-  assert.equal(armored.health, 15, "法术伤害应无视盔甲防御");
-  const striker = combatUnit("vanguard", { attack: 5, health: 20, maxHealth: 20, ready: true, justSummoned: false });
-  ab.player.board.front[0] = striker;
-  armorBattle.performUnitAttack("player", "front", 0, "enemy", "front", 0);
-  assert.equal(armored.health, 12, "普通攻击仍受盔甲防御减免");
-  const heavy = combatUnit("royal_war_machine", { attack: 0, health: 20, maxHealth: 20, keywords: ["重甲"], armorValue: 2 });
-  ab.enemy.board.front[1] = heavy;
-  armorBattle.damageUnit("enemy", "front", 1, 5, "火焰瓶", false, "player");
-  assert.equal(heavy.health, 17, "重甲关键词对法术仍然生效，但盔甲防御不生效");
-}
-
 const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
 const heroWeapon = heroWeaponBattle.state.player.weapon;
 assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");
@@ -1712,3 +1691,15 @@ console.log("✓ 63名竞技场英雄独立技能、双端施放与未收集技�
   emoteBattle.state.ended = true;
 }
 console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
+
+{
+  // 盔甲已取消：旧存档的盔甲材料与随从盔甲槽读档时清除，随从只保留武器槽。
+  storage.set("rift-expedition-save-v1", JSON.stringify({ deck: CF.STARTER_DECK, inventory: { weaponT2: 3, armorT3: 2 }, cardEquipment: { recruit: { weapon: 3, armor: 4 } } }));
+  CF.SaveSystem.load();
+  assert.equal(CF.SaveSystem.data.inventory.weaponT2, 3, "武器材料保留");
+  assert.ok(!Object.keys(CF.SaveSystem.data.inventory).some(key => key.startsWith("armor")), "盔甲材料应被清除");
+  assert.deepEqual({ ...CF.SaveSystem.data.cardEquipment.recruit }, { weapon: 3 }, "随从只保留武器槽");
+  assert.equal(CF.SaveSystem.equipCardItem("recruit", "armor", 1), false, "不能再装备盔甲");
+  assert.equal(CF.SaveSystem.forgeItem("armor", 1), false, "装备店不能再重锻盔甲");
+  assert.ok(!("equipDotHTML" in CF), "装备品级小图标已移除");
+}

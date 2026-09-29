@@ -66,7 +66,7 @@ function createSimulator() {
     weapons.forEach(id => { data.cardProgress[id] = { level: profile.cardLevel, xp: 0 }; });
     data.deck.forEach(id => {
       data.cardProgress[id] = { level: profile.cardLevel, xp: 0 };
-      if (CF.CARD_LIBRARY[id].type === "unit" && profile.equipment) data.cardEquipment[id] = { weapon: profile.equipment, armor: profile.equipment };
+      if (CF.CARD_LIBRARY[id].type === "unit" && profile.equipment) data.cardEquipment[id] = { weapon: profile.equipment };
     });
 
     const bond = CF.ECONOMY.bond;

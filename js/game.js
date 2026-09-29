@@ -556,19 +556,11 @@
       };
       if (row === "front" && unit.keywords.includes("守卫")) { unit.health += 2; unit.maxHealth += 2; }
       if (row === "back" && unit.keywords.includes("远程")) unit.attack += 1;
-      // 装备品级：玩家随从读取存档里的装备；敌方随从按阵营固定配置——
+      // 武器品级：玩家随从读取存档里的装备；敌方随从按阵营固定配置——
       // 冒险模式（魔族阵营）统一白色T1，竞技场/试炼（人类阵营）统一绿色T2。
-      if (side === "player") {
-        const equip = CF.SaveSystem.data.cardEquipment?.[card.id];
-        unit.weaponTier = equip?.weapon || 0;
-        unit.armorTier = equip?.armor || 0;
-      } else {
-        const enemyTier = (this.enemyConfig?.mode === "arena" || this.enemyConfig?.mode === "trial") ? 2 : 1;
-        unit.weaponTier = enemyTier;
-        unit.armorTier = enemyTier;
-      }
+      if (side === "player") unit.weaponTier = CF.SaveSystem.data.cardEquipment?.[card.id]?.weapon || 0;
+      else unit.weaponTier = (this.enemyConfig?.mode === "arena" || this.enemyConfig?.mode === "trial") ? 2 : 1;
       if (unit.weaponTier) unit.attack += unit.weaponTier;
-      if (unit.armorTier) unit.armorValue = unit.armorTier;
       // 粮食不足时饿着肚子出战：本场我方随从攻击-1（最低为0）。
       if (side === "player" && this.state.hungry) unit.attack = Math.max(0, unit.attack - 1);
       actor.board[row][column] = unit;
@@ -1463,18 +1455,16 @@
       this.checkOutcome();
     }
 
-    // 盔甲防御只抵挡普通攻击（随从攻击、反击、武器攻击）；法术、技能等效果伤害传 ignoreArmor 无视防御。
-    // 重甲是卡牌自身的关键词，对所有伤害都生效。
-    mitigatedDamage(unit, amount, { ignoreArmor = false } = {}) {
+    // 重甲：每次受到的伤害减少2，最低为1。
+    mitigatedDamage(unit, amount) {
       if (!unit) return Math.max(0, amount);
-      const reduced = amount - (ignoreArmor ? 0 : unit.armorValue || 0);
-      return unit.keywords?.includes("重甲") ? Math.max(1, reduced - 2) : Math.max(0, reduced);
+      return unit.keywords?.includes("重甲") ? Math.max(1, amount - 2) : Math.max(0, amount);
     }
 
     damageUnit(side, row, column, amount, source, clean = true, kind = "system") {
       const unit = this.state[side].board[row][column];
       if (!unit) return;
-      const dealt = this.mitigatedDamage(unit, amount, { ignoreArmor: true });
+      const dealt = this.mitigatedDamage(unit, amount);
       unit.health -= dealt;
       this.addLog(`${source}对第${column + 1}路${row === "front" ? "前排" : "后排"}的${unit.name}造成${dealt}点伤害${dealt < amount ? "（重甲减免）" : ""}；目标剩余${Math.max(0, unit.health)}/${unit.maxHealth}生命。`, kind);
       if (clean) { this.cleanDead(); this.checkOutcome(); }
@@ -2489,7 +2479,7 @@
       const combatClass = unit.role === "healer" ? "support" : (unit.combatStyle === "ranged" ? "ranged" : "melee");
       return `<div class="unit ${side === "enemy" ? "enemy-unit" : ""} ${unit.ready ? "ready" : ""} ${selected ? "selected" : ""}" title="${unit.name}｜${unit.keywords.join("、") || "无关键词"}">
         <span class="combat-tag ${combatClass}">${combatLabel}</span><div class="unit-name">${unit.name}</div><div class="unit-icon ${unit.image ? "has-image" : ""}">${unit.image ? `<img src="${unit.image}" alt="${unit.name}" loading="lazy">` : unit.icon}</div>
-        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}${CF.equipDotHTML("weapon", unit.weaponTier)}</span><span class="health-stat">${CF.equipDotHTML("armor", unit.armorTier)}♥ ${unit.health}/${unit.maxHealth}</span></div>
+        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}</span><span class="health-stat">♥ ${unit.health}/${unit.maxHealth}</span></div>
       </div>`;
     }
 
@@ -2507,7 +2497,7 @@
       return `<div class="game-card ${card.type === "spell" ? "spell" : ""} ${card.type === "weapon" ? "weapon" : ""} ${selected ? "selected" : ""} ${unplayable ? "unplayable" : ""}" data-action="select-card" data-index="${index}" title="${card.description}">
         <span class="card-cost ${discounted ? "discounted" : ""}" title="${discounted ? `原始费用 ${card.cost}` : `${card.cost}费`}">${cost}</span><span class="card-level">Lv${card.level}</span>
         <div class="card-name">${card.name}</div><div class="card-art ${card.image ? "has-image" : ""}">${card.image ? `<img src="${card.image}" alt="${card.name}" loading="lazy">` : card.icon}</div>${card.type === "unit" ? `<div class="card-style ${card.role === "healer" ? "support" : card.combatStyle}">${card.role === "healer" ? "治疗 · 无法攻击" : (card.combatStyle === "ranged" ? "远程 · 无反击" : "近战 · 会反击")}</div>` : weaponStyle}<div class="card-copy">${card.description}</div>
-        ${card.type === "unit" ? `<div class="card-stats"><span>⚔ ${card.attack}${CF.equipDotHTML("weapon", CF.SaveSystem.data.cardEquipment?.[card.id]?.weapon)}</span><span>${CF.equipDotHTML("armor", CF.SaveSystem.data.cardEquipment?.[card.id]?.armor)}♥ ${card.health}</span></div>` : card.type === "weapon" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span class="durability-stat">◆ ${card.durability}</span></div>` : ""}
+        ${card.type === "unit" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span>♥ ${card.health}</span></div>` : card.type === "weapon" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span class="durability-stat">◆ ${card.durability}</span></div>` : ""}
       </div>`;
     }
 

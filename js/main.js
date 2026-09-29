@@ -42,14 +42,13 @@
   const TOWN_ART = "assets/ui/town-square.webp";
   const TOWN_ART_SIZE = [1698, 926];
   const TOWN_SHOPS = [
-    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器与盔甲，重锻为更高品质的装备。", enabled: true, hotspot: [32, 42, 11.5, 27], crop: [600, 600, 150] },
+    { id: "forge", action: "open-equipment-shop", name: "铁匠·葛罗姆", title: "🔨 装备店", detail: "熔炼战场缴获的粗粝武器，重锻为更高品质的装备。", enabled: true, hotspot: [32, 42, 11.5, 27], crop: [600, 600, 150] },
     { id: "tavern", action: "open-restaurant", name: "金杯餐馆", title: "🍽️ 餐馆 · 新开业", detail: "出售各式菜肴。带去营地监狱投喂在押首领，提升好感度，结缘后才能使用它们的卡牌。", enabled: true, hotspot: [5, 27, 19, 17], crop: [165, 300, 150] },
     { id: "inn", action: "open-inn", name: "赤龙客栈", title: "🏨 客栈 · 新开业", detail: "花30金币睡一晚，直接进入第二天早上；口粮照常按一天消耗，在押首领又可以投喂了。", enabled: true, hotspot: [68, 16, 9, 19], crop: [1235, 250, 150] },
     { id: "grocer", name: "饥饿的半身人", title: "🛒 杂货铺", detail: "敬请期待。", enabled: false, hotspot: [88, 36, 11.3, 14], crop: [1590, 400, 180] }
   ];
   const EQUIPMENT_TIER_NAMES = {
     weapon: ["", "粗糙武器", "精良武器", "锋利武器", "传奇武器"],
-    armor: ["", "粗糙盔甲", "精良盔甲", "坚固盔甲", "传奇盔甲"]
   };
   const EQUIPMENT_TIER_QUALITY = ["", "quality-1", "quality-2", "quality-3", "quality-4"];
   const LEVEL_MAP_DEFAULT_LAYOUT = {
@@ -208,11 +207,10 @@
         if (details) {
           const progressHTML = `<span class="card-xp-label">经验 ${level >= 5 ? "已满" : `${currentXp}/${nextXp}`}</span><span class="card-xp-progress"><span style="width:${pct}%"></span></span>`;
           if (isDeckRow) {
-            // 重新根据数据生成基础属性（含装备品级小圆点），避免用 textContent 时把 <i class="equip-dot"> 也一并抹掉。
+            // 重新根据数据生成基础属性。
             const card = CF.getCard(cardId, progress, CF.Restaurant.cardBondBonus(cardId));
-            const cardEquip = data.cardEquipment?.[cardId] || {};
             const baseStats = card.type === "unit"
-              ? `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`
+              ? `${card.attack}/${card.health}`
               : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description;
             details.innerHTML = `${baseStats}<span class="card-xp-inline">${progressHTML}</span>`;
           } else {
@@ -923,7 +921,7 @@
       }).join("");
       const cards = TOWN_SHOPS.map(shop => `<button class="choice-btn camp-service training-npc-card${shop.enabled ? " ready" : " locked"}" ${actionAttrs(shop)}>${avatar(shop)}<span class="training-npc-copy"><span class="training-npc-name">${shop.name}</span><strong>${shop.title}</strong><small>${shop.detail}</small>${shop.enabled ? "" : '<em class="camp-service-hint">敬请期待</em>'}</span></button>`).join("");
       this.frame(`<section class="screen training-screen">
-        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工：装备店可将战场缴获的粗糙武器、盔甲重锻为更高品质；金杯餐馆出售面粉与各式菜肴；赤龙客栈可以住一晚，直接进入第二天。</p></div>
+        <div class="page-heading"><div><span class="eyebrow">城镇</span><h2>城镇商店</h2></div><p>四家店铺各有分工：装备店可将战场缴获的粗糙武器重锻为更高品质；金杯餐馆出售面粉与各式菜肴；赤龙客栈可以住一晚，直接进入第二天。</p></div>
         <div class="training-scene" style="background-image: url('${TOWN_ART}'); aspect-ratio: ${artWidth} / ${artHeight}">
           ${hotspots}
         </div>
@@ -999,8 +997,8 @@
 
     openEquipmentShop() {
       const inv = CF.SaveSystem.data.inventory;
-      const rows = ["weapon", "armor"].map(kind => {
-        const label = kind === "weapon" ? "武器" : "盔甲";
+      const rows = ["weapon"].map(kind => {
+        const label = "武器";
         const tiers = [1, 2, 3].map(tier => {
           const count = inv[`${kind}T${tier}`] || 0;
           const cost = tier * 30;
@@ -1037,7 +1035,6 @@
       }).join("");
       const heroWeapons = this.heroWeaponCardsHTML();
       const weaponItems = gearRows("weapon");
-      const armorItems = gearRows("armor");
       const foodItems = CF.Restaurant.FOODS.filter(food => CF.Restaurant.foodCount(food.id)).map(food => `<div class="backpack-item"><strong>${food.icon} ${food.name}</strong><small>拥有 ${CF.Restaurant.foodCount(food.id)} 份 · 投喂在押首领好感 +${food.affinity}</small><button class="secondary-btn" data-action="prison-page">去探监</button></div>`).join("");
       this.frame(`<section class="screen">
         <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
@@ -1045,7 +1042,6 @@
         <div class="backpack-section"><h3>餐馆食物</h3>${foodItems || '<p class="empty-hint">暂无食物。可在城镇商店的金杯餐馆购买，带去营地监狱投喂在押首领。</p>'}</div>
         <div class="backpack-section"><h3>英雄武器</h3>${heroWeapons ? `<p class="empty-hint">冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。</p><div class="hero-skill-collection hero-weapon-collection">${heroWeapons}</div>` : '<p class="empty-hint">尚未获得武器。击败第一关地图上的七位武器首领即可获得。</p>'}</div>
         <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
-        <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
       </section>`);
     },
@@ -1183,8 +1179,7 @@
         const bondLocked = CF.Restaurant.isCardBondLocked(id);
         const style = card.type === "unit" ? (card.role === "healer" ? "治疗" : (card.combatStyle === "ranged" ? "远程" : "近战")) : card.type === "weapon" ? `${card.combatStyle === "ranged" ? "远程" : "近战"}武器` : "法术";
         const thumb = card.image ? `<img class="deck-thumb" src="${card.image}" alt="" loading="lazy">` : `<span class="deck-icon">${card.icon}</span>`;
-        const cardEquip = data.cardEquipment?.[id] || {};
-        const unitStats = `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`;
+        const unitStats = `${card.attack}/${card.health}`;
         return `<div class="deck-row ${injured || bondLocked ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondBadge}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured || bondLocked ? " · 无法出战" : ""}${bondStatus ? ` · ${bondStatus}` : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
       }).join("");
       const availableCollection = Object.entries(data.collection).filter(([id, owned]) => owned > 0 && !deckCounts[id])
@@ -1224,9 +1219,8 @@
         : card.type === "weapon" ? (card.combatStyle === "ranged" ? "远程武器 · 无反击" : "近战武器 · 会反击") : "法术牌";
       const stars = "★".repeat(card.level) + "☆".repeat(5 - card.level);
       const keywords = card.keywords.length ? card.keywords.join(" · ") : (card.type === "spell" ? "即时生效" : "无额外关键词");
-      const cardEquip = CF.SaveSystem.data.cardEquipment?.[cardId] || {};
       const stats = card.type === "unit"
-        ? `<span class="inspect-attack" aria-label="攻击力${card.attack}">⚔<b>${card.attack}</b>${CF.equipDotHTML("weapon", cardEquip.weapon)}</span><span class="inspect-health" aria-label="生命值${card.health}">${CF.equipDotHTML("armor", cardEquip.armor)}♥<b>${card.health}</b></span>`
+        ? `<span class="inspect-attack" aria-label="攻击力${card.attack}">⚔<b>${card.attack}</b></span><span class="inspect-health" aria-label="生命值${card.health}">♥<b>${card.health}</b></span>`
         : card.type === "weapon"
           ? `<span class="inspect-attack" aria-label="攻击力${card.attack}">⚔<b>${card.attack}</b></span><span class="inspect-durability" aria-label="耐久${card.durability}">◆<b>${card.durability}</b></span>`
           : `<span class="inspect-spell-seal" aria-hidden="true">✦</span>`;
@@ -1663,8 +1657,8 @@
       const lootCards = [
         { title: "女王精血", detail: "为了唤醒更多同族，也为了让已经觉醒的同族获得更大的力量，关底首领献出了自己体内的精血——每位首领只能取得一瓶。通关统领试炼第七关、得到女王认可后，可在背包中使用，永久+1最大生命。" },
         loot.gearCount > 0
-          ? { title: `粗糙武器 ×${loot.gearCount} · 粗糙盔甲 ×${loot.gearCount}`, detail: `本场击杀${loot.gearCount}个敌方随从，缴获同等数量的白色品质装备。可装备到武器/盔甲栏，也可在城镇装备店重锻为更高品质。` }
-          : { title: "未缴获装备", detail: "本场没有击杀敌方随从，未能缴获粗糙武器/盔甲。击杀多少个随从，就能缴获多少件白装。" },
+          ? { title: `粗糙武器 ×${loot.gearCount}`, detail: `本场击杀${loot.gearCount}个敌方随从，缴获同等数量的白色品质武器。可装备给随从，也可在城镇装备店重锻为更高品质。` }
+          : { title: "未缴获装备", detail: "本场没有击杀敌方随从，未能缴获粗糙武器。击杀多少个随从，就能缴获多少件白装。" },
         loot.note
           ? { title: `${CF.LORE_BOOK_TITLE}${loot.note.title}`, detail: `笔记残页 ${loot.note.index}/${CF.LORE_PAGES.length}，翻开后可在下方阅读全文，之后也能在主界面“笔记残页”中重读。` }
           : { title: "残页已集齐", detail: `${CF.LORE_BOOK_TITLE}已全部收集，本次未获得新的残页。` }

@@ -496,7 +496,7 @@
       return EVENTS[(run?.stage + run?.completed?.length || 0) % EVENTS.length];
     },
     // 战斗胜利翻牌战利品：每场战斗（普通/精英/Boss）胜利后都会翻开三张固定战利品牌——
-    // 女王精血、粗糙装备、笔记残页。第二张的粗糙武器/盔甲数量等于本场击杀的敌方随从数；
+    // 女王精血、粗糙装备、笔记残页。第二张的粗糙武器数量等于本场击杀的敌方随从数；
     // 第三张按顺序解锁《源血纪元》的下一页，集满后不再有奖励。
     generateVictoryLoot(unitsKilled = 0) {
       const gearCount = Math.max(0, Math.floor(Number(unitsKilled) || 0));
@@ -507,7 +507,6 @@
       CF.SaveSystem.addInventoryItem("queenEssenceBlood", 1);
       if (gearCount > 0) {
         CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
-        CF.SaveSystem.addInventoryItem("armorT1", gearCount);
       }
       let note = null;
       if (CF.SaveSystem.data.notesUnlocked < LORE_PAGES.length) {

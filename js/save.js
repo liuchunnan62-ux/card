@@ -58,10 +58,10 @@
     }, {});
   }
 
-  // 人类阵营起步装备：英雄初始牌组里的随从统一预装绿色（T2）武器与盔甲。
+  // 人类阵营起步装备：英雄初始牌组里的随从统一预装绿色（T2）武器。
   function starterCardEquipment() {
     return CF.STARTER_IDS.reduce((acc, id) => {
-      if (CF.CARD_LIBRARY[id]?.type === "unit") acc[id] = { weapon: 2, armor: 2 };
+      if (CF.CARD_LIBRARY[id]?.type === "unit") acc[id] = { weapon: 2 };
       return acc;
     }, {});
   }
@@ -103,7 +103,7 @@
       chapterFiveBossRewards: {},
       questItemRewards: {},
       items: { queenBloodRiverWater: false },
-      inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
+      inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0 },
       cardEquipment: starterCardEquipment(),
       notesUnlocked: 0,
       prisoners: {},
@@ -220,8 +220,11 @@
       chapterFiveBossRewards: { ...base.chapterFiveBossRewards, ...(raw.chapterFiveBossRewards || {}) },
       questItemRewards: { ...base.questItemRewards, ...(raw.questItemRewards || {}) },
       items: { ...base.items, ...(raw.items || {}) },
-      inventory: { ...base.inventory, ...(raw.inventory || {}) },
-      cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
+      // 盔甲已取消：旧存档里的盔甲材料与随从盔甲槽在读档时清除。
+      inventory: Object.fromEntries(Object.entries({ ...base.inventory, ...(raw.inventory || {}) }).filter(([key]) => !key.startsWith("armor"))),
+      cardEquipment: Object.fromEntries(Object.entries({ ...base.cardEquipment, ...(raw.cardEquipment || {}) })
+        .filter(([, entry]) => entry && typeof entry === "object")
+        .map(([id, entry]) => [id, { weapon: Math.max(0, Math.min(4, Number(entry.weapon) || 0)) }])),
       notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
       prisoners: raw.prisoners && typeof raw.prisoners === "object" ? { ...raw.prisoners } : {},
       foods: cleanCounts(raw.foods),
@@ -631,14 +634,14 @@
       this.save();
       return true;
     },
-    // slot: "weapon"|"armor"；tier: 1-4。装备时把该卡该槽原有品级退回背包，再扣1件新品级。
+    // slot: "weapon"；tier: 1-4。装备时把该卡原有品级退回背包，再扣1件新品级。
     equipCardItem(cardId, slot, tier) {
-      if (!CF.CARD_LIBRARY[cardId] || (slot !== "weapon" && slot !== "armor") || !(tier >= 1 && tier <= 4)) return false;
+      if (!CF.CARD_LIBRARY[cardId] || slot !== "weapon" || !(tier >= 1 && tier <= 4)) return false;
       const key = `${slot}T${tier}`;
       const inventory = this.data.inventory || (this.data.inventory = {});
       if (!(inventory[key] > 0)) return false;
       const equipment = this.data.cardEquipment || (this.data.cardEquipment = {});
-      const entry = equipment[cardId] || (equipment[cardId] = { weapon: 0, armor: 0 });
+      const entry = equipment[cardId] || (equipment[cardId] = { weapon: 0 });
       const previousTier = entry[slot] || 0;
       if (previousTier) inventory[`${slot}T${previousTier}`] = (inventory[`${slot}T${previousTier}`] || 0) + 1;
       inventory[key] -= 1;
@@ -648,7 +651,7 @@
     },
     // 重锻：消耗2件同品级材料与对应金币，合成1件高一品级的装备（品级上限4）。
     forgeItem(kind, tier) {
-      if ((kind !== "weapon" && kind !== "armor") || !(tier >= 1 && tier <= 3)) return false;
+      if (kind !== "weapon" || !(tier >= 1 && tier <= 3)) return false;
       const key = `${kind}T${tier}`;
       const cost = tier * 30;
       const inventory = this.data.inventory || (this.data.inventory = {});
@@ -662,17 +665,6 @@
     }
   };
 
-  // 装备品级图标：武器=匕首（攻击力右侧），盔甲=盾牌（生命/防御左侧）。白/绿/蓝/紫依次对应T1~T4，未装备时为暗淡色。
-  const EQUIPMENT_TIER_COLORS = ["rgba(228,183,93,.25)", "#e7e2d8", "#7fd97f", "#79b8ff", "#d29bff"];
-  const EQUIPMENT_TIER_LABELS = {
-    weapon: ["未装备武器", "粗糙武器 +1攻击", "精良武器 +2攻击", "锋利武器 +3攻击", "传奇武器 +4攻击"],
-    armor: ["未装备盔甲", "粗糙盔甲 +1防御", "精良盔甲 +2防御", "坚固盔甲 +3防御", "传奇盔甲 +4防御"]
-  };
-  function equipDotHTML(slot, tier) {
-    const level = tier || 0;
-    return `<i class="equip-icon equip-icon-${slot}" style="background:${EQUIPMENT_TIER_COLORS[level]}" title="${EQUIPMENT_TIER_LABELS[slot][level]}" aria-hidden="true"></i>`;
-  }
-
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, SAVE_VERSION, equipDotHTML });
+  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, SAVE_VERSION });
 })();
