@@ -7,31 +7,17 @@
   // 之后每多 BOND_STEP 点好感升一级，最高 MAX_BOND_LEVEL 级；每高出结缘一级，卡牌获得一级加成（见 cards.js getCard）。
   // 各关最终首领被同族救走、不在监狱中：它的卡牌要等本关全部在押首领都结缘才能使用，好感等级取其中最低的一位。
   const CF = window.CardForge;
-  const BOND_THRESHOLD = 100;
-  const BOND_STEP = 100;
-  const MAX_BOND_LEVEL = 5;
+  // 数值来自经济数值表 js/data/economy.js。
+  const { bond: BOND, races: RACES, foods: FOODS, rations: RATIONS } = CF.ECONOMY;
+  const BOND_THRESHOLD = BOND.threshold;
+  const BOND_STEP = BOND.step;
+  const MAX_BOND_LEVEL = BOND.maxLevel;
   const MAX_AFFINITY = BOND_THRESHOLD + BOND_STEP * (MAX_BOND_LEVEL - 1);
-  const BOND_LEVEL_NAMES = ["", "结缘", "亲近", "挚友", "羁绊", "誓约"];
-  // 族群口味：投喂本族最爱的食物时好感度翻倍。
-  const RACES = {
-    2: { name: "哥布林", favorite: "charred_skewer" },
-    3: { name: "熊族", favorite: "honey_pancake" },
-    4: { name: "史莱姆", favorite: "moondew_jelly" },
-    5: { name: "狼族", favorite: "bone_roast" }
-  };
-  const FOODS = [
-    { id: "wheat_bread", name: "麦香面包", icon: "🍞", price: 12, affinity: 6, detail: "刚出炉的粗麦面包，谁都不会拒绝。" },
-    { id: "charred_skewer", name: "炭烤肉串", icon: "🍢", price: 30, affinity: 15, detail: "撒满辣椒粉的炭烤肉串，哥布林最爱抢着吃。" },
-    { id: "honey_pancake", name: "金蜜松饼", icon: "🥞", price: 30, affinity: 15, detail: "淋上整勺蜂蜜的厚松饼，熊族闻到就走不动路。" },
-    { id: "moondew_jelly", name: "月露果冻", icon: "🍮", price: 30, affinity: 15, detail: "用月潭露水凝成的清凉果冻，史莱姆会把它整个吞进身体里。" },
-    { id: "bone_roast", name: "炙烤带骨肉", icon: "🍖", price: 30, affinity: 15, detail: "外焦里嫩的大块带骨肉，狼族会一边啃一边摇尾巴。" },
-    { id: "hunter_stew", name: "猎人炖锅", icon: "🍲", price: 60, affinity: 30, detail: "炖了一整夜的浓汤，暖胃也暖心。" },
-    { id: "harvest_feast", name: "丰收宴席", icon: "🍱", price: 120, affinity: 60, detail: "一整桌丰盛的宴席，再倔强的俘虏也会动摇。" }
-  ];
+  const BOND_LEVEL_NAMES = BOND.levelNames;
   // 队伍粮食（类似魔兽争霸的人口食物）：每场战斗按“出战随从数 + 在押犯人数”消耗，用面粉补充。
-  // 面粉只用来填饱肚子，不能提升好感；上面的菜肴只用来投喂犯人，不计入粮食。
-  const FLOUR = { id: "flour", name: "面粉", icon: "🌾", price: 2, rations: 5, detail: "最便宜的基础口粮，一袋够5个人吃一顿。" };
-  const STARTING_RATIONS = 60;
+  // 面粉只用来填饱肚子，不能提升好感；餐馆菜肴只用来投喂犯人，不计入粮食。
+  const FLOUR = RATIONS.flour;
+  const STARTING_RATIONS = RATIONS.starting;
   const FOOD_BY_ID = Object.fromEntries(FOODS.map(food => [food.id, food]));
   const AFFINITY_TIERS = [
     [60, "信任"],

@@ -17,6 +17,9 @@ Windows 离线包（`packaging/windows`）和安卓 WebView 包（`packaging/and
 
 | 文件 | 内容 |
 | --- | --- |
+| `data/chapters.js` | **关卡数据表**：每关的节点（首领名、类型、敌人、头像、地图坐标、武器掉落）、路线、首领强度公式、胜利奖励、地图文案与通关总结 |
+| `data/economy.js` | **经济数值表**：粮食与面粉、游戏时间、客栈、好感等级、族群口味、餐馆食物、派遣收益 |
+| `data/lore.js` `data/road-events.js` | 《源血纪元》残页、冒险地图上的随机事件 |
 | `cards.js` `enemies.js` `heroes.js` | 卡牌库、敌人、英雄数据 |
 | `boss-dialogues.js` `emotes.js` `bond-stories.js` | 剧情台词与表情 |
 | `adventure.js` `trials.js` `arena.js` | 冒险关卡、统领试炼、竞技场 |
@@ -26,6 +29,26 @@ Windows 离线包（`packaging/windows`）和安卓 WebView 包（`packaging/and
 | `sound.js` `music.js` | 程序化音效与配乐（Web Audio，无音频文件） |
 | `i18n.js` `i18n/*.js` | 翻译层与各语言词典 |
 | `main.js` | 所有界面渲染与点击事件 |
+
+## 内容与数值（js/data/）
+
+- 调整首领、关卡数值、地图位置、奖励、食物价格、派遣收益等，**只改 `js/data/` 下的数据表**；逻辑代码只读表，不要在 `adventure.js`、`main.js` 里写死章节数值或按 `chapter === N` 分支取文案。
+- 每张表开头的注释说明了各字段含义。改完运行 `npm test`：`tests/content-data.test.cjs` 会检查敌人、卡牌、图片是否存在、路线是否连通、公式参数是否有效，出错时会指出“第几关节点几”。
+- 新增整整一关目前仍需要改代码：`save.js` 的各关首杀奖励字段、`cards.js` 的奖励卡、`boss-dialogues.js`、`bond-stories.js`、CSS 地图样式与战场背景，以及 `game.js` 中新的首领被动。
+
+## 平衡模拟（tools/）
+
+```
+npm run simulate                              # 每个战斗节点模拟 20 场，输出各关胜率
+node tools/simulate.cjs --chapter 2 --runs 50 # 只看第二关，模拟更多场
+node tools/simulate.cjs --sweep mana          # 最大法力 3~10 时各关的平均胜率
+node tools/simulate.cjs --economy             # 按天推演金币、粮食与结缘进度
+node tools/simulate.cjs --help                # 全部参数
+```
+
+- `tools/sim/bot.cjs` 是只通过界面点击接口操作的玩家机器人（贪心的“中等水平玩家”），`tools/sim/runner.cjs` 在 Node 沙箱中加载真实游戏脚本并批量对战，`tools/sim/economy.cjs` 用真实的餐馆/粮食/时间/派遣代码按天推演。
+- 玩家成长假设（等级、法力、卡牌等级、装备、好感）在 `tools/sim/profiles.cjs`，结果高度依赖这些假设；对比改动前后时保持参数和 `--seed` 不变。
+- 改了数据表中的数值，可以先跑一遍模拟看胜率曲线有没有异常的跳变或死角。
 
 ## 存档
 

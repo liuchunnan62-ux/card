@@ -13,8 +13,8 @@
   const EXPORT_GAME_ID = "rift-expedition";
   const EXPORT_FORMAT = 1;
   const CF = window.CardForge;
-  const CHAPTER_IDS = [1, 2, 3, 4, 5];
-  const CHAPTER_NODE_COUNTS = { 1: 13, 2: 20, 3: 20, 4: 20, 5: 20 };
+  const CHAPTER_IDS = CF.CHAPTERS.map(chapter => chapter.id);
+  const CHAPTER_NODE_COUNTS = Object.fromEntries(CF.CHAPTERS.map(chapter => [chapter.id, chapter.nodes.length]));
   const CHAPTER_FIVE_FINALE_PRESET_VERSION = "qianzhi-direct-finale-v1";
   const HERO_LEVELS = {
     1: { xp: 0, maxHealth: 30 },
@@ -107,7 +107,7 @@
       prisoners: {},
       foods: {},
       affinity: {},
-      rations: 60,
+      rations: CF.ECONOMY.rations.starting,
       fedDay: {},
       labor: {},
       laborDay: {},

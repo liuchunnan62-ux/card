@@ -60,21 +60,20 @@ assert.match(CF.Trials.list[6].dialogue[6], /体魄与灵智[\s\S]*饥饿[\s\S]*
 assert.match(CF.Trials.list[6].dialogue[7], /不再挨饿[\s\S]*极少杀人/, "女王低语应解释后续族群进入人类地区的原因");
 assert.match(indexSource, /js\/boss-dialogues\.js/, "游戏入口应加载Boss剧情台词配置");
 assert.match(battleCss, /\.boss-dialogue-frame\s*\{[^}]*position:\s*absolute[^}]*grid-template-columns/s, "战斗场地应显示带头像的Boss对白框");
-const chapterTwoLayout = mainSource.match(/const CHAPTER_TWO_NODE_LAYOUT = \[([\s\S]*?)\n  \];/);
-assert.ok(chapterTwoLayout, "chapter two should declare a fixed map layout");
-assert.equal((chapterTwoLayout[1].match(/\[\d+,\s*\d+\]/g) || []).length, 20, "chapter two should place exactly 20 boss nodes");
+// 地图坐标、路线与章节文案来自关卡数据表 js/data/chapters.js。
+const chapterLayout = id => CF.chapterById(id).nodes.map(node => node.pos);
+const isMapPoint = pos => Array.isArray(pos) && pos.length === 2 && pos.every(value => Number.isFinite(value) && value >= 0 && value <= 100);
+assert.equal(chapterLayout(2).filter(isMapPoint).length, 20, "chapter two should place exactly 20 boss nodes");
 assert.match(mainSource, /boss-map-board/, "chapter two should render a dedicated route board");
 assert.match(mainSource, /boss-route-lines/, "chapter two should render connecting route lines");
 assert.match(mainSource, /boss-map-node/, "chapter two should render boss nodes over the map");
 assert.match(battleCss, /\.boss-map-board\s*\{[^}]*position:\s*relative[^}]*goblin-expedition\.png/s, "chapter two map should use the supplied landscape as its route board");
 assert.match(battleCss, /\.boss-map-node\s*\{[^}]*position:\s*absolute/s, "boss nodes should use fixed map coordinates");
-const chapterThreeLayout = mainSource.match(/const CHAPTER_THREE_NODE_LAYOUT = \[([\s\S]*?)\n  \];/);
 const chapterThreeBossPortraits = Array.from(CF.CHAPTER_THREE_STAGES, nodes => nodes[0].portrait);
 assert.equal(chapterThreeBossPortraits.length, 20, "第三关应有20张熊族Boss头像");
 assert.equal(new Set(chapterThreeBossPortraits).size, 20, "第三关每个Boss应使用独立头像");
 chapterThreeBossPortraits.forEach(portrait => assert.ok(fs.existsSync(path.join(root, portrait)), `${portrait}应存在于游戏素材中`));
-assert.ok(chapterThreeLayout, "第三关应声明固定农场节点布局");
-assert.equal((chapterThreeLayout[1].match(/\[[\d.]+,\s*[\d.]+\]/g) || []).length, 20, "第三关应在农场地图放置20个Boss节点");
+assert.equal(chapterLayout(3).filter(isMapPoint).length, 20, "第三关应在农场地图放置20个Boss节点");
 const chapterThreeConnected = new Set([0]);
 let chapterThreeExpanded = true;
 while (chapterThreeExpanded) {
@@ -88,15 +87,13 @@ assert.equal(chapterThreeConnected.size, 20, "第三关20个Boss节点应全部�
 assert.ok(CF.CHAPTER_THREE_ROUTE_EDGES.some(([from, to]) => from === 18 && to === 19), "第三关最终Boss应与前置节点相连");
 assert.match(mainSource, /data-action="farm-npc"/, "第三关地图应提供农民夫妇NPC节点");
 assert.match(battleCss, /\.boss-map-board\.chapter-three-map\s*\{[^}]*farm-expedition-clean\.png/s, "第三关应使用用户提供的无标记农场地图");
-assert.match(mainSource, /CHAPTER_THREE_ROUTE_CONTROLS/, "第三关应使用独立曲线控制点绘制路线");
+assert.ok(Object.keys(CF.chapterById(3).routeControls).length >= CF.CHAPTER_THREE_ROUTE_EDGES.length, "第三关应使用独立曲线控制点绘制路线");
 assert.match(battleCss, /\.battlefield\.harvest-farm\s*\{[^}]*harvest-farm\.png/s, "第三关战斗应使用新农田背景");
-const chapterFourLayout = mainSource.match(/const CHAPTER_FOUR_NODE_LAYOUT = \[([\s\S]*?)\n  \];/);
 const chapterFourBossPortraits = Array.from(CF.CHAPTER_FOUR_STAGES, nodes => nodes[0].portrait);
 assert.equal(chapterFourBossPortraits.length, 20, "第四关应有20张史莱姆Boss头像");
 assert.equal(new Set(chapterFourBossPortraits).size, 20, "第四关每个Boss应使用独立史莱姆头像");
 chapterFourBossPortraits.forEach(portrait => assert.ok(fs.existsSync(path.join(root, portrait)), `${portrait}应存在于游戏素材中`));
-assert.ok(chapterFourLayout, "第四关应声明固定梦幻森林节点布局");
-assert.equal((chapterFourLayout[1].match(/\[[\d.]+,\s*[\d.]+\]/g) || []).length, 20, "第四关应在梦幻森林放置20个Boss节点");
+assert.equal(chapterLayout(4).filter(isMapPoint).length, 20, "第四关应在梦幻森林放置20个Boss节点");
 const chapterFourConnected = new Set([0]);
 let chapterFourExpanded = true;
 while (chapterFourExpanded) {
@@ -110,9 +107,7 @@ assert.equal(chapterFourConnected.size, 20, "第四关20个史莱姆节点应全
 assert.ok(CF.CHAPTER_FOUR_ROUTE_EDGES.some(([from, to]) => from === 18 && to === 19), "第四关最终Boss应与前置节点相连");
 assert.match(battleCss, /\.boss-map-board\.chapter-four-map\s*\{[^}]*dream-forest-expedition\.png/s, "第四关应使用用户提供的梦幻森林地图");
 assert.match(battleCss, /\.battlefield\.dream-slime-forest\s*\{[^}]*dream-slime-forest\.png/s, "第四关战斗应使用新绘制的史莱姆森林背景");
-const chapterFiveLayout = mainSource.match(/const CHAPTER_FIVE_NODE_LAYOUT = \[([\s\S]*?)\n  \];/);
-assert.ok(chapterFiveLayout, "第五关应声明固定古城废墟节点布局");
-assert.equal((chapterFiveLayout[1].match(/\[[\d.]+,\s*[\d.]+\]/g) || []).length, 20, "第五关应放置20个Boss节点");
+assert.equal(chapterLayout(5).filter(isMapPoint).length, 20, "第五关应放置20个Boss节点");
 assert.equal(CF.CHAPTER_FIVE_STAGES.length, 20, "第五关应包含20个灰狼与野兽Boss");
 assert.equal(new Set(Array.from(CF.CHAPTER_FIVE_STAGES, nodes => nodes[0].portrait)).size, 20, "第五关20个Boss应使用独立头像路径");
 Array.from(CF.CHAPTER_FIVE_STAGES, nodes => nodes[0].portrait).forEach(portrait => assert.ok(fs.existsSync(path.join(root, portrait)), `${portrait}应存在于第五关素材中`));
@@ -223,8 +218,8 @@ const arenaSkillSignatures = CF.Arena.heroes.map(hero => JSON.stringify({
   combatStyle: hero.skill.combatStyle
 }));
 assert.equal(new Set(arenaSkillSignatures).size, 63, "63种竞技场英雄技能应拥有不同的机制或三级数值组合");
-assert.match(mainSource, /CHAPTER_ONE_STAGE_LAYOUT\s*=\s*\[/, "第一关应使用固定雾林节点布局");
-assert.match(mainSource, /chapter-one-map/, "第一关地图应渲染雾林地图画布");
+assert.equal(chapterLayout(1).filter(isMapPoint).length, 13, "第一关应使用固定雾林节点布局");
+assert.equal(CF.chapterById(1).map.className, "chapter-one-map", "第一关地图应渲染雾林地图画布");
 assert.match(mainSource, /level-map-board/, "主界面应提供世界地图关卡选择");
 assert.match(mainSource, /assets\/enemies\/forest-wolf-king\.png[\s\S]*assets\/enemies\/goblin-queen\.png/, "世界地图应显示两关最终Boss头像");
 assert.match(mainSource, /selectChapter\(chapter\)/, "点击关卡头像应进入对应章节");
@@ -308,8 +303,8 @@ assert.match(mainSource, /arenaBracketHTML\(tournament\)/, "竞技场应渲染�
 assert.match(mainSource, /arena-bracket-connectors/, "竞技场赛程应使用连线展示胜者晋级关系");
 assert.match(battleCss, /\.arena-tournament-bracket\s*\{[^}]*position:\s*relative/s, "竞技场对阵图应使用固定赛程画布");
 assert.match(battleCss, /\.arena-match\.player-current\s*\{[^}]*border-color:\s*#ffe093/s, "玩家当前场次应使用醒目的金色高亮");
-assert.match(mainSource, /CHAPTER_ONE_ROUTE_EDGES\s*=\s*\[/, "第一关应配置独立的分支连线");
-assert.equal((mainSource.match(/\[50, 90\][\s\S]*?\[50, 5\]/)?.[0].match(/\[\d+, \d+\]/g) || []).length, 13, "第一关应配置13个可回溯的节点位置");
+assert.ok(CF.chapterById(1).edges.length >= 12, "第一关应配置独立的分支连线");
+assert.equal(new Set(chapterLayout(1).map(String)).size, 13, "第一关应配置13个可回溯的节点位置");
 assert.ok(fs.existsSync(path.join(root, "assets/enemies/goblin-queen.png")), "女哥布林最终Boss头像应存在");
 assert.ok(fs.existsSync(path.join(root, "assets/ui/mana-crystals.png")), "mana crystal sprite should exist");
 assert.ok(fs.existsSync(path.join(root, "assets/ui/gold-coin.png")), "custom gold coin icon should exist");

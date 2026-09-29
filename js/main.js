@@ -23,58 +23,8 @@
   const shouldPrepareChapterFiveFinale = save.chapterFiveFinalePreset !== CF.CHAPTER_FIVE_FINALE_PRESET_VERSION
     && (Number(save.completedRuns) >= 4 || Boolean(save.chapterRuns?.[5]));
   if (shouldPrepareChapterFiveFinale) CF.Adventure.prepareChapterFiveFinale();
-  const CHAPTER_TWO_NODE_LAYOUT = [
-    [6, 80], [18, 91], [38, 86], [48, 69], [60, 84],
-    [75, 74], [86, 68], [93, 58], [94, 40], [82, 32],
-    [59, 28], [46, 36], [34, 49], [14, 61], [21, 48],
-    [16, 35], [14, 18], [52, 12], [72, 18], [87, 12]
-  ];
-  const CHAPTER_TWO_ROUTE_EDGES = [
-    [16, 15], [15, 14], [14, 13], [13, 0], [0, 1], [1, 2], [2, 3], [3, 4],
-    [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 19], [14, 12], [12, 3],
-    [12, 11], [11, 10], [10, 17], [10, 18], [18, 19]
-  ];
-  const CHAPTER_THREE_NODE_LAYOUT = [
-    [8, 54], [16, 74], [24, 37], [22, 91], [43, 23],
-    [40, 91], [46, 49], [71, 70], [61, 78], [77, 85],
-    [55, 36], [86, 91], [71, 40], [87, 72], [67, 21],
-    [84, 55], [86, 41], [83, 31], [80, 21], [84, 9.5]
-  ];
-  const CHAPTER_THREE_NPC_LAYOUT = [67, 58];
-  const CHAPTER_THREE_ROUTE_CONTROLS = {
-    "0-1": [14, 62], "0-2": [14, 43], "1-3": [18, 82], "3-5": [31, 94],
-    "5-8": [50, 91], "7-8": [66, 73], "7-9": [74, 76], "9-11": [81, 88],
-    "11-13": [89, 82], "13-15": [84, 63], "2-4": [33, 11], "2-6": [29, 55],
-    "4-10": [50, 24], "6-10": [51, 43], "6-8": [50, 65], "10-12": [63, 32],
-    "10-14": [60, 26], "12-16": [78, 38], "14-18": [73, 21], "15-16": [87, 48],
-    "16-17": [85, 36], "17-18": [81, 25], "18-19": [84, 15]
-  };
-  const CHAPTER_FOUR_NODE_LAYOUT = [
-    [7, 83], [17, 70], [24, 88], [28, 58], [36, 78],
-    [42, 48], [50, 67], [54, 37], [62, 58], [72, 72],
-    [65, 35], [79, 58], [75, 27], [90, 53], [59, 22],
-    [73, 16], [86, 22], [91, 69], [84, 39], [92, 32]
-  ];
-  const CHAPTER_FIVE_NODE_LAYOUT = [
-    [8, 82], [18, 68], [28, 87], [31, 53], [43, 74], [45, 38], [56, 83], [59, 59], [67, 34], [73, 76],
-    [78, 53], [85, 26], [90, 68], [93, 43], [62, 16], [51, 22], [36, 18], [24, 34], [77, 12], [88, 10]
-  ];
-  const CHAPTER_ONE_STAGE_LAYOUT = [
-    [50, 90], [39, 79], [61, 79], [39, 66], [61, 66], [50, 54], [50, 42],
-    [38, 31], [62, 31], [38, 19], [62, 19], [50, 12], [50, 5]
-  ];
-  const CHAPTER_ONE_ROUTE_EDGES = [
-    [0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [3, 5], [4, 5], [5, 6],
-    [6, 7], [6, 8], [7, 9], [8, 10], [9, 11], [10, 11], [11, 12]
-  ];
-  // 主菜单：每章的背景战场图与首领徽记。
-  const MENU_CHAPTERS = [
-    { chapter: 1, name: "第一关", background: "assets/battle/forest-battlefield.png", boss: "assets/enemies/forest-wolf-king.png", bossName: "森林狼王" },
-    { chapter: 2, name: "第二关", background: "assets/battle/goblin-stronghold.png", boss: "assets/enemies/goblin-queen.png", bossName: "翠影女王" },
-    { chapter: 3, name: "第三关", background: "assets/battle/harvest-farm.png", boss: "assets/enemies/chapter3/bosses/bear-boss-20.png", bossName: "丰穗战母·布蕾娅" },
-    { chapter: 4, name: "第四关", background: "assets/battle/dream-slime-forest.png", boss: "assets/enemies/chapter4/bosses/slime-boss-20.png", bossName: "碧露大贤者·涅芙莉" },
-    { chapter: 5, name: "第五关", background: "assets/battle/ancient-city-ruins.png", boss: "assets/enemies/chapter5/bosses/wolf-matriarch.png", bossName: "银灰狼女猎手" }
-  ];
+  // 主菜单：每章的背景战场图与首领徽记（来自关卡数据表 js/data/chapters.js）。
+  const MENU_CHAPTERS = CF.CHAPTERS.map(chapter => ({ chapter: chapter.id, name: chapter.name, ...chapter.menu }));
   // 队伍营地：场景图中四位教官的位置（百分比）与头像裁切（原图像素：中心x、中心y、边长）。
   const TRAINING_GROUNDS_ART = "assets/ui/training-grounds.webp";
   const TRAINING_ART_SIZE = [1699, 926];
@@ -1512,24 +1462,24 @@
       if (!run) return this.renderMenu();
       const mapStages = CF.Adventure.mapStages();
       const chapter = Number(run.chapter) || 1;
-      const chapterTwo = chapter === 2;
+      const chapterData = CF.chapterById(chapter);
       const chapterThree = chapter === 3;
-      const chapterFour = chapter === 4;
       const chapterFive = chapter === 5;
-      const layout = chapterFive ? CHAPTER_FIVE_NODE_LAYOUT : chapterFour ? CHAPTER_FOUR_NODE_LAYOUT : chapterThree ? CHAPTER_THREE_NODE_LAYOUT : chapterTwo ? CHAPTER_TWO_NODE_LAYOUT : CHAPTER_ONE_STAGE_LAYOUT;
+      const layout = mapStages.map(nodes => nodes[0].pos);
+      const npc = chapterData.npc;
       const routeLines = CF.Adventure.routeEdges().map(([from, to]) => {
         const start = layout[from];
         const end = layout[to];
-        if (chapterThree || chapterFour || chapterFive) {
+        if (chapterData.routeStyle === "curve") {
           const key = `${Math.min(from, to)}-${Math.max(from, to)}`;
           const midpoint = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
-          const control = chapterThree ? (CHAPTER_THREE_ROUTE_CONTROLS[key] || midpoint) : [midpoint[0], midpoint[1] + ((from + to) % 2 ? -2.5 : 2.5)];
+          const control = chapterData.routeControls ? (chapterData.routeControls[key] || midpoint) : [midpoint[0], midpoint[1] + ((from + to) % 2 ? -2.5 : 2.5)];
           return `<path class="boss-route-line" d="M ${start[0]} ${start[1]} Q ${control[0]} ${control[1]} ${end[0]} ${end[1]}"></path>`;
         }
         return `<line class="boss-route-line" x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}"></line>`;
       }).join("");
-      const npcRouteLine = chapterThree
-        ? `<path class="boss-route-line npc-route-line" d="M ${CHAPTER_THREE_NPC_LAYOUT[0]} ${CHAPTER_THREE_NPC_LAYOUT[1]} Q 68 64 ${layout[CF.CHAPTER_THREE_NPC.adjacentNode][0]} ${layout[CF.CHAPTER_THREE_NPC.adjacentNode][1]}"></path>`
+      const npcRouteLine = npc
+        ? `<path class="boss-route-line npc-route-line" d="M ${npc.pos[0]} ${npc.pos[1]} Q ${npc.routeControl[0]} ${npc.routeControl[1]} ${layout[npc.adjacentNode][0]} ${layout[npc.adjacentNode][1]}"></path>`
         : "";
       const routeNodes = mapStages.map((nodes, stageIndex) => {
         const node = nodes[0];
@@ -1548,16 +1498,16 @@
         return `<button class="node-btn boss-map-node ${edgeClass} ${node.type === "boss" ? "final-boss" : ""} ${node.weaponBoss ? "weapon-boss" : ""} ${completed ? "completed" : available ? "available" : "locked"}" style="--node-x:${position[0]}%;--node-y:${position[1]}%" data-action="node" data-choice="${stageIndex}" title="第${stageIndex + 1}节点 · ${node.label}${attemptText}" ${available ? "" : "disabled"}><span class="stage-number">${stageIndex + 1}</span>${portrait}<small>${node.label}</small></button>`;
       }).join("");
       const npcUnlocked = chapterThree && CF.Adventure.farmNpcUnlocked();
-      const npcNode = chapterThree ? `<button class="node-btn boss-map-node farm-npc-node ${npcUnlocked ? "available" : "locked"}" style="--node-x:${CHAPTER_THREE_NPC_LAYOUT[0]}%;--node-y:${CHAPTER_THREE_NPC_LAYOUT[1]}%" data-action="farm-npc" title="${npcUnlocked ? "与留守的农民夫妇交谈" : "先抵达相邻农田节点"}" ${npcUnlocked ? "" : "disabled"}><span class="node-portrait-frame"><img class="node-portrait" src="${CF.CHAPTER_THREE_NPC.portrait}" alt="留守的农民夫妇"></span><small>农民夫妇</small></button>` : "";
-      const mapClass = chapterFive ? "chapter-five-map" : chapterFour ? "chapter-four-map" : chapterThree ? "chapter-three-map" : chapterTwo ? "" : "chapter-one-map";
-      const mapLabel = chapterFive ? "千枝城废墟二十野兽首领路线图" : chapterFour ? "梦幻森林二十史莱姆首领路线图" : chapterThree ? "金麦农场二十首领路线图" : chapterTwo ? "哥布林王庭二十节点路线图" : "迷雾森林十三节点路线图";
+      const npcNode = chapterThree ? `<button class="node-btn boss-map-node farm-npc-node ${npcUnlocked ? "available" : "locked"}" style="--node-x:${npc.pos[0]}%;--node-y:${npc.pos[1]}%" data-action="farm-npc" title="${npcUnlocked ? "与留守的农民夫妇交谈" : "先抵达相邻农田节点"}" ${npcUnlocked ? "" : "disabled"}><span class="node-portrait-frame"><img class="node-portrait" src="${CF.CHAPTER_THREE_NPC.portrait}" alt="留守的农民夫妇"></span><small>农民夫妇</small></button>` : "";
+      const mapClass = chapterData.map.className;
+      const mapLabel = chapterData.map.label;
       const mapRoute = `<div class="boss-map-board ${mapClass}" aria-label="${mapLabel}"><svg class="boss-route-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${routeLines}${npcRouteLine}</svg>${routeNodes}${npcNode}</div>`;
       const progressLabel = `已完成 ${run.completed.length} / ${mapStages.length} 节点`;
-      const chapterTitle = chapterFive ? "千枝城古城废墟" : chapterFour ? "梦幻森林" : chapterThree ? "金麦农场" : chapterTwo ? "哥布林王庭" : "迷雾森林远征";
-      const mapNote = chapterFive ? "灰狼和其他野兽速度极快，许多单位登场即可攻击。击败全部节点后，魔族联军会在废墟建立据点，之后可以反复挑战强大的军官与魔族军队。" : chapterFour ? "沿发光溪流与林间小径推进。每个史莱姆首领都会治疗自身与随从；击败节点后开启所有相邻路线，首胜卡牌会在战后揭晓。" : chapterThree ? "沿金色路线推进。击败节点后会开启所有相邻路线；抵达农舍旁的节点后，可与留守的农民夫妇交谈。每个首领的首胜奖励会在战后揭晓。" : chapterTwo ? "击败任一节点即可开启相邻路线；翠影女王会在抵达右上方终点后开放。大部分节点由哥布林军团驻守。" : "金边节点由更强的敌人驻守；首次击败会获得未知战利品。击败节点后仍可回到岔路挑战相邻路线。";
+      const chapterTitle = chapterData.map.title;
+      const mapNote = chapterData.map.note;
       const totalFailures = Object.values(run.failures || {}).reduce((sum, count) => sum + Number(count || 0), 0);
       this.frame(`<section class="screen"><div class="page-heading"><div><span class="eyebrow">${progressLabel} · 第${chapter}关独立存档</span><h2>${chapterTitle}</h2></div><p>击败一个节点后，所有相邻的未完成节点都会解锁。战败不会清空本关进度，切换关卡也会分别保存。</p></div>
-        <div class="panel map-shell ${chapterFive ? "chapter-five-map-shell" : chapterFour ? "chapter-four-map-shell" : chapterThree ? "chapter-three-map-shell" : chapterTwo ? "chapter-two-map" : ""}"><div class="run-status"><span class="resource-chip">❤️ <strong>${run.hp}/${run.maxHp}</strong></span><span class="resource-chip">${COIN_ICON} 本轮 <strong>+${run.earnedCoins}</strong></span><span class="resource-chip">⭐ 本轮 <strong>+${run.earnedXp}</strong></span><span class="resource-chip">⚔️ 已完成 <strong>${run.completed.length}</strong></span><span class="resource-chip">🛡️ 失败 <strong>${totalFailures}</strong></span></div>
+        <div class="panel map-shell ${chapterData.map.shellClass}"><div class="run-status"><span class="resource-chip">❤️ <strong>${run.hp}/${run.maxHp}</strong></span><span class="resource-chip">${COIN_ICON} 本轮 <strong>+${run.earnedCoins}</strong></span><span class="resource-chip">⭐ 本轮 <strong>+${run.earnedXp}</strong></span><span class="resource-chip">⚔️ 已完成 <strong>${run.completed.length}</strong></span><span class="resource-chip">🛡️ 失败 <strong>${totalFailures}</strong></span></div>
         ${mapRoute}<p class="map-note">${mapNote}</p>
         <button class="secondary-btn" data-action="abandon-run">退出当前关卡</button></div></section>`);
     },
@@ -1645,12 +1595,8 @@
     handleVictory(battle, type) {
       const run = CF.Adventure.current();
       run.hp = battle.state.storyDefeat ? run.maxHp : battle.state.player.hp;
-      const chapterTwo = run.chapter === 2;
-      const chapterThree = run.chapter === 3;
-      const chapterFour = run.chapter === 4;
-      const chapterFive = run.chapter === 5;
-      const baseGold = chapterFive ? (type === "normal" ? 100 : type === "elite" ? 180 : 420) : chapterFour ? (type === "normal" ? 75 : type === "elite" ? 120 : 320) : chapterThree ? (type === "normal" ? 55 : type === "elite" ? 90 : 240) : chapterTwo ? (type === "normal" ? 36 : type === "elite" ? 65 : 180) : (type === "normal" ? 20 : type === "elite" ? 40 : 60);
-      const baseXp = chapterFive ? (type === "normal" ? 70 : type === "elite" ? 110 : 240) : chapterFour ? (type === "normal" ? 50 : type === "elite" ? 80 : 180) : chapterThree ? (type === "normal" ? 38 : type === "elite" ? 60 : 140) : chapterTwo ? (type === "normal" ? 25 : type === "elite" ? 40 : 100) : (type === "normal" ? 10 : type === "elite" ? 20 : 50);
+      // 基础奖励来自关卡数据表 js/data/chapters.js 的 victoryRewards。
+      const { gold: baseGold, xp: baseXp } = CF.chapterById(run.chapter).victoryRewards[type];
       CF.SaveSystem.data.coins += baseGold;
       CF.SaveSystem.data.totalVictories += 1;
       run.earnedCoins += baseGold; run.earnedXp += baseXp;
@@ -1730,9 +1676,7 @@
     },
     finishBoss() {
       const run = CF.Adventure.current();
-      const chapterTwo = run.chapter === 2;
-      const chapterThree = run.chapter === 3;
-      const chapterFour = run.chapter === 4;
+      const chapterData = CF.chapterById(run.chapter);
       const chapterFive = run.chapter === 5;
       CF.Adventure.finishNode("boss");
       run.cleared = true;
@@ -1740,10 +1684,9 @@
       CF.SaveSystem.data.completedRuns = Math.max(CF.SaveSystem.data.completedRuns, run.chapter);
       CF.SaveSystem.save();
       this.sfx("chapterClear", 150);
-      const summaryTitle = chapterFive ? "千枝城的旗帜重新升起" : chapterFour ? "梦幻森林归于寂静" : chapterThree ? "金麦农场的战事落幕" : chapterTwo ? "哥布林王庭陷落" : "密林重见曙光";
-      const summaryText = chapterFive ? "你击败银灰狼女猎手后，五位魅魔军官没有继续退避。她们救下狼族首领，以20点攻击的力量击溃小队，并决定在千枝城废墟建立魔族据点、重建这座千年前的共居之城。第五关奖励照常结算，英雄等级上限提升至25级；废墟地图上已经开放可反复挑战的魔族驻军。" : chapterFour ? "你击败了碧露大贤者·涅芙莉，迫使史莱姆族群退回森林深处，并将英雄等级上限提升至20级。" : chapterThree ? "你击败了丰穗战母·布蕾娅，完成第三关并解锁东部梦幻森林与英雄20级上限。" : chapterTwo ? "你击败了翠影女王，完成第二关的二十场首领战，并解锁王城南部的金麦农场与英雄15级上限。" : "你击败了森林狼王，并解锁第二关与英雄10级上限。最大法力只在统领试炼中提升。";
+      const { title: summaryTitle, text: summaryText } = chapterData.clearSummary;
       this.modal(`<span class="eyebrow">冒险总结</span><h2>${summaryTitle}</h2><p>${summaryText}所有永久成长均已保存。</p><div class="summary-list">
-        <div><span>本轮金币</span><strong>+${run.earnedCoins}</strong></div><div><span>英雄经验</span><strong>+${run.earnedXp}</strong></div><div><span>升级卡牌</span><strong>${run.cardsLeveled}</strong></div><div><span>完成节点</span><strong>${run.completed.length}/${run.chapter === 1 ? 13 : 20}</strong></div>
+        <div><span>本轮金币</span><strong>+${run.earnedCoins}</strong></div><div><span>英雄经验</span><strong>+${run.earnedXp}</strong></div><div><span>升级卡牌</span><strong>${run.cardsLeveled}</strong></div><div><span>完成节点</span><strong>${run.completed.length}/${chapterData.nodes.length}</strong></div>
         </div><button class="primary-btn" data-modal-action="finish-run">返回主菜单</button>`);
     },
     handleDefeat(battle) {

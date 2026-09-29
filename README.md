@@ -70,4 +70,12 @@ node tests/run-all.cjs
 - `tests/save-system.test.cjs`：存档版本迁移、自动备份、损坏恢复与导出/导入。
 - `tests/project-integrity.test.cjs`：脚本清单、语法、素材路径、卡牌数据引用与翻译词典检查。
 
+- `tests/content-data.test.cjs`：关卡数据表、经济数值表、剧情与事件的格式和引用检查。
+- `tests/simulation.test.cjs`：平衡模拟工具的冒烟测试。
+
+## 内容数据表与平衡模拟
+
+- 关卡（首领、敌人强度公式、奖励、地图坐标与文案）集中在 `js/data/chapters.js`，经济数值（粮食、食物、好感、客栈、派遣收益）集中在 `js/data/economy.js`，剧情残页与路上事件在 `js/data/lore.js`、`js/data/road-events.js`。调数值只改这些表。
+- `npm run simulate` 让机器人玩家与每个首领反复对战并输出胜率曲线；`--sweep mana` 查看各关对最大法力的依赖；`--economy` 按天推演金币与粮食。玩家成长假设在 `tools/sim/profiles.cjs`，用法见 `node tools/simulate.cjs --help`。
+
 推送到 GitHub 后，`.github/workflows/tests.yml` 会在每次推送 main 和每个 Pull Request 上自动运行测试。开发约定见 `CLAUDE.md`。
