@@ -2,7 +2,7 @@
   "use strict";
 
   const KEY = "rift-expedition-save-v1";
-  const SLOT_COUNT = 15;
+  const SLOT_COUNT = 75;
   const SLOT_PREFIX = "rift-expedition-slot-";
   const ACTIVE_SLOT_KEY = "rift-expedition-active-slot";
   const BACKUP_SUFFIX = "-backup";
@@ -58,10 +58,10 @@
     }, {});
   }
 
-  // 人类阵营起步装备：英雄初始牌组里的随从统一预装绿色（T2）武器与盔甲。
+  // 人类阵营起步装备：英雄初始牌组里的随从统一预装绿色（T2）武器。
   function starterCardEquipment() {
     return CF.STARTER_IDS.reduce((acc, id) => {
-      if (CF.CARD_LIBRARY[id]?.type === "unit") acc[id] = { weapon: 2, armor: 2 };
+      if (CF.CARD_LIBRARY[id]?.type === "unit") acc[id] = { weapon: 2 };
       return acc;
     }, {});
   }
@@ -82,6 +82,8 @@
         heroId: hero?.id || "captain",
         level: 1, xp: 0, maxHealth: 30, maxMana: 3,
         equippedSkill: signature,
+        // 英雄武器：七把首杀武器不再作为卡牌放进牌组，而是在英雄档案中选择一把随身携带（null 为空手）。
+        equippedWeapon: null,
         skillProgress
       },
       coins: 50,
@@ -90,6 +92,8 @@
       deck: [...CF.STARTER_DECK],
       injuredCards: [],
       tutorialSeen: false,
+      // 分路规则上线后，老玩家也要看一次新的规则讲解。
+      laneRulesSeen: false,
       totalVictories: 0,
       completedRuns: 0,
       qianzhiGarrisonUnlocked: false,
@@ -101,7 +105,7 @@
       chapterFiveBossRewards: {},
       questItemRewards: {},
       items: { queenBloodRiverWater: false },
-      inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0, armorT1: 0, armorT2: 0, armorT3: 0, armorT4: 0 },
+      inventory: { queenEssenceBlood: 0, weaponT1: 0, weaponT2: 0, weaponT3: 0, weaponT4: 0 },
       cardEquipment: starterCardEquipment(),
       notesUnlocked: 0,
       prisoners: {},
@@ -192,7 +196,7 @@
   function normalize(raw) {
     const base = freshSave(raw?.hero?.heroId);
     if (!raw || typeof raw !== "object") return base;
-    const cleanDeck = Array.isArray(raw.deck) ? raw.deck.filter(id => CF.CARD_LIBRARY[id]).filter((id, index, list) => list.indexOf(id) === index) : [...base.deck];
+    const cleanDeck = Array.isArray(raw.deck) ? raw.deck.filter(id => CF.CARD_LIBRARY[id] && CF.CARD_LIBRARY[id].type !== "weapon").filter((id, index, list) => list.indexOf(id) === index) : [...base.deck];
     if (cleanDeck.length < 24) {
       base.deck.forEach(id => { if (cleanDeck.length < 24 && !cleanDeck.includes(id)) cleanDeck.push(id); });
     }
@@ -218,8 +222,11 @@
       chapterFiveBossRewards: { ...base.chapterFiveBossRewards, ...(raw.chapterFiveBossRewards || {}) },
       questItemRewards: { ...base.questItemRewards, ...(raw.questItemRewards || {}) },
       items: { ...base.items, ...(raw.items || {}) },
-      inventory: { ...base.inventory, ...(raw.inventory || {}) },
-      cardEquipment: { ...base.cardEquipment, ...(raw.cardEquipment || {}) },
+      // 盔甲已取消：旧存档里的盔甲材料与随从盔甲槽在读档时清除。
+      inventory: Object.fromEntries(Object.entries({ ...base.inventory, ...(raw.inventory || {}) }).filter(([key]) => !key.startsWith("armor"))),
+      cardEquipment: Object.fromEntries(Object.entries({ ...base.cardEquipment, ...(raw.cardEquipment || {}) })
+        .filter(([, entry]) => entry && typeof entry === "object")
+        .map(([id, entry]) => [id, { weapon: Math.max(0, Math.min(4, Number(entry.weapon) || 0)) }])),
       notesUnlocked: Number.isInteger(raw.notesUnlocked) ? raw.notesUnlocked : base.notesUnlocked,
       prisoners: raw.prisoners && typeof raw.prisoners === "object" ? { ...raw.prisoners } : {},
       foods: cleanCounts(raw.foods),
@@ -256,10 +263,12 @@
       progress.unlocked = progress.unlocked !== false;
       result.hero.skillProgress[id] = progress;
     });
+    result.laneRulesSeen = raw.laneRulesSeen === true;
     result.hero.heroId = base.hero.heroId;
     const signature = signatureSkillOf(result.hero.heroId);
     if (!result.hero.skillProgress[signature]?.unlocked) result.hero.skillProgress[signature] = { level: 1, xp: 0, unlocked: true };
     if (!result.hero.skillProgress[result.hero.equippedSkill]?.unlocked) result.hero.equippedSkill = signature;
+    if (!isOwnedWeapon(result, result.hero.equippedWeapon)) result.hero.equippedWeapon = null;
     if (Number(result.completedRuns) >= 1) {
       result.items.queenBloodRiverWater = true;
       result.questItemRewards.queenBloodRiverWater = true;
@@ -280,6 +289,10 @@
     delete result.hero.skillLevel;
     delete result.hero.manaShards;
     return result;
+  }
+
+  function isOwnedWeapon(data, id) {
+    return typeof id === "string" && CF.CARD_LIBRARY[id]?.type === "weapon" && data.collection?.[id] > 0;
   }
 
   const loadSaveData = raw => normalize(migrate(raw));
@@ -590,6 +603,21 @@
       this.save();
       return true;
     },
+    // 已获得的英雄武器（首杀武器奖励），按费用排列。
+    ownedWeapons() {
+      return (CF.HERO_WEAPON_IDS || []).filter(id => isOwnedWeapon(this.data, id));
+    },
+    equippedWeapon() {
+      const id = this.data.hero.equippedWeapon;
+      return isOwnedWeapon(this.data, id) ? id : null;
+    },
+    // id 为 null 时卸下武器。
+    equipHeroWeapon(id) {
+      if (id !== null && !isOwnedWeapon(this.data, id)) return false;
+      this.data.hero.equippedWeapon = id;
+      this.save();
+      return true;
+    },
     addInventoryItem(key, amount = 1) {
       const inventory = this.data.inventory || (this.data.inventory = {});
       inventory[key] = (inventory[key] || 0) + amount;
@@ -609,14 +637,14 @@
       this.save();
       return true;
     },
-    // slot: "weapon"|"armor"；tier: 1-4。装备时把该卡该槽原有品级退回背包，再扣1件新品级。
+    // slot: "weapon"；tier: 1-4。装备时把该卡原有品级退回背包，再扣1件新品级。
     equipCardItem(cardId, slot, tier) {
-      if (!CF.CARD_LIBRARY[cardId] || (slot !== "weapon" && slot !== "armor") || !(tier >= 1 && tier <= 4)) return false;
+      if (!CF.CARD_LIBRARY[cardId] || slot !== "weapon" || !(tier >= 1 && tier <= 4)) return false;
       const key = `${slot}T${tier}`;
       const inventory = this.data.inventory || (this.data.inventory = {});
       if (!(inventory[key] > 0)) return false;
       const equipment = this.data.cardEquipment || (this.data.cardEquipment = {});
-      const entry = equipment[cardId] || (equipment[cardId] = { weapon: 0, armor: 0 });
+      const entry = equipment[cardId] || (equipment[cardId] = { weapon: 0 });
       const previousTier = entry[slot] || 0;
       if (previousTier) inventory[`${slot}T${previousTier}`] = (inventory[`${slot}T${previousTier}`] || 0) + 1;
       inventory[key] -= 1;
@@ -626,7 +654,7 @@
     },
     // 重锻：消耗2件同品级材料与对应金币，合成1件高一品级的装备（品级上限4）。
     forgeItem(kind, tier) {
-      if ((kind !== "weapon" && kind !== "armor") || !(tier >= 1 && tier <= 3)) return false;
+      if (kind !== "weapon" || !(tier >= 1 && tier <= 3)) return false;
       const key = `${kind}T${tier}`;
       const cost = tier * 30;
       const inventory = this.data.inventory || (this.data.inventory = {});
@@ -640,17 +668,6 @@
     }
   };
 
-  // 装备品级图标：武器=匕首（攻击力右侧），盔甲=盾牌（生命/防御左侧）。白/绿/蓝/紫依次对应T1~T4，未装备时为暗淡色。
-  const EQUIPMENT_TIER_COLORS = ["rgba(228,183,93,.25)", "#e7e2d8", "#7fd97f", "#79b8ff", "#d29bff"];
-  const EQUIPMENT_TIER_LABELS = {
-    weapon: ["未装备武器", "粗糙武器 +1攻击", "精良武器 +2攻击", "锋利武器 +3攻击", "传奇武器 +4攻击"],
-    armor: ["未装备盔甲", "粗糙盔甲 +1防御", "精良盔甲 +2防御", "坚固盔甲 +3防御", "传奇盔甲 +4防御"]
-  };
-  function equipDotHTML(slot, tier) {
-    const level = tier || 0;
-    return `<i class="equip-icon equip-icon-${slot}" style="background:${EQUIPMENT_TIER_COLORS[level]}" title="${EQUIPMENT_TIER_LABELS[slot][level]}" aria-hidden="true"></i>`;
-  }
-
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, SAVE_VERSION, equipDotHTML });
+  Object.assign(window.CardForge, { SaveSystem, HERO_LEVELS, freshSave, CHAPTER_FIVE_FINALE_PRESET_VERSION, SAVE_SLOT_COUNT: SLOT_COUNT, SAVE_VERSION });
 })();

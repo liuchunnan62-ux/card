@@ -232,10 +232,6 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .quality-3 { color: #79b8ff; }
 .quality-4 { color: #d29bff; }
 
-/* 装备品级图标：出现在攻击力右侧（匕首=武器）与生命/防御左侧（盾牌=盔甲），未装备时为暗淡描边色 */
-.equip-icon { display: inline-block; width: 13px; height: 13px; margin: 0 3px; vertical-align: middle; filter: drop-shadow(0 0 2px rgba(0,0,0,.6)); }
-.equip-icon-weapon { clip-path: polygon(50% 0%, 58% 48%, 85% 48%, 85% 58%, 58% 58%, 58% 100%, 42% 100%, 42% 58%, 15% 58%, 15% 48%, 42% 48%); }
-.equip-icon-armor { clip-path: polygon(50% 0%, 92% 16%, 92% 50%, 50% 100%, 8% 50%, 8% 16%); }
 
 /* Boss战翻牌：三张固定战利品牌，点击翻面揭示 */
 .boss-loot-hint { margin: 10px 0 6px; color: var(--muted); }
@@ -444,6 +440,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .skill-panel { margin-top: 15px; padding: 16px; border: 1px solid rgba(80,134,184,.55); border-radius: 10px; background: linear-gradient(120deg, rgba(55,99,135,.2), rgba(0,0,0,.2)); }
 .hero-skills-heading { margin: 26px 0 12px; display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .hero-skills-heading h2, .hero-skills-heading p { margin: 0; }
+.hero-skills-heading h2 { white-space: nowrap; }
 .hero-skills-heading p { color: var(--muted); }
 .hero-skill-collection { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .hero-skill-card { min-height: 190px; padding: 15px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(102,139,177,.48); border-radius: 12px; background: linear-gradient(145deg, rgba(30,56,83,.76), rgba(14,13,15,.9)); box-shadow: 0 8px 20px rgba(0,0,0,.28); }
@@ -456,6 +453,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .hero-skill-xp { display: grid; gap: 5px; margin-top: auto; }
 .hero-skill-card .mini-btn { align-self: flex-end; }
 .hero-skill-card .mini-btn:disabled { color: #f3cf7b; border-color: #ba8d3e; opacity: 1; cursor: default; }
+.hero-weapon-card .hero-skill-card-title > span { overflow: hidden; }
+.hero-weapon-card .hero-skill-card-title img { width: 100%; height: 100%; object-fit: cover; }
+.hero-weapon-stats { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
+.hero-weapon-stats b { color: #f3cf7b; font-size: 18px; }
+.hero-weapon-stats small { color: var(--muted); font-size: 11px; }
+.backpack-section .hero-weapon-collection { margin-top: 8px; }
 .arena-skill-reward, .arena-skill-inherit { padding: 10px 12px; border: 1px solid rgba(100,153,205,.42); border-radius: 8px; background: rgba(28,59,88,.32); }
 .arena-skill-inherit { border-color: rgba(229,188,86,.55); background: rgba(110,75,20,.25); }
 
@@ -1121,6 +1124,17 @@ html:not(:lang(zh)):not(:lang(ja)) .game-card:not(.spell) .card-name { margin-le
 .tutorial-steps { display: grid; gap: 10px; margin: 18px 0; }
 .tutorial-step { display: grid; grid-template-columns: 35px 1fr; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,.24); border-radius: 8px; }
 .tutorial-step b { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #7f5a2b; }
+.lane-diagram { margin: 14px 0 6px; padding: 12px; border: 1px solid rgba(228,183,93,.3); border-radius: 10px; background: rgba(0,0,0,.25); text-align: center; }
+.lane-diagram p { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.lane-hero { display: inline-block; margin-bottom: 8px; padding: 4px 14px; border: 1px solid #c9564a; border-radius: 999px; color: #ffb3a8; background: rgba(120,30,25,.35); font-weight: bold; }
+.lane-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-width: 320px; margin: 0 auto; }
+.lane-col { display: grid; gap: 5px; padding: 5px; border-radius: 8px; opacity: .45; }
+.lane-col.focus { opacity: 1; background: rgba(230,189,95,.14); box-shadow: 0 0 0 2px rgba(230,189,95,.55); }
+.lane-cell { height: 30px; display: grid; place-items: center; border-radius: 6px; font-weight: bold; }
+.lane-cell.enemy { background: rgba(160,60,50,.35); border: 1px solid rgba(220,110,90,.4); color: #ffd2c8; }
+.lane-cell.mine { margin-top: 8px; background: rgba(60,110,160,.35); border: 1px solid rgba(110,160,220,.45); color: #d6e8ff; }
+.lane-col small { color: var(--muted); font-size: 11px; }
+.objective .rules-btn { float: right; margin-top: -2px; }
 .reward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .reward-card { min-height: 175px; border: 1px solid #87663d; border-radius: 10px; background: linear-gradient(#473224, #201714); padding: 18px; cursor: pointer; text-align: center; }
 .reward-card:hover { border-color: #ffd77d; transform: translateY(-4px); }
@@ -1250,6 +1264,8 @@ html:not(:lang(zh)):not(:lang(ja)) .game-card:not(.spell) .card-name { margin-le
 .hero-select-screen, .save-slots-screen { padding-bottom: 32px; }
 .hero-select-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
 .hero-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.hero-select-group-title { margin: 18px 0 10px; color: var(--gold); font-size: 18px; letter-spacing: .06em; }
+.hero-select-group-title:first-child { margin-top: 0; }
 .hero-pick { display: grid; justify-items: center; gap: 4px; padding: 10px 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: linear-gradient(180deg, rgba(58,40,27,.92), rgba(23,17,14,.95)); cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
 .hero-pick:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--gold); box-shadow: 0 10px 26px rgba(0,0,0,.45); }
 .hero-pick.selected { border-color: var(--gold-bright); box-shadow: 0 0 0 2px rgba(255,217,139,.55), 0 12px 30px rgba(0,0,0,.5); background: linear-gradient(180deg, rgba(110,78,40,.95), rgba(35,25,17,.95)); }

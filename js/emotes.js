@@ -14,7 +14,8 @@
     { id: "threaten", icon: "⚔️", label: "嘲讽" }
   ];
 
-  // 我方台词按英雄区分；对面只把他们看作人类一方，因此回应不按英雄区分。
+  // 我方台词按英雄区分（竞技场选手的台词见 js/data/arena-emotes.js）；对面只把他们看作人类一方，因此回应不按英雄区分——
+  // 例外是投靠人族的“魔族”选手，魔族一方会改为嘲讽其背叛。
   const HERO_LINES = {
     captain: {
       greet: ["我是罗兰·维克，曾是王都护卫队长。报上你的名字。", "你好。……我想，你听得懂我在说什么。"],
@@ -215,13 +216,19 @@
 
   const pick = (lines, random = Math.random) => Array.isArray(lines) ? lines[Math.floor(random() * lines.length) % lines.length] : lines;
 
+  // 回应集的键：章节守卫为章节号（"1"~"5"），其余为 BOSS_REPLIES 的键。
+  function replySetKey(enemyConfig, rescueActive = false) {
+    if (!enemyConfig) return "arena";
+    if (rescueActive || enemyConfig.id === "qianzhi_demon_garrison") return "succubus_officers";
+    if (enemyConfig.mode === "trial") return enemyConfig.trialId === 7 ? "queen_iselanda" : "trial_mentor";
+    if (enemyConfig.mode === "arena") return "arena";
+    if (FINAL_BOSS_IDS.includes(enemyConfig.id)) return enemyConfig.id;
+    return CHAPTER_REPLIES[enemyConfig.chapter] ? String(enemyConfig.chapter) : "1";
+  }
+
   function replySetFor(enemyConfig, rescueActive = false) {
-    if (!enemyConfig) return BOSS_REPLIES.arena;
-    if (rescueActive || enemyConfig.id === "qianzhi_demon_garrison") return BOSS_REPLIES.succubus_officers;
-    if (enemyConfig.mode === "trial") return enemyConfig.trialId === 7 ? BOSS_REPLIES.queen_iselanda : BOSS_REPLIES.trial_mentor;
-    if (enemyConfig.mode === "arena") return BOSS_REPLIES.arena;
-    if (FINAL_BOSS_IDS.includes(enemyConfig.id)) return BOSS_REPLIES[enemyConfig.id];
-    return CHAPTER_REPLIES[enemyConfig.chapter] || CHAPTER_REPLIES[1];
+    const key = replySetKey(enemyConfig, rescueActive);
+    return CHAPTER_REPLIES[key] || BOSS_REPLIES[key];
   }
 
   function playerLine(emoteId, random, heroId = "captain") {
@@ -229,10 +236,26 @@
     return lines ? pick(lines, random) : "";
   }
 
+  // 投靠人族的“魔族”选手主动发出表情时，魔族一方不再正常回应，而是嘲讽其背叛（见 js/data/arena-emotes.js）；
+  // 同族首领有一半机会说出只针对同族叛徒的话。
+  function defectorTaunt(key, emoteId, options) {
+    const kin = Emotes.DEFECTORS?.[options.heroId];
+    const set = kin && Emotes.DEFECTOR_TAUNTS?.[key];
+    if (!set) return "";
+    const random = options.random || Math.random;
+    const kinLines = set.kin?.[kin];
+    const lines = kinLines?.length && random() < 0.5 ? kinLines : set[emoteId];
+    return lines?.length ? pick(lines, random).replaceAll("{0}", options.heroName || "") : "";
+  }
+
   function replyFor(enemyConfig, emoteId, options = {}) {
-    const set = replySetFor(enemyConfig, options.rescueActive);
+    const key = replySetKey(enemyConfig, options.rescueActive);
+    const taunt = defectorTaunt(key, emoteId, options);
+    if (taunt) return taunt;
+    const set = CHAPTER_REPLIES[key] || BOSS_REPLIES[key];
     return set?.[emoteId] ? pick(set[emoteId], options.random) : "";
   }
 
-  CF.Emotes = { list: EMOTES, HERO_LINES, PLAYER_LINES, CHAPTER_REPLIES, BOSS_REPLIES, replySetFor, playerLine, replyFor };
+  const Emotes = { list: EMOTES, HERO_LINES, PLAYER_LINES, CHAPTER_REPLIES, BOSS_REPLIES, replySetKey, replySetFor, playerLine, replyFor };
+  CF.Emotes = Emotes;
 })();

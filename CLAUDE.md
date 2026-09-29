@@ -20,6 +20,7 @@ Windows 离线包（`packaging/windows`）和安卓 WebView 包（`packaging/and
 | `data/chapters.js` | **关卡数据表**：每关的节点（首领名、类型、敌人、头像、地图坐标、武器掉落）、路线、首领强度公式、胜利奖励、地图文案与通关总结 |
 | `data/economy.js` | **经济数值表**：粮食与面粉、游戏时间、客栈、好感等级、族群口味、餐馆食物、派遣收益 |
 | `data/lore.js` `data/road-events.js` | 《源血纪元》残页、冒险地图上的随机事件 |
+| `data/arena-emotes.js` | 竞技场选手（可选英雄）的表情台词，以及投靠人族的魔族选手被敌方嘲讽的台词 |
 | `cards.js` `enemies.js` `heroes.js` | 卡牌库、敌人、英雄数据 |
 | `boss-dialogues.js` `emotes.js` `bond-stories.js` | 剧情台词与表情 |
 | `adventure.js` `trials.js` `arena.js` | 冒险关卡、统领试炼、竞技场 |

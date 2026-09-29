@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="1024" height="1536">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="80%"><stop offset="0" stop-color="#3b3f5c"/><stop offset=".6" stop-color="#171a2b"/><stop offset="1" stop-color="#07080f"/></radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#dfe7ff" stop-opacity=".55"/><stop offset="1" stop-color="#dfe7ff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="blade" x1="0" x2="1"><stop offset="0" stop-color="#8d97b8"/><stop offset=".5" stop-color="#f4f7ff"/><stop offset="1" stop-color="#9aa3c2"/></linearGradient>
+  </defs>
+  <rect width="200" height="300" fill="url(#bg)"/>
+  <circle cx="100" cy="92" r="58" fill="url(#glow)"/>
+  <circle cx="100" cy="92" r="34" fill="#e9eeff" opacity=".9"/>
+  <path d="M40 300 L40 240 L56 240 L56 214 L70 214 L70 300 Z M132 300 L132 226 L150 226 L150 250 L166 250 L166 300 Z" fill="#0b0d16"/>
+  <g stroke="#2a2f45" stroke-width="1.5">
+    <g transform="rotate(-22 100 170)">
+      <path d="M96 60 Q118 110 104 190 L94 190 Q104 118 96 60 Z" fill="url(#blade)"/>
+      <rect x="84" y="188" width="32" height="8" rx="3" fill="#b9a36a"/>
+      <rect x="95" y="196" width="10" height="44" rx="3" fill="#3a2d4f"/>
+      <circle cx="100" cy="244" r="6" fill="#c9d4ff"/>
+    </g>
+    <g transform="rotate(22 100 170)">
+      <path d="M104 60 Q82 110 96 190 L106 190 Q96 118 104 60 Z" fill="url(#blade)"/>
+      <rect x="84" y="188" width="32" height="8" rx="3" fill="#b9a36a"/>
+      <rect x="95" y="196" width="10" height="44" rx="3" fill="#3a2d4f"/>
+      <circle cx="100" cy="244" r="6" fill="#c9d4ff"/>
+    </g>
+  </g>
+  <g fill="#eef2ff"><circle cx="30" cy="40" r="1.4"/><circle cx="170" cy="30" r="1.8"/><circle cx="160" cy="130" r="1.2"/><circle cx="38" cy="150" r="1.6"/></g>
+</svg>

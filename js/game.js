@@ -13,6 +13,8 @@
   const BOSS_DIALOGUE_SEQUENCE_GAP = 1300 + DIALOGUE_EXTRA_DURATION;
   const BOSS_DEFEAT_DIALOGUE_DELAY = 1900 + DIALOGUE_EXTRA_DURATION;
   const INITIAL_BATTLE_HAND = 10;
+  // 冒险首领（handRefill）每个行动回合把手牌补到这个数量。
+  const BOSS_HAND_SIZE = 10;
   // 战场中央的敌方行动播报：敌方回合内一直保留，轮到玩家后再停留 BATTLE_NOTICE_DURATION 毫秒；最多同时显示 BATTLE_NOTICE_LIMIT 条。
   const BATTLE_NOTICE_DURATION = 8000;
   const BATTLE_NOTICE_LIMIT = 8;
@@ -36,10 +38,20 @@
     canTargetBack(board, column, keywords = []) {
       return keywords.includes("狙击") || !board.front[column];
     },
-    canAttackHero(board) {
+    // 传入 column（攻击者所在路线）时按随从的“分路”规则判断：只能攻击同一路的敌人，
+    // 先前排、后排，整路清空后才能攻击英雄；不传 column 时（英雄武器）沿用全场规则。
+    canAttackHero(board, column) {
+      if (Number.isInteger(column)) return this.isLaneOpen(board, column);
       return this.openLanes(board).length > 0;
     },
-    legalUnitTargets(attacker, board) {
+    legalUnitTargets(attacker, board, column) {
+      if (Number.isInteger(column)) {
+        const result = [];
+        if (board.front[column]) result.push({ row: "front", column, unit: board.front[column] });
+        // 狙击随从可以越过本路前排攻击本路后排，但仍不能攻击其他路线。
+        if (board.back[column] && (!board.front[column] || (attacker.keywords || []).includes("狙击"))) result.push({ row: "back", column, unit: board.back[column] });
+        return result;
+      }
       const result = [];
       board.front.forEach((unit, column) => { if (unit) result.push({ row: "front", column, unit }); });
       board.back.forEach((unit, column) => {
@@ -90,11 +102,14 @@
           id: enemy.id, name: enemy.name, icon: enemy.icon, portrait: enemy.portrait || "", battlefield: enemy.battlefield || "forest",
           hp: enemy.health, maxHp: enemy.health,
           mana: enemy.mana, maxMana: enemy.mana, board: emptyBoard(), hand: [], weapon: null,
-          deck: shuffle(CF.makeDeck(enemy.deck, enemy.cardProgress || Object.fromEntries([...new Set(enemy.deck)].map(id => [id, { level: enemy.enemyCardLevel || 1 }])))), fatigue: 0
+          deck: this.buildEnemyDeck(enemy), fatigue: 0
         }
       };
+      if (enemy.mode !== "trial") this.equipHeroWeapon();
       this.draw("player", Math.min(INITIAL_BATTLE_HAND, this.state.player.deck.length));
       if (!enemy.noCards) this.draw("enemy", enemy.openingHand || 4);
+      if (enemy.handRefill && !enemy.noCards) this.refillEnemyHand();
+      if (enemy.weapon) this.equipEnemyWeapon(enemy.weapon);
       CF.Trials?.configureBattle(this);
       this.addLog(`遭遇${enemy.name}「${enemy.title}」。击穿任意一路即可攻击敌方英雄。`, "system");
       if (enemy.dialogue?.intro) {
@@ -102,6 +117,57 @@
         this.bossSpeak(enemy.dialogue.intro, {}, false);
       }
       this.render();
+    }
+
+    buildEnemyDeck(enemy) {
+      const progress = enemy.cardProgress || Object.fromEntries([...new Set(enemy.deck || [])].map(id => [id, { level: enemy.enemyCardLevel || 1 }]));
+      return shuffle(CF.makeDeck(enemy.deck || [], progress));
+    }
+
+    // 首领的底气：手牌补到10张；牌库不够时把整副牌组重新洗入牌库底部，不会因此受到疲劳伤害。
+    refillEnemyHand() {
+      const enemy = this.state.enemy;
+      const missing = BOSS_HAND_SIZE - enemy.hand.length;
+      if (missing <= 0) return;
+      if (enemy.deck.length < missing && this.enemyConfig.deck?.length) {
+        enemy.deck = [...this.buildEnemyDeck(this.enemyConfig), ...enemy.deck];
+        this.addLog(`${this.enemyConfig.name}重新洗入牌组。`, "enemy");
+      }
+      this.draw("enemy", Math.min(missing, enemy.deck.length));
+    }
+
+    // 首领随身武器：与英雄武器相同，不消耗耐久，每个行动回合都能攻击一次。
+    equipEnemyWeapon(spec) {
+      const card = CF.getCard(spec.id, { level: spec.level || 1 });
+      if (!card || card.type !== "weapon") return false;
+      this.state.enemy.weapon = this.weaponFromCard(card, true);
+      this.addLog(`${this.enemyConfig.name}手持${card.name}（${card.attack}攻），每回合都能攻击一次。`, "enemy");
+      return true;
+    }
+
+    // 敌方随从的分路站位：先堵住玩家随从能打脸的空路线（玩家该路火力越强越优先），再占玩家空着的路线施压；
+    // 远程与治疗随从放在有己方前排保护的后排，守卫和高生命随从顶在玩家火力最强的前排。
+    aiChooseSlot(unit = {}) {
+      const own = this.state.enemy.board;
+      const foe = this.state.player.board;
+      const keywords = unit.keywords || [];
+      const backline = unit.role === "healer" || unit.combatStyle === "ranged" || keywords.includes("远程");
+      const tank = keywords.includes("守卫") || (unit.health || 0) >= 6;
+      const laneAttack = column => [foe.front[column], foe.back[column]]
+        .filter(other => other && other.role !== "healer").reduce((sum, other) => sum + this.currentAttack(other), 0);
+      let best = null;
+      ["front", "back"].forEach(row => own[row].forEach((slot, column) => {
+        if (slot) return;
+        const threat = laneAttack(column);
+        let score = 0;
+        if (Rules.isLaneOpen(own, column)) score += 100 + threat * 10;
+        if (Rules.isLaneOpen(foe, column)) score += 25;
+        if (row === "front") score += backline ? -30 : 20 + (tank ? threat * 3 : 0);
+        else score += backline ? (own.front[column] ? 40 : 10) : -20;
+        score -= column * 0.01;
+        if (!best || score > best.score) best = { row, column, score };
+      }));
+      return best;
     }
 
     currentAttack(unit) { return unit.attack + (unit.tempAttack || 0); }
@@ -247,7 +313,8 @@
         if (!this.state.ended) this.render();
       }, PLAYER_EMOTE_DURATION);
       const rescue = this.state.rescueEpilogue;
-      const reply = Emotes.replyFor(this.enemyConfig, emoteId, { rescueActive: !!rescue });
+      const hero = CF.currentHero?.();
+      const reply = Emotes.replyFor(this.enemyConfig, emoteId, { rescueActive: !!rescue, heroId: hero?.id, heroName: hero?.name });
       if (reply) {
         setTimeout(() => {
           if (this.state.ended) return;
@@ -319,17 +386,32 @@
       const replaced = actor.weapon;
       actor.mana -= cost;
       actor.hand.splice(index, 1);
-      actor.weapon = {
-        cardId: card.id, name: card.name, image: card.image, icon: card.icon,
-        attack: card.attack, durability: card.durability, maxDurability: card.durability,
-        combatStyle: card.combatStyle, keywords: [...card.keywords], effect: card.weaponEffect,
-        level: card.level, ready: true
-      };
+      actor.weapon = this.weaponFromCard(card);
       this.recordCardPlayed(side, card);
       this.state.selected = null;
       this.sound("summon");
       this.addLog(`${side === "player" ? "你" : this.enemyConfig.name}装备${card.name}（${cost}费，${card.attack}攻/${card.durability}耐久）${replaced ? `，替换了${replaced.name}` : ""}；剩余${actor.mana}/${actor.maxMana}法力。`, side);
       this.render();
+      return true;
+    }
+
+    weaponFromCard(card, permanent = false) {
+      return {
+        cardId: card.id, name: card.name, image: card.image, icon: card.icon,
+        attack: card.attack, durability: card.durability, maxDurability: card.durability,
+        combatStyle: card.combatStyle, keywords: [...card.keywords], effect: card.weaponEffect,
+        level: card.level, ready: true, strikes: 0, permanent
+      };
+    }
+
+    // 英雄武器：冒险与竞技场开战时自动装备英雄档案中选择的武器。
+    // 不占手牌、不耗法力、不消耗耐久，每回合都可以攻击一次（统领试炼使用各自的固定规则，不带入）。
+    equipHeroWeapon() {
+      const id = CF.SaveSystem.equippedWeapon?.();
+      if (!id) return false;
+      const card = CF.getCard(id, CF.SaveSystem.data.cardProgress?.[id]);
+      if (!card || card.type !== "weapon") return false;
+      this.state.player.weapon = this.weaponFromCard(card, true);
       return true;
     }
 
@@ -475,19 +557,11 @@
       };
       if (row === "front" && unit.keywords.includes("守卫")) { unit.health += 2; unit.maxHealth += 2; }
       if (row === "back" && unit.keywords.includes("远程")) unit.attack += 1;
-      // 装备品级：玩家随从读取存档里的装备；敌方随从按阵营固定配置——
+      // 武器品级：玩家随从读取存档里的装备；敌方随从按阵营固定配置——
       // 冒险模式（魔族阵营）统一白色T1，竞技场/试炼（人类阵营）统一绿色T2。
-      if (side === "player") {
-        const equip = CF.SaveSystem.data.cardEquipment?.[card.id];
-        unit.weaponTier = equip?.weapon || 0;
-        unit.armorTier = equip?.armor || 0;
-      } else {
-        const enemyTier = (this.enemyConfig?.mode === "arena" || this.enemyConfig?.mode === "trial") ? 2 : 1;
-        unit.weaponTier = enemyTier;
-        unit.armorTier = enemyTier;
-      }
+      if (side === "player") unit.weaponTier = CF.SaveSystem.data.cardEquipment?.[card.id]?.weapon || 0;
+      else unit.weaponTier = (this.enemyConfig?.mode === "arena" || this.enemyConfig?.mode === "trial") ? 2 : 1;
       if (unit.weaponTier) unit.attack += unit.weaponTier;
-      if (unit.armorTier) unit.armorValue = unit.armorTier;
       // 粮食不足时饿着肚子出战：本场我方随从攻击-1（最低为0）。
       if (side === "player" && this.state.hungry) unit.attack = Math.max(0, unit.attack - 1);
       actor.board[row][column] = unit;
@@ -1190,9 +1264,10 @@
       const attacker = selected?.type === "attacker" ? this.state.player.board[selected.row][selected.column] : null;
       const target = this.state.enemy.board[targetRow][targetColumn];
       if (!attacker || attacker.uid !== selected.unitId || !target) return;
-      const legal = Rules.legalUnitTargets(attacker, this.state.enemy.board).some(item => item.row === targetRow && item.column === targetColumn);
+      const legal = Rules.legalUnitTargets(attacker, this.state.enemy.board, selected.column).some(item => item.row === targetRow && item.column === targetColumn);
       if (!legal) {
-        if (targetRow === "back" && this.state.enemy.board.front[targetColumn]) this.toast("必须先击败该路线的前排单位。", "bad");
+        if (targetColumn !== selected.column) this.toast("随从只能攻击同一路线的敌人。", "bad");
+        else if (targetRow === "back" && this.state.enemy.board.front[targetColumn]) this.toast("必须先击败该路线的前排单位。", "bad");
         return;
       }
       this.performUnitAttack("player", selected.row, selected.column, "enemy", targetRow, targetColumn);
@@ -1206,9 +1281,9 @@
       if (!attacker || attacker.uid !== selected.unitId) return;
       if (this.state.rescueEpilogue) return this.toast(`${this.enemyConfig.name}已被带离战场。`, "bad");
       if (attacker.justSummoned) return this.toast("突袭随从登场回合不能攻击英雄。", "bad");
-      const lanes = Rules.openLanes(this.state.enemy.board);
+      const lanes = Rules.canAttackHero(this.state.enemy.board, selected.column) ? [selected.column] : [];
       const trialExecution = CF.Trials?.canPuzzleAttackHero(this, attacker);
-      if (!lanes.length && !trialExecution) return this.toast("必须先打通一整条路线。", "bad");
+      if (!lanes.length && !trialExecution) return this.toast("必须先清空本路线的前排和后排，才能攻击英雄。", "bad");
       const damage = this.currentAttack(attacker);
       this.state.enemy.hp -= damage;
       attacker.ready = false;
@@ -1256,12 +1331,16 @@
       const counter = noCounter ? 0 : this.currentAttack(target) + (target.keywords.includes("荆棘") ? 2 : 0);
       target.health -= damage;
       if (!noCounter) actor.hp -= counter;
-      weapon.ready = false;
-      weapon.durability -= 1;
+      this.spendWeaponStrike(weapon);
+      if (!weapon.permanent) weapon.durability -= 1;
       const killed = target.health <= 0;
       this.sound(ranged ? "ranged" : "melee");
-      this.addLog(`${attackerSide === "player" ? this.state.player.name : this.enemyConfig.name}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${ranged ? "且不受反击" : noCounter ? "，远程目标无法反击" : `并受到${counter}点反击`}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
-      this.applyWeaponAfterAttack(attackerSide, targetSide, killed);
+      const attackerName = attackerSide === "player" ? this.state.player.name : this.enemyConfig.name;
+      const counterText = ranged ? "且不受反击" : noCounter ? "，远程目标无法反击" : `并受到${counter}点反击`;
+      this.addLog(weapon.permanent
+        ? `${attackerName}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${counterText}；英雄武器不消耗耐久。`
+        : `${attackerName}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${counterText}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
+      this.applyWeaponAfterAttack(attackerSide, targetSide, killed, { row: targetRow, column: targetColumn, unit: target, damage });
       this.cleanDead();
       this.finishWeaponUse(attackerSide);
       this.checkOutcome();
@@ -1274,21 +1353,48 @@
       const weapon = actor.weapon;
       if (!weapon || !weapon.ready || !Rules.canAttackHero(target.board)) return false;
       target.hp -= weapon.attack;
-      weapon.ready = false;
-      weapon.durability -= 1;
+      this.spendWeaponStrike(weapon);
+      if (!weapon.permanent) weapon.durability -= 1;
       this.sound(weapon.combatStyle === "ranged" ? "ranged" : "melee");
       this.sound("heroHit");
-      this.addLog(`${attackerSide === "player" ? this.state.player.name : this.enemyConfig.name}使用${weapon.name}突破战线，对${targetSide === "enemy" ? this.enemyConfig.name : "我方英雄"}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
-      this.applyWeaponAfterAttack(attackerSide, targetSide, false);
+      const attackerName = attackerSide === "player" ? this.state.player.name : this.enemyConfig.name;
+      const targetName = targetSide === "enemy" ? this.enemyConfig.name : "我方英雄";
+      this.addLog(weapon.permanent
+        ? `${attackerName}使用${weapon.name}突破战线，对${targetName}造成${weapon.attack}点伤害；英雄武器不消耗耐久。`
+        : `${attackerName}使用${weapon.name}突破战线，对${targetName}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
+      this.applyWeaponAfterAttack(attackerSide, targetSide, false, { damage: weapon.attack });
       this.finishWeaponUse(attackerSide);
       this.checkOutcome();
       return true;
     }
 
-    applyWeaponAfterAttack(attackerSide, targetSide, killed) {
+    // 银月狼牙刃（twin_strike）每回合可以攻击两次，其余武器一次。
+    spendWeaponStrike(weapon) {
+      weapon.strikes = (weapon.strikes || 0) + 1;
+      weapon.ready = weapon.effect === "twin_strike" && weapon.strikes < 2;
+    }
+
+    // hit：攻击随从时为 { row, column, unit, damage }（结算前目标仍在场上），攻击英雄时为 { damage }。
+    applyWeaponAfterAttack(attackerSide, targetSide, killed, hit = null) {
       const actor = this.state[attackerSide];
       const weapon = actor.weapon;
       if (!weapon) return;
+      if (weapon.effect === "venom" && hit?.unit && hit.unit.health > 0 && hit.unit.attack > 0) {
+        hit.unit.attack -= 1;
+        this.addLog(`${weapon.name}的毒针让${hit.unit.name}永久失去1点攻击。`, attackerSide);
+      }
+      if (weapon.effect === "quake" && hit?.unit) {
+        const otherRow = hit.row === "front" ? "back" : "front";
+        if (this.state[targetSide].board[otherRow][hit.column]) {
+          this.addLog(`${weapon.name}震荡大地，波及同一路的另一排。`, attackerSide);
+          this.damageUnit(targetSide, otherRow, hit.column, 2, weapon.name, false, attackerSide);
+        }
+      }
+      if (weapon.effect === "lifesteal" && hit?.damage > 0) {
+        const healed = Math.min(hit.damage, actor.maxHp - actor.hp);
+        actor.hp += healed;
+        if (healed) this.addLog(`${weapon.name}吸取露水，为英雄恢复${healed}点生命。`, attackerSide);
+      }
       if (weapon.effect === "kill_draw" && killed) {
         this.draw(attackerSide, 1);
         this.addLog(`${weapon.name}触发：消灭随从，抽1张牌。`, attackerSide);
@@ -1311,7 +1417,7 @@
 
     finishWeaponUse(side) {
       const weapon = this.state[side].weapon;
-      if (!weapon || weapon.durability > 0) return;
+      if (!weapon || weapon.permanent || weapon.durability > 0) return;
       this.addLog(`${side === "player" ? "你的" : `${this.enemyConfig.name}的`}${weapon.name}耐久耗尽并损毁。`, side);
       this.state[side].weapon = null;
       this.sound("death");
@@ -1350,10 +1456,10 @@
       this.checkOutcome();
     }
 
+    // 重甲：每次受到的伤害减少2，最低为1。
     mitigatedDamage(unit, amount) {
       if (!unit) return Math.max(0, amount);
-      const reduced = amount - (unit.armorValue || 0);
-      return unit.keywords?.includes("重甲") ? Math.max(1, reduced - 2) : Math.max(0, reduced);
+      return unit.keywords?.includes("重甲") ? Math.max(1, amount - 2) : Math.max(0, amount);
     }
 
     damageUnit(side, row, column, amount, source, clean = true, kind = "system") {
@@ -1416,7 +1522,7 @@
       this.state.enemyTurns += 1;
       this.state.battleNotices = [];
       enemy.mana = enemy.maxMana;
-      if (enemy.weapon) enemy.weapon.ready = true;
+      if (enemy.weapon) { enemy.weapon.ready = true; enemy.weapon.strikes = 0; }
       this.addLog(`${this.enemyConfig.name}第${this.state.enemyTurns}个行动回合开始：法力恢复为${enemy.mana}/${enemy.maxMana}，场上有${[...enemy.board.front, ...enemy.board.back].filter(Boolean).length}个随从。`, "enemy");
       this.bossTurnDialogue();
       [...enemy.board.front, ...enemy.board.back].filter(Boolean).forEach(unit => {
@@ -1426,7 +1532,10 @@
       let regeneratedEnemyHealth = 0;
       regeneratingEnemies.forEach(unit => { const before = unit.health; unit.health = Math.min(unit.maxHealth, unit.health + 2); regeneratedEnemyHealth += unit.health - before; });
       if (regeneratedEnemyHealth) this.addLog(`${regeneratingEnemies.length}个敌方再生随从在回合开始时共恢复${regeneratedEnemyHealth}点生命。`, "boss");
-      if (!this.enemyConfig.noCards) this.draw("enemy", 1);
+      if (!this.enemyConfig.noCards) {
+        if (this.enemyConfig.handRefill) this.refillEnemyHand();
+        else this.draw("enemy", 1);
+      }
       this.render();
       await wait(BOSS_ACTION_DELAY);
       if (this.enemyConfig.passive === "wolf_king") {
@@ -1516,7 +1625,7 @@
         this.render();
         await wait(BOSS_ACTION_DELAY);
       }
-      if (!this.state.ended && !this.state.rescueEpilogue && enemy.weapon?.ready) {
+      for (let strike = 0; strike < 2 && !this.state.ended && !this.state.rescueEpilogue && enemy.weapon?.ready; strike += 1) {
         this.aiWeaponAttack();
         this.render();
         await wait(BOSS_ACTION_DELAY);
@@ -1534,8 +1643,11 @@
     // 冒险首领的英雄技能：每个敌方行动回合免费发动一次，相当于被动（见 js/data/chapters.js 的 heroSkill）。
     enemyHeroSkill() {
       const config = this.enemyConfig.heroSkill;
-      const skill = config && CF.HERO_SKILLS?.[config.id];
-      return skill ? { skill, level: Math.max(1, Math.min(3, Number(config.level) || 1)) } : null;
+      const base = config && CF.HERO_SKILLS?.[config.id];
+      if (!base) return null;
+      // 关卡数据表可以只为本关覆盖技能数值（overrides），描述文字随之重新生成。
+      const skill = config.overrides && CF.makeHeroSkill ? CF.makeHeroSkill({ ...base, ...config.overrides }) : base;
+      return { skill, level: Math.max(1, Math.min(3, Number(config.level) || 1)) };
     }
 
     // 技能此刻是否有意义：没有目标或用了也没有效果时不浪费法力。
@@ -1681,9 +1793,9 @@
 
     summonArenaToken(name, attack, health, image = "assets/cards/recruit.png", cardId = "arena_token", options = {}) {
       const board = this.state.enemy.board;
-      let row = "front";
-      let column = board.front.findIndex(slot => !slot);
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ health, keywords: options.keyword ? [options.keyword] : [], combatStyle: options.combatStyle || "melee" });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) return false;
       board[row][column] = {
         uid: `arena-token-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -1727,12 +1839,8 @@
         this.equipWeapon("enemy", index);
         return;
       } else if (card.type === "unit") {
-        const wantsBack = card.keywords.includes("远程");
-        const rows = wantsBack ? ["back", "front"] : ["front", "back"];
-        for (const row of rows) {
-          const column = this.state.enemy.board[row].findIndex(slot => !slot);
-          if (column >= 0) { this.summon("enemy", index, row, column); return; }
-        }
+        const slot = this.aiChooseSlot(card);
+        if (slot) { this.summon("enemy", index, slot.row, slot.column); return; }
       } else if (card.effect === "damage") {
         const targets = [];
         ["front", "back"].forEach(row => this.state.player.board[row].forEach((unit, column) => { if (unit) targets.push({ row, column, unit }); }));
@@ -1926,13 +2034,13 @@
     aiAttack(row, column) {
       const attacker = this.state.enemy.board[row][column];
       if (!attacker || attacker.role === "healer") return;
-      const targets = Rules.legalUnitTargets(attacker, this.state.player.board);
+      const targets = Rules.legalUnitTargets(attacker, this.state.player.board, column);
       const ranged = attacker.combatStyle === "ranged" || attacker.keywords.includes("远程");
-      const heroOpen = !attacker.justSummoned && Rules.canAttackHero(this.state.player.board);
+      const heroOpen = !attacker.justSummoned && Rules.canAttackHero(this.state.player.board, column);
       const lethal = heroOpen && this.currentAttack(attacker) >= this.state.player.hp;
       const canHitHero = heroOpen && (!ranged || lethal || !targets.length);
       if (canHitHero) {
-        const lanes = Rules.openLanes(this.state.player.board);
+        const lanes = [column];
         const damage = this.currentAttack(attacker);
         this.state.player.hp -= damage;
         attacker.ready = false;
@@ -1970,9 +2078,9 @@
 
     summonFreeWolf(source = "狼王号令") {
       const board = this.state.enemy.board;
-      let column = board.front.findIndex(slot => !slot);
-      let row = "front";
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ attack: 1, health: 2 });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) {
         this.addLog(`${source}尝试召唤幼狼，但敌方战场没有空位。`, "boss");
         return false;
@@ -1991,9 +2099,9 @@
 
     summonGreyRushWolf(source = "灰狼增援") {
       const board = this.state.enemy.board;
-      let column = board.front.findIndex(slot => !slot);
-      let row = "front";
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ attack: 4, health: 1, keywords: ["突袭"] });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) {
         this.addLog(`${this.enemyConfig.name}发动「${source}」，但敌方战场已经占满。`, "boss");
         return false;
@@ -2012,9 +2120,9 @@
 
     summonFreeGoblin(source = "无尽绿潮", overrideStats = null) {
       const board = this.state.enemy.board;
-      let column = board.front.findIndex(slot => !slot);
-      let row = "front";
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ attack: 2, health: overrideStats?.health ?? 1 });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) {
         this.addLog(`${source}试图召唤普通哥布林，但敌方战场已经占满。`, "boss");
         return false;
@@ -2264,7 +2372,7 @@
       if (!initial) { this.state.round += 1; this.sound("turnStart"); }
       this.expireBattleNotices();
       player.mana = player.maxMana;
-      if (player.weapon) player.weapon.ready = true;
+      if (player.weapon) { player.weapon.ready = true; player.weapon.strikes = 0; }
       player.skillCooldown = Math.max(0, player.skillCooldown - 1);
       [...player.board.front, ...player.board.back].filter(Boolean).forEach(unit => {
         unit.ready = unit.role !== "healer"; unit.justSummoned = false; unit.tempAttack = 0; unit.healUsed = false;
@@ -2331,7 +2439,7 @@
       }
       if (selected.type === "attacker" && side === "enemy") {
         const attacker = this.state.player.board[selected.row][selected.column];
-        return !!attacker && Rules.legalUnitTargets(attacker, this.state.enemy.board).some(item => item.row === row && item.column === column);
+        return !!attacker && Rules.legalUnitTargets(attacker, this.state.enemy.board, selected.column).some(item => item.row === row && item.column === column);
       }
       if (selected.type === "weapon" && side === "enemy") {
         const weapon = this.state.player.weapon;
@@ -2375,7 +2483,7 @@
       const combatClass = unit.role === "healer" ? "support" : (unit.combatStyle === "ranged" ? "ranged" : "melee");
       return `<div class="unit ${side === "enemy" ? "enemy-unit" : ""} ${unit.ready ? "ready" : ""} ${selected ? "selected" : ""}" title="${unit.name}｜${unit.keywords.join("、") || "无关键词"}">
         <span class="combat-tag ${combatClass}">${combatLabel}</span><div class="unit-name">${unit.name}</div><div class="unit-icon ${unit.image ? "has-image" : ""}">${unit.image ? `<img src="${unit.image}" alt="${unit.name}" loading="lazy">` : unit.icon}</div>
-        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}${CF.equipDotHTML("weapon", unit.weaponTier)}</span><span class="health-stat">${CF.equipDotHTML("armor", unit.armorTier)}♥ ${unit.health}/${unit.maxHealth}</span></div>
+        <div class="unit-stats"><span class="attack-stat ${unit.tempAttack ? "buffed" : ""}">⚔ ${attack}</span><span class="health-stat">♥ ${unit.health}/${unit.maxHealth}</span></div>
       </div>`;
     }
 
@@ -2393,7 +2501,7 @@
       return `<div class="game-card ${card.type === "spell" ? "spell" : ""} ${card.type === "weapon" ? "weapon" : ""} ${selected ? "selected" : ""} ${unplayable ? "unplayable" : ""}" data-action="select-card" data-index="${index}" title="${card.description}">
         <span class="card-cost ${discounted ? "discounted" : ""}" title="${discounted ? `原始费用 ${card.cost}` : `${card.cost}费`}">${cost}</span><span class="card-level">Lv${card.level}</span>
         <div class="card-name">${card.name}</div><div class="card-art ${card.image ? "has-image" : ""}">${card.image ? `<img src="${card.image}" alt="${card.name}" loading="lazy">` : card.icon}</div>${card.type === "unit" ? `<div class="card-style ${card.role === "healer" ? "support" : card.combatStyle}">${card.role === "healer" ? "治疗 · 无法攻击" : (card.combatStyle === "ranged" ? "远程 · 无反击" : "近战 · 会反击")}</div>` : weaponStyle}<div class="card-copy">${card.description}</div>
-        ${card.type === "unit" ? `<div class="card-stats"><span>⚔ ${card.attack}${CF.equipDotHTML("weapon", CF.SaveSystem.data.cardEquipment?.[card.id]?.weapon)}</span><span>${CF.equipDotHTML("armor", CF.SaveSystem.data.cardEquipment?.[card.id]?.armor)}♥ ${card.health}</span></div>` : card.type === "weapon" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span class="durability-stat">◆ ${card.durability}</span></div>` : ""}
+        ${card.type === "unit" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span>♥ ${card.health}</span></div>` : card.type === "weapon" ? `<div class="card-stats"><span>⚔ ${card.attack}</span><span class="durability-stat">◆ ${card.durability}</span></div>` : ""}
       </div>`;
     }
 
@@ -2430,7 +2538,7 @@
       const action = side === "player" ? ' data-action="weapon-attack"' : "";
       const selected = side === "player" && this.state.selected?.type === "weapon";
       return `<button class="equipped-weapon ${side}-weapon ${weapon.ready ? "ready" : "spent"} ${selected ? "selected" : ""}"${action} title="${weapon.name}｜${weapon.combatStyle === "ranged" ? "远程无反击" : "近战受反击"}">
-        <img src="${weapon.image}" alt="${weapon.name}"><span>${weapon.name}</span><strong>⚔ ${weapon.attack}　◆ ${weapon.durability}/${weapon.maxDurability}</strong>
+        <img src="${weapon.image}" alt="${weapon.name}"><span>${weapon.name}</span><strong>⚔ ${weapon.attack}　◆ ${weapon.permanent ? "∞" : `${weapon.durability}/${weapon.maxDurability}`}</strong>
       </button>`;
     }
 
@@ -2487,7 +2595,7 @@
       const playerSkill = this.playerSkill();
       const unitCanTargetHero = s.selected?.type === "attacker" && (() => {
         const unit = s.player.board[s.selected.row]?.[s.selected.column];
-        return unit && !unit.justSummoned && (Rules.canAttackHero(s.enemy.board) || CF.Trials?.canPuzzleAttackHero(this, unit));
+        return unit && !unit.justSummoned && (Rules.canAttackHero(s.enemy.board, s.selected.column) || CF.Trials?.canPuzzleAttackHero(this, unit));
       })();
       const weaponCanTargetHero = s.selected?.type === "weapon" && !!s.player.weapon?.ready && Rules.canAttackHero(s.enemy.board);
       const puzzleSpellCanTargetHero = s.selected?.type === "card" && CF.Trials?.isPuzzleFireFlask(this, this.selectedCard());
@@ -2530,7 +2638,7 @@
           <aside class="battle-sidebar">
             <div class="turn-badge">${s.phase === "player" ? `你的回合 · 第${s.round}回合` : `${s.enemy.name}的回合`}</div>
             <div class="deck-remaining-panel"><div class="battle-log-heading"><h3>我方牌库</h3><small>剩余${s.player.deck.length}张</small></div>${this.deckRemainingHTML(s.player.deck)}</div>
-            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次，每次攻击消耗1点耐久。</p><p>前排保护同列后排，狙击单位与狙击武器除外。</p><p>前后排均为空时路线突破。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
+            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><button class="mini-btn rules-btn" data-action="show-rules">📖 规则说明</button><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。</p><p>随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。</p><p>狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
           </aside>
         </div>
       </section>`;

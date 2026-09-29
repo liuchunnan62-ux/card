@@ -110,8 +110,8 @@ class PlayerBot {
   enemyTargetsFor(card) {
     const value = Number(card.value) || 0;
     return units(this.enemy.board).sort((a, b) => {
-      const killA = value && this.battle.mitigatedDamage(a.unit, value) >= a.unit.health ? 1 : 0;
-      const killB = value && this.battle.mitigatedDamage(b.unit, value) >= b.unit.health ? 1 : 0;
+      const killA = value && this.battle.mitigatedDamage(a.unit, value, { ignoreArmor: true }) >= a.unit.health ? 1 : 0;
+      const killB = value && this.battle.mitigatedDamage(b.unit, value, { ignoreArmor: true }) >= b.unit.health ? 1 : 0;
       return killB - killA || this.battle.currentAttack(b.unit) - this.battle.currentAttack(a.unit) || a.unit.health - b.unit.health;
     });
   }
@@ -177,10 +177,10 @@ class PlayerBot {
   }
 
   // 为攻击者挑选目标：击杀且存活 > 击杀 > 存活时造成最多伤害。打不死目标又会被反击致死的攻击不做（返回 null）。
-  chooseTarget(attacker, isRanged) {
+  chooseTarget(attacker, isRanged, column) {
     const battle = this.battle;
     const Rules = this.Rules;
-    const legal = Rules.legalUnitTargets(attacker, this.enemy.board);
+    const legal = Rules.legalUnitTargets(attacker, this.enemy.board, column);
     let best = null;
     let bestScore = -Infinity;
     legal.forEach(entry => {
@@ -203,17 +203,17 @@ class PlayerBot {
       const ready = units(this.player.board).filter(entry => entry.unit.ready && entry.unit.role !== "healer" && battle.currentAttack(entry.unit) > 0);
       if (!ready.length) return;
       // 斩杀：能打到英雄的总伤害足以击杀时全部打脸。
-      const heroReachable = Rules.canAttackHero(this.enemy.board);
-      const faceDamage = heroReachable ? ready.filter(entry => !entry.unit.justSummoned).reduce((sum, entry) => sum + battle.currentAttack(entry.unit), 0) : 0;
-      const lethal = heroReachable && faceDamage >= this.enemy.hp;
+      // 随从只能攻击本路：只有所在路线已被清空的随从才能打到英雄。
+      const faceDamage = ready.filter(entry => !entry.unit.justSummoned && Rules.canAttackHero(this.enemy.board, entry.column)).reduce((sum, entry) => sum + battle.currentAttack(entry.unit), 0);
+      const lethal = faceDamage > 0 && faceDamage >= this.enemy.hp;
       // 自己没有空路线时对手打不到英雄，可以放心抢血；否则优先用划算的交换清理威胁。
       const safe = Rules.openLanes(this.player.board).length === 0;
       let acted = false;
       for (const entry of ready) {
         const attacker = entry.unit;
         const isRanged = attacker.combatStyle === "ranged" || attacker.keywords.includes("远程");
-        const canFace = heroReachable && !attacker.justSummoned;
-        const trade = this.chooseTarget(attacker, isRanged);
+        const canFace = Rules.canAttackHero(this.enemy.board, entry.column) && !attacker.justSummoned;
+        const trade = this.chooseTarget(attacker, isRanged, entry.column);
         const goodTrade = trade && this.battle.mitigatedDamage(trade.unit, battle.currentAttack(attacker)) >= trade.unit.health;
         const heroOpen = canFace && (lethal || safe || !goodTrade);
         const target = heroOpen ? null : trade;
@@ -231,6 +231,11 @@ class PlayerBot {
   }
 
   attackWithWeapon() {
+    // 银月狼牙刃每回合可以攻击两次。
+    for (let strike = 0; strike < 2 && this.player.weapon?.ready && this.battle.canPlayerAct(); strike += 1) this.attackWithWeaponOnce();
+  }
+
+  attackWithWeaponOnce() {
     const battle = this.battle;
     const weapon = this.player.weapon;
     if (!weapon?.ready) return;

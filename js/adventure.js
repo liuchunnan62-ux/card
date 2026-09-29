@@ -43,7 +43,7 @@
   function heroSkillFor(chapter, type) {
     const config = chapter?.heroSkill;
     if (!config) return null;
-    return { id: type === "boss" && config.boss ? config.boss : config.id, level: config.levels?.[type] || 1, fallbackSummon: config.fallbackSummon || null };
+    return { id: type === "boss" && config.boss ? config.boss : config.id, level: config.levels?.[type] || 1, fallbackSummon: config.fallbackSummon || null, overrides: config.overrides || null };
   }
 
   // 第2~5关普通/精英首领：按数据表 encounter 中的公式生成；最终首领直接使用 enemies.js 中的专属配置。
@@ -323,7 +323,19 @@
       }
       CF.SaveSystem.save();
     },
+    // 冒险中的首领：随身武器（每回合都能攻击）与每回合补满10张手牌，见 chapters.js 的 bossWeapon。
     encounterFor(type) {
+      const base = this.baseEncounterFor(type);
+      if (!base) return base;
+      const run = this.current();
+      const nodeIndex = Number.isInteger(run?.activeNode) ? run.activeNode : run?.stage;
+      const node = this.mapStages()[nodeIndex]?.[0];
+      const weapons = CF.chapterById(run?.chapter)?.bossWeapon || {};
+      const spec = weapons[base.type] || weapons[type];
+      const weaponId = node?.weaponId || spec?.id;
+      return { ...base, handRefill: true, weapon: weaponId ? { id: weaponId, level: spec?.level || 1 } : null };
+    },
+    baseEncounterFor(type) {
       const run = this.current();
       const encounterNodeIndex = Number.isInteger(run?.activeNode) ? run.activeNode : run?.stage;
       const node = this.mapStages()[encounterNodeIndex]?.[0];
@@ -364,8 +376,31 @@
       CF.SaveSystem.data.weaponBossRewards ||= {};
       CF.SaveSystem.data.weaponBossRewards[reward.cardId] = true;
       CF.SaveSystem.addCardToCollection(reward.cardId, 1);
+      // 武器是英雄装备而不是牌组卡牌：空手时直接为英雄装备新获得的武器。
+      if (!CF.SaveSystem.equippedWeapon()) CF.SaveSystem.data.hero.equippedWeapon = reward.cardId;
       CF.SaveSystem.save();
-      return reward;
+      return { ...reward, weapon: true, autoEquipped: CF.SaveSystem.equippedWeapon() === reward.cardId };
+    },
+    // 第二关起的关卡武器：击败本关第一个首领（第一个战斗节点）后获得一次，见 chapters.js 的 chapterWeapon。
+    activeChapterWeaponReward() {
+      const run = this.current();
+      const chapter = CF.chapterById(run?.chapter);
+      const cardId = chapter?.chapterWeapon;
+      if (!run || !cardId || CF.SaveSystem.data.weaponBossRewards?.[cardId]) return null;
+      const nodeIndex = Number.isInteger(run.activeNode) ? run.activeNode : run.stage;
+      const firstBattle = chapter.nodes.findIndex(node => ["normal", "elite", "boss"].includes(node.type));
+      if (nodeIndex !== firstBattle) return null;
+      return { nodeIndex, cardId, nodeLabel: chapter.nodes[nodeIndex].label };
+    },
+    claimActiveChapterWeaponReward() {
+      const reward = this.activeChapterWeaponReward();
+      if (!reward) return null;
+      CF.SaveSystem.data.weaponBossRewards ||= {};
+      CF.SaveSystem.data.weaponBossRewards[reward.cardId] = true;
+      CF.SaveSystem.addCardToCollection(reward.cardId, 1);
+      if (!CF.SaveSystem.equippedWeapon()) CF.SaveSystem.data.hero.equippedWeapon = reward.cardId;
+      CF.SaveSystem.save();
+      return { ...reward, weapon: true, autoEquipped: CF.SaveSystem.equippedWeapon() === reward.cardId };
     },
     activeChapterTwoCardReward() {
       const run = this.current();
@@ -461,7 +496,7 @@
       return EVENTS[(run?.stage + run?.completed?.length || 0) % EVENTS.length];
     },
     // 战斗胜利翻牌战利品：每场战斗（普通/精英/Boss）胜利后都会翻开三张固定战利品牌——
-    // 女王精血、粗糙装备、笔记残页。第二张的粗糙武器/盔甲数量等于本场击杀的敌方随从数；
+    // 女王精血、粗糙装备、笔记残页。第二张的粗糙武器数量等于本场击杀的敌方随从数；
     // 第三张按顺序解锁《源血纪元》的下一页，集满后不再有奖励。
     generateVictoryLoot(unitsKilled = 0) {
       const gearCount = Math.max(0, Math.floor(Number(unitsKilled) || 0));
@@ -472,7 +507,6 @@
       CF.SaveSystem.addInventoryItem("queenEssenceBlood", 1);
       if (gearCount > 0) {
         CF.SaveSystem.addInventoryItem("weaponT1", gearCount);
-        CF.SaveSystem.addInventoryItem("armorT1", gearCount);
       }
       let note = null;
       if (CF.SaveSystem.data.notesUnlocked < LORE_PAGES.length) {

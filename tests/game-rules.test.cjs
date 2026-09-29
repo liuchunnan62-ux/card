@@ -686,16 +686,15 @@ assert.ok(indexSource.indexOf("js/restaurant.js") > indexSource.indexOf("js/adve
 assert.ok(fs.existsSync(path.join(root, "assets/ui/prison-hall.webp")) && fs.existsSync(path.join(root, "assets/ui/prison-warden.webp")), "营地监狱场景图与典狱长立绘应位于项目资源目录");
 assert.match(mainSource, /camp-warden[\s\S]*data-action="prison-page"/, "点击队伍营地门口的典狱长应进入营地监狱");
 assert.match(mainSource, /prison-screen" style="background-image: url\('\$\{PRISON_ART\}'\)"[\s\S]*prison-roster/, "营地监狱应以监狱场景图为整页背景，直接列出在押者头像");
-assert.equal(CF.Adventure.generateVictoryLoot(4).gearCount, 4, "战斗胜利的粗糙武器/盔甲数量应等于击杀的敌方随从数");
-assert.equal(CF.Adventure.generateVictoryLoot(0).gearCount, 0, "未击杀随从时不应获得粗糙武器/盔甲");
+assert.equal(CF.Adventure.generateVictoryLoot(4).gearCount, 4, "战斗胜利的粗糙武器数量应等于击杀的敌方随从数");
+assert.equal(CF.Adventure.generateVictoryLoot(0).gearCount, 0, "未击杀随从时不应获得粗糙武器");
 const priorNotes = CF.SaveSystem.data.notesUnlocked;
 const priorWater = CF.SaveSystem.data.inventory.queenEssenceBlood || 0;
 const priorWeapons = CF.SaveSystem.data.inventory.weaponT1 || 0;
-const priorArmors = CF.SaveSystem.data.inventory.armorT1 || 0;
 const loot = CF.Adventure.claimVictoryLoot(5);
 assert.equal(loot.gearCount, 5, "翻牌第二张应按击杀数发放白装");
 assert.equal(CF.SaveSystem.data.inventory.weaponT1, priorWeapons + 5, "击杀5个随从应获得5件粗糙武器");
-assert.equal(CF.SaveSystem.data.inventory.armorT1, priorArmors + 5, "击杀5个随从应获得5件粗糙盔甲");
+assert.equal(CF.SaveSystem.data.inventory.armorT1, undefined, "盔甲已取消，不应再获得盔甲材料");
 assert.match(mainSource, /claimVictoryLoot\(battle\.state\.enemyUnitsKilled\)/, "胜利结算应把本场击杀数传给战利品翻牌");
 assert.equal(CF.SaveSystem.data.inventory.queenEssenceBlood, priorWater + 1, "每场战斗胜利（不限普通/精英/Boss）都应获得1瓶女王精血");
 {
@@ -1265,6 +1264,173 @@ assert.equal(firstWeaponReward.cardId, "mist_dagger", "第一个武器Boss应掉
 assert.equal(CF.SaveSystem.data.collection.mist_dagger, 1, "Boss武器应永久加入收藏");
 assert.equal(CF.Adventure.claimActiveWeaponReward(), null, "同一Boss武器奖励不可重复领取");
 assert.equal(CF.Adventure.mapStages().flat().filter(node => node.weaponBoss).length, 7, "第一关应有七个武器Boss奖励点");
+assert.equal(firstWeaponReward.autoEquipped, true, "空手时获得的首杀武器应自动装备为英雄武器");
+assert.equal(CF.SaveSystem.equippedWeapon(), "mist_dagger", "英雄武器应记录在存档中");
+assert.deepEqual([...CF.SaveSystem.ownedWeapons()], ["mist_dagger"], "已获得的武器应列在英雄武器中");
+assert.equal(CF.SaveSystem.equipHeroWeapon("riftmoon_blade"), false, "未获得的武器不能装备");
+assert.equal(CF.SaveSystem.equipHeroWeapon("recruit"), false, "非武器卡牌不能装备为英雄武器");
+assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入牌组");
+
+{
+  // 分路规则：随从只能攻击同一路线的敌人，先前排后后排，本路清空才能攻击英雄；狙击可越过本路前排。
+  const laneBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+  const ls = laneBattle.state;
+  ls.player.board = CF.emptyBoard();
+  ls.enemy.board = CF.emptyBoard();
+  const laneAttacker = combatUnit("vanguard", { attack: 3, health: 20, maxHealth: 20, ready: true, justSummoned: false });
+  ls.player.board.front[1] = laneAttacker;
+  ls.enemy.board.front[1] = combatUnit("goblin", { attack: 1, health: 5, maxHealth: 5 });
+  ls.enemy.board.back[1] = combatUnit("goblin_archer", { attack: 1, health: 5, maxHealth: 5 });
+  ls.enemy.board.front[2] = combatUnit("goblin", { attack: 1, health: 5, maxHealth: 5 });
+  ls.selected = { type: "attacker", row: "front", column: 1, unitId: laneAttacker.uid };
+  laneBattle.playerAttack("front", 2);
+  assert.equal(ls.enemy.board.front[2].health, 5, "随从不能攻击其他路线的敌人");
+  assert.equal(laneBattle.isTargetable("enemy", "back", 1), false, "本路前排存活时不能攻击本路后排");
+  assert.equal(laneBattle.isTargetable("enemy", "front", 1), true, "可以攻击本路前排");
+  ls.enemy.board.front[1] = null;
+  assert.equal(laneBattle.isTargetable("enemy", "back", 1), true, "本路前排被清空后可以攻击后排");
+  const hpBeforeLane = ls.enemy.hp;
+  laneBattle.playerAttackHero();
+  assert.equal(ls.enemy.hp, hpBeforeLane, "本路后排仍在时不能攻击英雄，即使其他路线是空的");
+  ls.enemy.board.back[1] = null;
+  ls.selected = { type: "attacker", row: "front", column: 1, unitId: laneAttacker.uid };
+  laneBattle.playerAttackHero();
+  assert.equal(ls.enemy.hp, hpBeforeLane - 3, "本路清空后可以攻击英雄");
+  const sniper = { keywords: ["狙击"] };
+  const sniperBoard = CF.emptyBoard();
+  sniperBoard.front[0] = { name: "前" }; sniperBoard.back[0] = { name: "后" }; sniperBoard.back[1] = { name: "邻路" };
+  assert.deepEqual([...CF.Rules.legalUnitTargets(sniper, sniperBoard, 0)].map(item => `${item.row}${item.column}`), ["front0", "back0"], "狙击可越过本路前排攻击本路后排，但不能跨路");
+}
+
+{
+  // 冒险首领：随身武器 + 每回合补满10张手牌 + 分路站位。
+  const encounter = CF.Adventure.encounterFor("normal");
+  assert.equal(encounter.handRefill, true, "冒险首领应每回合补齐手牌");
+  assert.deepEqual({ ...encounter.weapon }, { id: "mist_dagger", level: 1 }, "第一关节点首领应手持自己掉落的武器");
+  const bossBattle = new CF.Battle(encounter, {});
+  const bs = bossBattle.state;
+  assert.ok(bs.enemy.weapon?.permanent, "首领开战即装备不消耗耐久的武器");
+  assert.equal(bs.enemy.weapon.cardId, "mist_dagger");
+  assert.equal(bs.enemy.hand.length, 10, "首领开战手牌应补到10张");
+  bs.enemy.hand = [];
+  bs.enemy.deck = [];
+  const bossHp = bs.enemy.hp;
+  bossBattle.refillEnemyHand();
+  assert.equal(bs.enemy.hand.length, 10, "牌库耗尽时首领应重新洗牌并补满10张");
+  assert.equal(bs.enemy.hp, bossHp, "首领补牌不应受到疲劳伤害");
+  bs.player.board = CF.emptyBoard();
+  bs.enemy.board = CF.emptyBoard();
+  bs.enemy.board.front[0] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  bs.enemy.board.front[1] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  bs.enemy.board.front[3] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  bs.player.board.front[2] = combatUnit("vanguard", { attack: 3, health: 4, maxHealth: 4 });
+  const blockSlot = bossBattle.aiChooseSlot({ attack: 2, health: 3, keywords: [] });
+  assert.equal(`${blockSlot.row}${blockSlot.column}`, "front2", "首领应把随从补到有威胁的空路线");
+  bs.enemy.board.front[2] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  const rangedSlot = bossBattle.aiChooseSlot({ attack: 2, health: 2, keywords: ["远程"], combatStyle: "ranged" });
+  assert.equal(rangedSlot.row, "back", "路线都堵住后，远程随从应站在有前排保护的后排");
+  assert.equal(new CF.Battle(CF.enemies.goblin_warband, {}).state.enemy.weapon, null, "不经过冒险配置的敌人不带首领武器");
+}
+
+{
+  // 第二至五关的关卡武器：击败本关第一个首领获得；四种特效。
+  const data = CF.SaveSystem.data;
+  const previousChapter = data.activeChapter;
+  const previousRuns = data.completedRuns;
+  data.completedRuns = 4; // 解锁全部章节
+  [[2, "goblin_venom_crossbow"], [3, "harvest_maul"], [4, "moonpool_lash"], [5, "silvermoon_fang"]].forEach(([chapterId, weaponId]) => {
+    data.chapterRuns[chapterId] = CF.freshRun(data, chapterId);
+    data.activeChapter = chapterId;
+    const run = CF.Adventure.current(chapterId);
+    data.run = run;
+    run.activeNode = 1;
+    assert.equal(CF.Adventure.claimActiveChapterWeaponReward(), null, `第${chapterId}关只有第一个首领掉落关卡武器`);
+    run.activeNode = 0;
+    const reward = CF.Adventure.claimActiveChapterWeaponReward();
+    assert.equal(reward?.cardId, weaponId, `击败第${chapterId}关第一个首领应获得关卡武器`);
+    assert.ok(CF.SaveSystem.ownedWeapons().includes(weaponId), "关卡武器应可在英雄档案装备");
+    assert.equal(CF.Adventure.claimActiveChapterWeaponReward(), null, "关卡武器不可重复领取");
+    assert.equal(CF.Adventure.encounterFor("normal").weapon.id, weaponId, `第${chapterId}关的首领应手持本关武器`);
+  });
+  data.activeChapter = previousChapter;
+  data.completedRuns = previousRuns;
+  data.run = data.chapterRuns[previousChapter];
+
+  const effectBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+  const es = effectBattle.state;
+  const equip = id => { es.player.weapon = effectBattle.weaponFromCard(CF.getCard(id, { level: 1 }), true); };
+  const reset = () => { es.player.board = CF.emptyBoard(); es.enemy.board = CF.emptyBoard(); };
+  reset();
+  equip("goblin_venom_crossbow");
+  const venomTarget = combatUnit("orc_grunt", { attack: 3, health: 9, maxHealth: 9 });
+  es.enemy.board.front[0] = venomTarget;
+  effectBattle.performWeaponAttack("player", "enemy", "front", 0);
+  assert.equal(venomTarget.attack, 2, "毒针弩命中后目标永久-1攻击");
+  reset();
+  equip("harvest_maul");
+  const behind = combatUnit("goblin_archer", { attack: 2, health: 5, maxHealth: 5 });
+  es.enemy.board.front[1] = combatUnit("orc_grunt", { attack: 3, health: 9, maxHealth: 9 });
+  es.enemy.board.back[1] = behind;
+  es.enemy.board.back[2] = combatUnit("goblin_archer", { attack: 2, health: 5, maxHealth: 5 });
+  effectBattle.performWeaponAttack("player", "enemy", "front", 1);
+  assert.equal(behind.health, 3, "碾地锤震波应伤到同一路另一排");
+  assert.equal(es.enemy.board.back[2].health, 5, "震波不波及其他路线");
+  reset();
+  equip("moonpool_lash");
+  es.player.hp = 10;
+  es.enemy.board.front[0] = combatUnit("goblin_archer", { attack: 2, health: 9, maxHealth: 9 });
+  effectBattle.performWeaponAttack("player", "enemy", "front", 0);
+  assert.equal(es.player.hp, 13, "吸露鞭按造成的伤害为英雄回血（远程目标不反击）");
+  reset();
+  equip("silvermoon_fang");
+  es.enemy.board.front[0] = combatUnit("orc_grunt", { attack: 0, health: 20, maxHealth: 20 });
+  assert.equal(effectBattle.performWeaponAttack("player", "enemy", "front", 0), true);
+  assert.equal(es.player.weapon.ready, true, "狼牙刃第一次攻击后还能再攻击");
+  assert.equal(effectBattle.performWeaponAttack("player", "enemy", "front", 0), true);
+  assert.equal(es.player.weapon.ready, false, "狼牙刃每回合最多攻击两次");
+  assert.equal(es.enemy.board.front[0].health, 12, "两次攻击都应造成伤害");
+}
+
+const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+const heroWeapon = heroWeaponBattle.state.player.weapon;
+assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");
+assert.equal(heroWeapon.cardId, "mist_dagger", "开战装备的应是英雄档案中选择的武器");
+assert.ok(heroWeaponBattle.state.player.hand.every(card => card.type !== "weapon"), "英雄武器不占手牌");
+heroWeaponBattle.state.enemy.board.front[0] = combatUnit("goblin", { attack: 2, health: 5, maxHealth: 5 });
+heroWeaponBattle.selectWeaponAttack();
+heroWeaponBattle.playerWeaponAttack("front", 0);
+assert.equal(heroWeapon.ready, false, "英雄武器每回合只能攻击一次");
+assert.equal(heroWeapon.durability, heroWeapon.maxDurability, "英雄武器攻击不消耗耐久");
+heroWeapon.ready = true;
+heroWeaponBattle.state.selected = { type: "weapon", side: "player", cardId: heroWeapon.cardId };
+heroWeaponBattle.playerWeaponAttack("front", 0);
+heroWeapon.ready = true;
+heroWeaponBattle.state.selected = { type: "weapon", side: "player", cardId: heroWeapon.cardId };
+heroWeaponBattle.playerWeaponAttack("front", 0);
+assert.equal(heroWeaponBattle.state.player.weapon, heroWeapon, "英雄武器连续攻击也不会损毁");
+
+const arenaWeaponEnemy = { ...CF.enemies.goblin_warband, mode: "arena" };
+assert.equal(new CF.Battle(arenaWeaponEnemy, {}).state.player.weapon?.cardId, "mist_dagger", "竞技场开战时也应装备英雄武器");
+assert.equal(new CF.Battle(CF.Trials.enemy(1), {}).state.player.weapon, null, "其他统领试炼不带入英雄武器");
+assert.equal(new CF.Battle(CF.Trials.enemy(4), {}).state.player.weapon?.cardId, "mist_dagger", "统领试炼第四关允许带入英雄武器");
+assert.ok(new CF.Battle(CF.Trials.enemy(4), {}).state.player.weapon.permanent, "第四关的英雄武器同样不消耗耐久");
+{
+  const trialFour = new CF.Battle(CF.Trials.enemy(4), {});
+  const cards = [...trialFour.state.player.deck, ...trialFour.state.player.hand];
+  assert.ok(cards.length > 0 && cards.every(card => card.cost <= 7), "统领试炼第四关只发不高于7费的牌");
+  assert.ok(cards.every(card => card.type === "spell" || card.type === "weapon"), "统领试炼第四关只发法术与武器牌");
+}
+assert.equal(CF.SaveSystem.equipHeroWeapon(null), true, "应能卸下英雄武器");
+assert.equal(new CF.Battle(CF.enemies.goblin_warband, {}).state.player.weapon, null, "卸下后开战不应装备武器");
+
+storage.set("rift-expedition-save-v1", JSON.stringify({ deck: [...CF.STARTER_DECK.slice(0, 23), "mist_dagger"], collection: { mist_dagger: 1 }, hero: { equippedWeapon: "mist_dagger" } }));
+CF.SaveSystem.load();
+assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "旧存档牌组中的武器应被移出牌组");
+assert.equal(CF.SaveSystem.data.deck.length, 24, "移出武器后牌组应补足24张");
+assert.equal(CF.SaveSystem.equippedWeapon(), "mist_dagger", "已拥有的英雄武器应在读档后保留");
+storage.set("rift-expedition-save-v1", JSON.stringify({ deck: CF.STARTER_DECK, hero: { equippedWeapon: "riftmoon_blade" } }));
+CF.SaveSystem.load();
+assert.equal(CF.SaveSystem.data.hero.equippedWeapon, null, "未拥有的英雄武器应在读档时清除");
 
 const legacyDuplicatedDeck = CF.STARTER_DECK.slice(0, 12).flatMap(id => [id, id]);
 storage.set("rift-expedition-save-v1", JSON.stringify({ deck: legacyDuplicatedDeck }));
@@ -1386,7 +1552,7 @@ assert.match(indexSource, /js\/heroes\.js/, "游戏入口应加载英雄配置")
 storage.clear();
 CF.SaveSystem.load();
 assert.equal(CF.SaveSystem.activeSlot, null, "首次进入游戏时不应占用存档栏位");
-assert.equal(CF.SaveSystem.listSlots().length, 15, "应提供15个存档栏位");
+assert.equal(CF.SaveSystem.listSlots().length, 75, "应提供75个存档栏位");
 assert.ok(CF.SaveSystem.listSlots().every(slot => slot.empty), "首次进入时所有栏位为空");
 CF.SaveSystem.newGame(3, "violet_witch");
 assert.equal(CF.SaveSystem.activeSlot, 3, "新游戏应绑定所选栏位");
@@ -1525,3 +1691,106 @@ console.log("✓ 63名竞技场英雄独立技能、双端施放与未收集技�
   emoteBattle.state.ended = true;
 }
 console.log("✓ 头像表情菜单与各首领对应回应测试全部通过");
+
+{
+  // 盔甲已取消：旧存档的盔甲材料与随从盔甲槽读档时清除，随从只保留武器槽。
+  storage.set("rift-expedition-save-v1", JSON.stringify({ deck: CF.STARTER_DECK, inventory: { weaponT2: 3, armorT3: 2 }, cardEquipment: { recruit: { weapon: 3, armor: 4 } } }));
+  CF.SaveSystem.load();
+  assert.equal(CF.SaveSystem.data.inventory.weaponT2, 3, "武器材料保留");
+  assert.ok(!Object.keys(CF.SaveSystem.data.inventory).some(key => key.startsWith("armor")), "盔甲材料应被清除");
+  assert.deepEqual({ ...CF.SaveSystem.data.cardEquipment.recruit }, { weapon: 3 }, "随从只保留武器槽");
+  assert.equal(CF.SaveSystem.equipCardItem("recruit", "armor", 1), false, "不能再装备盔甲");
+  assert.equal(CF.SaveSystem.forgeItem("armor", 1), false, "装备店不能再重锻盔甲");
+  assert.ok(!("equipDotHTML" in CF), "装备品级小图标已移除");
+}
+
+{
+  // 第一关首领的英雄技能削弱为每回合1点伤害（只在第一关生效）。
+  CF.SaveSystem.reset();
+  const run = CF.Adventure.start(1);
+  run.activeNode = 0;
+  const normal = new CF.Battle(CF.Adventure.encounterFor("normal"), {});
+  const hunt = normal.enemyHeroSkill();
+  assert.equal(normal.skillValue(hunt.skill, "amount", hunt.level), 1, "第一关猎手射击每回合只造成1点伤害");
+  normal.state.player.board = CF.emptyBoard();
+  const target = combatUnit("vanguard", { health: 5, maxHealth: 5 });
+  normal.state.player.board.front[0] = target;
+  normal.applyEnemySkill(hunt.skill, hunt.level);
+  assert.equal(target.health, 4, "第一关首领技能实际造成1点伤害");
+  run.activeNode = CF.chapterById(1).nodes.findIndex(node => node.type === "boss");
+  const wolfKing = new CF.Battle(CF.Adventure.encounterFor("boss"), {}).enemyHeroSkill();
+  assert.equal(wolfKing.skill.id, "frost_fang");
+  assert.match(wolfKing.skill.playerDescription(wolfKing.level), /造成1点伤害。$/, "狼王的寒牙撕咬也只造成1点伤害、不再回血");
+  assert.deepEqual([...CF.HERO_SKILLS.frost_fang.amount], [3, 4, 5], "其他地方的同名技能数值不受影响");
+}
+
+{
+  // 分路规则讲解：新存档与老存档（已看过旧教程）都要看一次；战斗中可随时重看。
+  assert.equal(CF.freshSave().laneRulesSeen, false, "新存档应显示分路规则讲解");
+  storage.set("rift-expedition-save-v1", JSON.stringify({ deck: CF.STARTER_DECK, tutorialSeen: true }));
+  CF.SaveSystem.load();
+  assert.equal(CF.SaveSystem.data.laneRulesSeen, false, "看过旧教程的老存档也应再看一次分路规则");
+  assert.match(mainSource, /!CF\.SaveSystem\.data\.laneRulesSeen\) this\.showTutorial\(\)/, "未看过分路规则时开战应弹出讲解");
+  assert.match(mainSource, /随从只能攻击自己所在这一路的敌人/, "讲解应说明只能攻击本路");
+  assert.match(gameJs, /data-action="show-rules"/, "战斗中应能打开规则说明");
+}
+
+{
+  // 竞技场的63名选手都可以作为英雄开局；玩家扮演的选手不会在对阵表里再出现，由罗兰顶替席位。
+  assert.equal(CF.ARENA_HEROES.length, 63, "63名竞技场选手都应可选");
+  assert.equal(CF.allSelectableHeroes().length, 9 + 63, "可选英雄应为9名冒险英雄加63名竞技场英雄");
+  CF.ARENA_HEROES.forEach(hero => {
+    assert.ok(CF.HERO_SKILLS[hero.skill], `${hero.name}应以竞技场技能作为英雄技能`);
+    assert.ok(fs.existsSync(path.join(root, hero.portrait)), `${hero.name}的头像应存在`);
+    assert.equal(CF.heroById(hero.id).id, hero.id, "应能按编号找到竞技场英雄");
+  });
+  const pick = CF.ARENA_HEROES[4];
+  CF.SaveSystem.newGame(70, pick.id);
+  assert.equal(CF.SaveSystem.activeSlot, 70, "第70号栏位应可用");
+  assert.equal(CF.SaveSystem.data.hero.heroId, pick.id, "新游戏应记录所选竞技场英雄");
+  assert.equal(CF.SaveSystem.data.hero.equippedSkill, pick.skill, "应自动装备该选手的竞技场技能");
+  assert.equal(CF.SaveSystem.loadSlot(70).hero.heroId, pick.id, "读档后仍是所选竞技场英雄");
+  const tournament = CF.Arena.createTournament();
+  const entrants = tournament.bracket.rounds[0].flatMap(match => match.entrants);
+  assert.equal(new Set(entrants).size, 64, "对阵表仍是64名不同参赛者");
+  assert.ok(!entrants.includes(pick.arenaId), "玩家扮演的选手不应再作为对手出现");
+  assert.ok(entrants.includes(CF.Arena.standIn().id), "罗兰应顶替该选手的席位");
+  assert.equal(CF.Arena.participant(CF.Arena.standIn().id).name, "罗兰·维克");
+  CF.SaveSystem.newGame(71, "captain");
+  const normalEntrants = CF.Arena.createTournament().bracket.rounds[0].flatMap(match => match.entrants);
+  assert.ok(!normalEntrants.includes(CF.Arena.standIn().id), "以冒险英雄开局时对阵表不含罗兰替补");
+}
+
+{
+  // 竞技场英雄的专属表情台词，以及投靠人族的魔族选手被敌方嘲讽。
+  const Emotes = CF.Emotes;
+  CF.ARENA_HEROES.forEach(hero => {
+    const lines = Emotes.HERO_LINES[hero.id];
+    assert.ok(lines, `${hero.name}应拥有专属表情台词`);
+    Emotes.list.forEach(emote => assert.ok(lines[emote.id]?.length >= 2, `${hero.name}的${emote.label}台词应至少两句`));
+  });
+  const greets = CF.ARENA_HEROES.map(hero => Emotes.HERO_LINES[hero.id].greet.join("|"));
+  assert.equal(new Set(greets).size, greets.length, "每名竞技场英雄的问候台词应各不相同");
+  assert.ok(Emotes.HERO_LINES.arena_05.threaten.includes(Emotes.playerLine("threaten", Math.random, "arena_05")), "应按当前竞技场英雄选择表情台词");
+
+  const defectors = Object.keys(Emotes.DEFECTORS);
+  assert.ok(defectors.length >= 20 && defectors.every(id => CF.heroById(id).arena), "应有一批投靠人族的魔族选手");
+  const demonSide = ["1", "2", "3", "4", "5", "wolf_king", "goblin_queen", "bear_matriarch", "slime_sage", "wolf_matriarch", "succubus_officers", "queen_iselanda"];
+  demonSide.forEach(key => Emotes.list.forEach(emote => assert.ok(Emotes.DEFECTOR_TAUNTS[key]?.[emote.id]?.length >= 2, `${key}对叛徒的${emote.label}嘲讽应至少两句`)));
+  const always = () => 0.9; // 不走同族分支
+  const kinFirst = () => 0.1;
+  const forest = { id: "goblin_warband", chapter: 1 };
+  const normalReply = Emotes.replyFor(forest, "greet", { random: always, heroId: "captain", heroName: "罗兰·维克" });
+  assert.ok(Emotes.CHAPTER_REPLIES[1].greet.includes(normalReply), "普通英雄仍得到原来的回应");
+  const taunt = Emotes.replyFor(forest, "greet", { random: always, heroId: "arena_05", heroName: "裂牙酋长" });
+  assert.ok(!Emotes.CHAPTER_REPLIES[1].greet.includes(taunt) && taunt.length > 0, "魔族叛徒发出表情后应被敌方嘲讽");
+  assert.ok(!taunt.includes("{0}"), "嘲讽中的名字占位符应被替换");
+  const wolfTaunt = Emotes.replyFor({ id: "wolf_king", chapter: 1 }, "wow", { random: kinFirst, heroId: "arena_46", heroName: "寒牙战王" });
+  assert.ok(Emotes.DEFECTOR_TAUNTS.wolf_king.kin.wolf.map(line => line.replaceAll("{0}", "寒牙战王")).includes(wolfTaunt), "狼王对狼族叛徒应说同族专属的嘲讽");
+  const arenaReply = Emotes.replyFor({ mode: "arena" }, "greet", { random: always, heroId: "arena_05", heroName: "裂牙酋长" });
+  assert.ok(Emotes.BOSS_REPLIES.arena.greet.includes(arenaReply), "竞技场对手不会嘲讽叛徒");
+  const mentorReply = Emotes.replyFor({ mode: "trial", trialId: 2 }, "greet", { random: always, heroId: "arena_05", heroName: "裂牙酋长" });
+  assert.ok(Emotes.BOSS_REPLIES.trial_mentor.greet.includes(mentorReply), "人类教官不会嘲讽叛徒");
+  const queenTaunt = Emotes.replyFor({ mode: "trial", trialId: 7 }, "sorry", { random: always, heroId: "arena_43", heroName: "炼狱女王" });
+  assert.ok(Emotes.DEFECTOR_TAUNTS.queen_iselanda.sorry.map(line => line.replaceAll("{0}", "炼狱女王")).includes(queenTaunt), "伊瑟兰妲也会质问投靠人族的魔裔");
+}

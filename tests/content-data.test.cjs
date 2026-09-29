@@ -189,6 +189,7 @@ test("每关首领都配置了有效的英雄技能", () => {
     assert.ok(config, `第${chapter.id}关缺少 heroSkill`);
     [config.id, config.boss].filter(Boolean).forEach(id => assert.ok(CF.HERO_SKILLS[id], `第${chapter.id}关的英雄技能 ${id} 不存在`));
     ["normal", "elite", "boss"].forEach(type => assert.ok(config.levels[type] >= 1 && config.levels[type] <= 3, `第${chapter.id}关 heroSkill.levels.${type} 应在 1~3 之间`));
+    if (chapter.id >= 2) assert.equal(CF.CARD_LIBRARY[chapter.chapterWeapon]?.type, "weapon", `第${chapter.id}关缺少有效的关卡武器 chapterWeapon`);
   });
   const data = CF.SaveSystem.data;
   CF.CHAPTERS.forEach(chapter => {
@@ -201,6 +202,8 @@ test("每关首领都配置了有效的英雄技能", () => {
       data.run = run;
       const enemy = CF.Adventure.encounterFor(node.type);
       assert.ok(enemy.heroSkill && CF.HERO_SKILLS[enemy.heroSkill.id], `${where(chapter, index)}：首领没有英雄技能`);
+      assert.equal(CF.CARD_LIBRARY[enemy.weapon?.id]?.type, "weapon", `${where(chapter, index)}：首领没有有效的随身武器（bossWeapon）`);
+      assert.ok(enemy.weapon.level >= 1 && enemy.weapon.level <= 5, `${where(chapter, index)}：首领武器等级应在 1~5 之间`);
     });
   });
 });

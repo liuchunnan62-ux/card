@@ -10,7 +10,9 @@
     "eagle_eye", "iron_lancer", "royal_medic"
   ];
   const enemyUnits = ["goblin_guard", "orc_grunt", "bandit", "shadow_sniper", "orc_breaker", "wild_wolf", "dire_wolf"];
-  const spellAndWeaponDeck = Object.values(CF.CARD_LIBRARY).filter(card => card.type === "spell" || card.type === "weapon").map(card => card.id);
+  // 第四关（队长的试炼）的牌库：全部法术与武器牌中费用不高于7的（挑战时的最大法力只有7点）。
+  const TRIAL_FOUR_MAX_COST = 7;
+  const spellAndWeaponDeck = Object.values(CF.CARD_LIBRARY).filter(card => (card.type === "spell" || card.type === "weapon") && card.cost <= TRIAL_FOUR_MAX_COST).map(card => card.id);
 
   const TRIALS = [
     {
@@ -182,6 +184,8 @@
       battle.state.player.hand = [];
       battle.state.player.fatigue = 0;
       battle.draw("player", 10);
+      // 队长的试炼允许带上英雄档案中装备的武器（不消耗耐久，每回合可攻击）。
+      battle.equipHeroWeapon();
     }
   }
 

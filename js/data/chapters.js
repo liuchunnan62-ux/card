@@ -20,6 +20,10 @@
   //   heroSkill                   首领的英雄技能（arena.js 的 HERO_SKILLS 编号）：每个敌方行动回合在出牌后免费发动一次（相当于被动）；
   //                               levels 为普通/精英/最终首领使用的技能等级（1~3），boss 可为最终首领单独指定技能；
   //                               fallbackSummon（可选）：没有受伤的己方随从时改为召唤这个随从（attack/health 按技能等级取值）
+  //                               overrides（可选）：只在本关覆盖技能数值，例如 { amount: 1, heal: 0 }（不影响竞技场等其他地方的同名技能）
+  //   bossWeapon                  首领随身武器 { normal|elite|boss: { id, level } }：开战即装备，不消耗耐久，每个行动回合都能攻击一次；
+  //                               第一关节点的 weaponId（首杀掉落武器）优先于这里的 id。冒险中的首领每个行动回合还会把手牌补到10张。
+  //   chapterWeapon               （第2~5关）关卡武器（cards.js 中的武器牌）：击败本关第一个首领后永久获得，可在英雄档案装备
   //   routeStyle                  地图连线样式："line" 直线，"curve" 曲线（可用 routeControls 指定控制点）
   //   nodes                       节点列表，下标即节点序号：
   //       type                    normal 普通 / elite 精英 / boss 最终首领 / event 事件 / shop 商店 / camp 营地
@@ -40,7 +44,9 @@
         note: "金边节点由更强的敌人驻守；首次击败会获得未知战利品。击败节点后仍可回到岔路挑战相邻路线。" },
       clearSummary: { title: "密林重见曙光",
         text: "你击败了森林狼王，并解锁第二关与英雄10级上限。最大法力只在统领试炼中提升。" },
-      heroSkill: { id: "hunt", boss: "frost_fang", levels: { normal: 1, elite: 2, boss: 3 } }, // 猎手射击：打生命最低的随从；狼王：寒牙撕咬
+      bossWeapon: { normal: { id: "mist_dagger", level: 1 }, elite: { id: "silverfeather_bow", level: 1 }, boss: { id: "riftmoon_blade", level: 1 } }, // 节点手持自己掉落的武器（weaponId 优先）
+      // 猎手射击：打生命最低的随从；狼王：寒牙撕咬。第一关削弱：每回合只造成1点伤害、不回血。
+      heroSkill: { id: "hunt", boss: "frost_fang", levels: { normal: 1, elite: 2, boss: 3 }, overrides: { amount: 1, heal: 0 } },
       victoryRewards: { normal: { gold: 20, xp: 10 }, elite: { gold: 40, xp: 20 }, boss: { gold: 60, xp: 50 } },
       routeStyle: "line",
       nodes: [
@@ -67,6 +73,8 @@
         note: "击败任一节点即可开启相邻路线；翠影女王会在抵达右上方终点后开放。大部分节点由哥布林军团驻守。" },
       clearSummary: { title: "哥布林王庭陷落",
         text: "你击败了翠影女王，完成第二关的二十场首领战，并解锁王城南部的金麦农场与英雄15级上限。" },
+      chapterWeapon: "goblin_venom_crossbow", // 翠影女王的毒针弩：哥布林擅长暗箭与毒药；击败本关第一个首领后获得
+      bossWeapon: { normal: { id: "goblin_venom_crossbow", level: 1 }, elite: { id: "goblin_venom_crossbow", level: 2 }, boss: { id: "goblin_venom_crossbow", level: 3 } },
       heroSkill: { id: "venom_mark", boss: "red_tide", levels: { normal: 1, elite: 2, boss: 3 } }, // 哥布林毒箭；女王：赤潮掠夺
       victoryRewards: { normal: { gold: 36, xp: 25 }, elite: { gold: 65, xp: 40 }, boss: { gold: 180, xp: 100 } },
       rewardCardIds: CF.CHAPTER_TWO_REWARD_CARD_IDS,
@@ -112,6 +120,8 @@
         note: "沿金色路线推进。击败节点后会开启所有相邻路线；抵达农舍旁的节点后，可与留守的农民夫妇交谈。每个首领的首胜奖励会在战后揭晓。" },
       clearSummary: { title: "金麦农场的战事落幕",
         text: "你击败了丰穗战母·布蕾娅，完成第三关并解锁东部梦幻森林与英雄20级上限。" },
+      chapterWeapon: "harvest_maul", // 熊族开荒碾地的大锤；击败本关第一个首领后获得
+      bossWeapon: { normal: { id: "harvest_maul", level: 2 }, elite: { id: "harvest_maul", level: 3 }, boss: { id: "harvest_maul", level: 4 } },
       heroSkill: { id: "stone_skin", boss: "desert_aegis", levels: { normal: 1, elite: 2, boss: 3 } }, // 熊族磐石之肤；战母：沙幕王盾
       victoryRewards: { normal: { gold: 55, xp: 38 }, elite: { gold: 90, xp: 60 }, boss: { gold: 240, xp: 140 } },
       rewardCardIds: CF.CHAPTER_THREE_REWARD_CARD_IDS,
@@ -174,6 +184,8 @@
       clearSummary: { title: "梦幻森林归于寂静",
         text: "你击败了碧露大贤者·涅芙莉，迫使史莱姆族群退回森林深处，并将英雄等级上限提升至20级。" },
       // 史莱姆潮汐愈合：治疗受伤最重的随从；没有受伤的随从时召唤小史莱姆（攻击/生命按技能等级 Lv1~Lv3 取值）
+      chapterWeapon: "moonpool_lash", // 史莱姆族吸取月潭露水疗伤的藤鞭；击败本关第一个首领后获得
+      bossWeapon: { normal: { id: "moonpool_lash", level: 3 }, elite: { id: "moonpool_lash", level: 4 }, boss: { id: "moonpool_lash", level: 5 } },
       heroSkill: { id: "tide_mending", boss: "tide_mending", levels: { normal: 1, elite: 2, boss: 3 },
         fallbackSummon: { name: "小史莱姆", icon: "💧", image: "assets/cards/chapter4/dewdrop-scout.png", attack: [2, 3, 4], health: [4, 5, 6] } },
       victoryRewards: { normal: { gold: 75, xp: 50 }, elite: { gold: 120, xp: 80 }, boss: { gold: 320, xp: 180 } },
@@ -225,6 +237,8 @@
         note: "灰狼和其他野兽速度极快，许多单位登场即可攻击。击败全部节点后，魔族联军会在废墟建立据点，之后可以反复挑战强大的军官与魔族军队。" },
       clearSummary: { title: "千枝城的旗帜重新升起",
         text: "你击败银灰狼女猎手后，五位魅魔军官没有继续退避。她们救下狼族首领，以20点攻击的力量击溃小队，并决定在千枝城废墟建立魔族据点、重建这座千年前的共居之城。第五关奖励照常结算，英雄等级上限提升至25级；废墟地图上已经开放可反复挑战的魔族驻军。" },
+      chapterWeapon: "silvermoon_fang", // 狼族猎手成对挥出的银月獠牙；击败本关第一个首领后获得
+      bossWeapon: { normal: { id: "silvermoon_fang", level: 4 }, elite: { id: "silvermoon_fang", level: 5 }, boss: { id: "silvermoon_fang", level: 5 } },
       heroSkill: { id: "white_wolf", boss: "frost_fang", levels: { normal: 1, elite: 2, boss: 3 } }, // 白狼急袭；狼女猎手：寒牙撕咬
       victoryRewards: { normal: { gold: 100, xp: 70 }, elite: { gold: 180, xp: 110 }, boss: { gold: 420, xp: 240 } },
       rewardCardIds: CF.CHAPTER_FIVE_REWARD_CARD_IDS,

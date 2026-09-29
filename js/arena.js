@@ -6,6 +6,7 @@
   const ADVANCE_NAMES = ["32强", "16强", "8强", "4强", "亚军", "冠军"];
   const REWARDS = [100, 200, 400, 800, 1200, 1600];
   const PLAYER_ID = 0;
+  const STAND_IN_ID = 64;
   const HERO_NAMES = [
     "曙光圣骑", "铁炉战王", "苍叶游侠", "赤焰导师", "裂牙酋长", "雷铜工匠", "寒骨领主", "月林守望", "夜幕之刃",
     "霜冠女王", "荒原先知", "圣辉祭司", "药剂大师", "赤鳞冠军", "沙海猎手", "黑潮船长", "邪刃猎魔", "鸦木女巫",
@@ -281,19 +282,38 @@
       portrait: `assets/arena/portraits/hero-${String(index + 1).padStart(2, "0")}.webp`,
       skill: SKILLS[index],
       persona: HERO_PERSONAS[index][0],
+      faction: HERO_PERSONAS[index][1],
+      motto: HERO_PERSONAS[index][2],
       dialogue: buildArenaDialogue(name, HERO_PERSONAS[index], index)
     })),
+    // 玩家以竞技场选手身份开局时，这名选手不会在对阵表里再出现一次，由罗兰·维克顶替他的席位。
+    standIn() {
+      if (!this.standInHero) {
+        const persona = ["honor", "王都晨辉骑士团", "让荣誉由守住阵线的人证明"];
+        this.standInHero = { id: STAND_IN_ID, name: "罗兰·维克", portrait: "assets/hero/novice-swordsman.png", skill: SLASH_SKILL, persona: persona[0], faction: persona[1], motto: persona[2], dialogue: buildArenaDialogue("罗兰·维克", persona, 0) };
+      }
+      return this.standInHero;
+    },
+    selfArenaId() { return CF.currentHero?.().arenaId || null; },
+    candidates() {
+      const self = this.selfArenaId();
+      return self ? [...this.heroes.filter(hero => hero.id !== self), this.standIn()] : this.heroes;
+    },
+    heroById(id) {
+      return this.heroes.find(hero => hero.id === id) || (id === STAND_IN_ID ? this.standIn() : null);
+    },
     roundNames: ROUND_NAMES,
     advanceNames: ADVANCE_NAMES,
     rewards: REWARDS,
     participant(id) {
       if (id === PLAYER_ID) return { id: PLAYER_ID, name: CF.currentHero?.().name || "罗兰·维克", portrait: CF.currentHero?.().portrait || "assets/hero/novice-swordsman.png", player: true, skill: HERO_SKILLS[CF.SaveSystem.data.hero.equippedSkill || "slash"] || HERO_SKILLS.slash };
-      return this.heroes.find(hero => hero.id === id) || null;
+      return this.heroById(id);
     },
     preferredFinalist() {
       const progress = CF.SaveSystem.data.hero.skillProgress || {};
-      const unowned = this.heroes.filter(hero => !progress[hero.skill.id]?.unlocked);
-      const pool = unowned.length ? unowned : this.heroes;
+      const candidates = this.candidates();
+      const unowned = candidates.filter(hero => !progress[hero.skill.id]?.unlocked);
+      const pool = unowned.length ? unowned : candidates;
       return pool[Math.floor(Math.random() * pool.length)];
     },
     createTournament() {
@@ -301,7 +321,7 @@
       const playerSlot = Math.floor(Math.random() * 64);
       const oppositeSlots = Array.from({ length: 32 }, (_, index) => playerSlot < 32 ? index + 32 : index);
       const featuredSlot = oppositeSlots[Math.floor(Math.random() * oppositeSlots.length)];
-      const remaining = shuffle(this.heroes.map(hero => hero.id).filter(id => id !== preferredFinalist.id));
+      const remaining = shuffle(this.candidates().map(hero => hero.id).filter(id => id !== preferredFinalist.id));
       const entrants = Array(64).fill(null);
       entrants[playerSlot] = PLAYER_ID;
       entrants[featuredSlot] = preferredFinalist.id;
@@ -441,7 +461,7 @@
       const tournament = this.current();
       const match = this.ensureMatch();
       if (!tournament || !match) return null;
-      const hero = this.heroes.find(item => item.id === match.heroId);
+      const hero = this.heroById(match.heroId);
       const round = tournament.round;
       const health = 30 + round * 5;
       const arenaSkillLevel = Math.max(1, Math.min(3, 1 + Math.floor(round / 2)));
@@ -462,7 +482,7 @@
       const reward = REWARDS[tournament.round];
       const advance = ADVANCE_NAMES[tournament.round];
       const playerMatch = this.playerMatch(tournament);
-      const defeatedHero = this.heroes.find(hero => hero.id === tournament.match?.heroId);
+      const defeatedHero = this.heroById(tournament.match?.heroId);
       if (!playerMatch || !defeatedHero) return null;
       this.finishMatch(playerMatch, PLAYER_ID);
       tournament.defeated.push(tournament.match?.heroId);
@@ -505,5 +525,5 @@
   };
 
   window.CardForge = window.CardForge || {};
-  Object.assign(window.CardForge, { Arena, HERO_SKILLS });
+  Object.assign(window.CardForge, { Arena, HERO_SKILLS, makeHeroSkill: makeSkill });
 })();
