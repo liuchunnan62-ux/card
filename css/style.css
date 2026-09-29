@@ -444,6 +444,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .skill-panel { margin-top: 15px; padding: 16px; border: 1px solid rgba(80,134,184,.55); border-radius: 10px; background: linear-gradient(120deg, rgba(55,99,135,.2), rgba(0,0,0,.2)); }
 .hero-skills-heading { margin: 26px 0 12px; display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .hero-skills-heading h2, .hero-skills-heading p { margin: 0; }
+.hero-skills-heading h2 { white-space: nowrap; }
 .hero-skills-heading p { color: var(--muted); }
 .hero-skill-collection { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .hero-skill-card { min-height: 190px; padding: 15px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(102,139,177,.48); border-radius: 12px; background: linear-gradient(145deg, rgba(30,56,83,.76), rgba(14,13,15,.9)); box-shadow: 0 8px 20px rgba(0,0,0,.28); }
@@ -456,6 +457,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ffe1a0; out
 .hero-skill-xp { display: grid; gap: 5px; margin-top: auto; }
 .hero-skill-card .mini-btn { align-self: flex-end; }
 .hero-skill-card .mini-btn:disabled { color: #f3cf7b; border-color: #ba8d3e; opacity: 1; cursor: default; }
+.hero-weapon-card .hero-skill-card-title > span { overflow: hidden; }
+.hero-weapon-card .hero-skill-card-title img { width: 100%; height: 100%; object-fit: cover; }
+.hero-weapon-stats { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
+.hero-weapon-stats b { color: #f3cf7b; font-size: 18px; }
+.hero-weapon-stats small { color: var(--muted); font-size: 11px; }
+.backpack-section .hero-weapon-collection { margin-top: 8px; }
 .arena-skill-reward, .arena-skill-inherit { padding: 10px 12px; border: 1px solid rgba(100,153,205,.42); border-radius: 8px; background: rgba(28,59,88,.32); }
 .arena-skill-inherit { border-color: rgba(229,188,86,.55); background: rgba(110,75,20,.25); }
 

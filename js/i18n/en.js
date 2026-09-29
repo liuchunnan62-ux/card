@@ -4,6 +4,21 @@
   // English dictionary. Keys are the original Simplified Chinese text; {0}, {value} etc. are placeholders.
   window.CardForge.I18n.register("en", {
     "exact": {
+      "英雄武器": "Hero Weapon",
+      "空手": "Unarmed",
+      "随身装备": "Carried Gear",
+      "冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。": "The chosen weapon is equipped automatically at the start of adventure and arena battles: it takes no hand slot, costs no mana, never loses durability, and can attack once every turn.",
+      "尚未获得武器。击败第一关地图上的七位武器首领即可获得。": "No weapons yet. Defeat the seven weapon bosses on the Chapter 1 map to obtain them.",
+      "卸下武器": "Unequip Weapon",
+      "装备武器": "Equip Weapon",
+      "已卸下英雄武器。": "Hero weapon unequipped.",
+      "{0}已放进背包": "{0} added to your backpack",
+      "已自动装备为英雄武器。": "Automatically equipped as your hero weapon.",
+      "可在英雄档案或背包中更换英雄武器。": "You can change your hero weapon in the Hero Profile or Backpack.",
+      "冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。": "In adventures and the arena you can attack with it once every turn, without losing durability.",
+      "武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。": "Weapons can attack once per turn; the weapon equipped in the Hero Profile never loses durability.",
+      "{0}挥动{1}{2}第{3}路{4}的{5}，造成{6}点伤害{7}；英雄武器不消耗耐久。": "{0} swings {1}: {2} on {5} in Lane {3} {4}, dealing {6} damage {7}; hero weapons don't lose durability.",
+      "{0}使用{1}突破战线，对{2}造成{3}点伤害；英雄武器不消耗耐久。": "{0} uses {1} to break the line, dealing {3} damage to {2}; hero weapons don't lose durability.",
       // 战斗表情（点击头像）
       "林海边境的莉瑟尔。别乱动，我的箭比招呼快。": "Lisel of the forest-sea border. Don't move—my arrows are faster than my greetings.",
       "你好呀。你也是从林子里来的吗？": "Hi there. Did you come from the woods too?",
@@ -1237,7 +1252,6 @@
       "手牌为空": "Hand is empty",
       "战术目标": "Tactical Goals",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Melee minions and melee weapons take counterattacks; ranged attacks don't.",
-      "武器每回合可攻击1次，每次攻击消耗1点耐久。": "Weapons can attack once per turn; each attack uses 1 durability.",
       "前排保护同列后排，狙击单位与狙击武器除外。": "The front row protects the back row in its lane, except against sniper units and sniper weapons.",
       "前后排均为空时路线突破。": "A lane is breached when both its front and back rows are empty.",
       "战线 · 击穿任一路线即可攻击英雄": "Battle Line · breach any lane to attack the hero",

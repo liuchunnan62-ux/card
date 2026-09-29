@@ -364,8 +364,10 @@
       CF.SaveSystem.data.weaponBossRewards ||= {};
       CF.SaveSystem.data.weaponBossRewards[reward.cardId] = true;
       CF.SaveSystem.addCardToCollection(reward.cardId, 1);
+      // 武器是英雄装备而不是牌组卡牌：空手时直接为英雄装备新获得的武器。
+      if (!CF.SaveSystem.equippedWeapon()) CF.SaveSystem.data.hero.equippedWeapon = reward.cardId;
       CF.SaveSystem.save();
-      return reward;
+      return { ...reward, weapon: true, autoEquipped: CF.SaveSystem.equippedWeapon() === reward.cardId };
     },
     activeChapterTwoCardReward() {
       const run = this.current();

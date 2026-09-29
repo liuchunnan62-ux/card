@@ -82,6 +82,8 @@
         heroId: hero?.id || "captain",
         level: 1, xp: 0, maxHealth: 30, maxMana: 3,
         equippedSkill: signature,
+        // 英雄武器：七把首杀武器不再作为卡牌放进牌组，而是在英雄档案中选择一把随身携带（null 为空手）。
+        equippedWeapon: null,
         skillProgress
       },
       coins: 50,
@@ -192,7 +194,7 @@
   function normalize(raw) {
     const base = freshSave(raw?.hero?.heroId);
     if (!raw || typeof raw !== "object") return base;
-    const cleanDeck = Array.isArray(raw.deck) ? raw.deck.filter(id => CF.CARD_LIBRARY[id]).filter((id, index, list) => list.indexOf(id) === index) : [...base.deck];
+    const cleanDeck = Array.isArray(raw.deck) ? raw.deck.filter(id => CF.CARD_LIBRARY[id] && CF.CARD_LIBRARY[id].type !== "weapon").filter((id, index, list) => list.indexOf(id) === index) : [...base.deck];
     if (cleanDeck.length < 24) {
       base.deck.forEach(id => { if (cleanDeck.length < 24 && !cleanDeck.includes(id)) cleanDeck.push(id); });
     }
@@ -260,6 +262,7 @@
     const signature = signatureSkillOf(result.hero.heroId);
     if (!result.hero.skillProgress[signature]?.unlocked) result.hero.skillProgress[signature] = { level: 1, xp: 0, unlocked: true };
     if (!result.hero.skillProgress[result.hero.equippedSkill]?.unlocked) result.hero.equippedSkill = signature;
+    if (!isOwnedWeapon(result, result.hero.equippedWeapon)) result.hero.equippedWeapon = null;
     if (Number(result.completedRuns) >= 1) {
       result.items.queenBloodRiverWater = true;
       result.questItemRewards.queenBloodRiverWater = true;
@@ -280,6 +283,10 @@
     delete result.hero.skillLevel;
     delete result.hero.manaShards;
     return result;
+  }
+
+  function isOwnedWeapon(data, id) {
+    return typeof id === "string" && CF.CARD_LIBRARY[id]?.type === "weapon" && data.collection?.[id] > 0;
   }
 
   const loadSaveData = raw => normalize(migrate(raw));
@@ -587,6 +594,21 @@
     equipHeroSkill(id) {
       if (!this.heroSkillProgress(id)?.unlocked) return false;
       this.data.hero.equippedSkill = id;
+      this.save();
+      return true;
+    },
+    // 已获得的英雄武器（首杀武器奖励），按费用排列。
+    ownedWeapons() {
+      return (CF.WEAPON_CARD_IDS || []).filter(id => isOwnedWeapon(this.data, id));
+    },
+    equippedWeapon() {
+      const id = this.data.hero.equippedWeapon;
+      return isOwnedWeapon(this.data, id) ? id : null;
+    },
+    // id 为 null 时卸下武器。
+    equipHeroWeapon(id) {
+      if (id !== null && !isOwnedWeapon(this.data, id)) return false;
+      this.data.hero.equippedWeapon = id;
       this.save();
       return true;
     },

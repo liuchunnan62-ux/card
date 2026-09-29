@@ -4,6 +4,21 @@
   // Spanish dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("es", {
     "exact": {
+      "英雄武器": "Arma del héroe",
+      "空手": "Desarmado",
+      "随身装备": "Equipo personal",
+      "冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。": "El arma elegida se equipa automáticamente al empezar los combates de aventura y de arena: no ocupa la mano, no cuesta maná, nunca pierde durabilidad y puede atacar una vez cada turno.",
+      "尚未获得武器。击败第一关地图上的七位武器首领即可获得。": "Aún no tienes armas. Derrota a los siete jefes de armas del mapa del capítulo 1 para obtenerlas.",
+      "卸下武器": "Quitar arma",
+      "装备武器": "Equipar arma",
+      "已卸下英雄武器。": "Arma del héroe retirada.",
+      "{0}已放进背包": "{0} guardado en la mochila",
+      "已自动装备为英雄武器。": "Equipada automáticamente como arma del héroe.",
+      "可在英雄档案或背包中更换英雄武器。": "Puedes cambiar el arma del héroe en el Perfil del héroe o en la Mochila.",
+      "冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。": "En aventuras y en la arena puedes atacar con ella una vez cada turno sin perder durabilidad.",
+      "武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。": "Las armas pueden atacar una vez por turno; el arma equipada en el Perfil del héroe nunca pierde durabilidad.",
+      "{0}挥动{1}{2}第{3}路{4}的{5}，造成{6}点伤害{7}；英雄武器不消耗耐久。": "{0} blande {1}: {2} a {5} en el carril {3} {4} e inflige {6} de daño {7}; las armas del héroe no pierden durabilidad.",
+      "{0}使用{1}突破战线，对{2}造成{3}点伤害；英雄武器不消耗耐久。": "{0} usa {1} para romper la línea e inflige {3} de daño a {2}; las armas del héroe no pierden durabilidad.",
       // 战斗表情（点击头像）
       "林海边境的莉瑟尔。别乱动，我的箭比招呼快。": "Lisel, de la frontera del mar de bosques. No te muevas: mis flechas son más rápidas que mis saludos.",
       "你好呀。你也是从林子里来的吗？": "¡Hola! ¿Tú también vienes del bosque?",
@@ -1245,7 +1260,6 @@
       "手牌为空": "La mano está vacía",
       "战术目标": "Objetivos Tácticos",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Los esbirros cuerpo a cuerpo y las armas cuerpo a cuerpo sufren contraataques; los ataques a distancia no.",
-      "武器每回合可攻击1次，每次攻击消耗1点耐久。": "Las armas pueden atacar una vez por turno; cada ataque usa 1 durabilidad.",
       "前排保护同列后排，狙击单位与狙击武器除外。": "La primera fila protege la segunda fila en su carril, excepto contra unidades francotirador y armas francotirador.",
       "前后排均为空时路线突破。": "Un carril está abierto cuando tanto su primera como su segunda fila están vacías.",
       "战线 · 击穿任一路线即可攻击英雄": "Línea de Batalla · abre cualquier carril para atacar al héroe",

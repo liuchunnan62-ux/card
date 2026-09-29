@@ -93,6 +93,7 @@
           deck: shuffle(CF.makeDeck(enemy.deck, enemy.cardProgress || Object.fromEntries([...new Set(enemy.deck)].map(id => [id, { level: enemy.enemyCardLevel || 1 }])))), fatigue: 0
         }
       };
+      if (enemy.mode !== "trial") this.equipHeroWeapon();
       this.draw("player", Math.min(INITIAL_BATTLE_HAND, this.state.player.deck.length));
       if (!enemy.noCards) this.draw("enemy", enemy.openingHand || 4);
       CF.Trials?.configureBattle(this);
@@ -319,17 +320,32 @@
       const replaced = actor.weapon;
       actor.mana -= cost;
       actor.hand.splice(index, 1);
-      actor.weapon = {
-        cardId: card.id, name: card.name, image: card.image, icon: card.icon,
-        attack: card.attack, durability: card.durability, maxDurability: card.durability,
-        combatStyle: card.combatStyle, keywords: [...card.keywords], effect: card.weaponEffect,
-        level: card.level, ready: true
-      };
+      actor.weapon = this.weaponFromCard(card);
       this.recordCardPlayed(side, card);
       this.state.selected = null;
       this.sound("summon");
       this.addLog(`${side === "player" ? "你" : this.enemyConfig.name}装备${card.name}（${cost}费，${card.attack}攻/${card.durability}耐久）${replaced ? `，替换了${replaced.name}` : ""}；剩余${actor.mana}/${actor.maxMana}法力。`, side);
       this.render();
+      return true;
+    }
+
+    weaponFromCard(card, permanent = false) {
+      return {
+        cardId: card.id, name: card.name, image: card.image, icon: card.icon,
+        attack: card.attack, durability: card.durability, maxDurability: card.durability,
+        combatStyle: card.combatStyle, keywords: [...card.keywords], effect: card.weaponEffect,
+        level: card.level, ready: true, permanent
+      };
+    }
+
+    // 英雄武器：冒险与竞技场开战时自动装备英雄档案中选择的武器。
+    // 不占手牌、不耗法力、不消耗耐久，每回合都可以攻击一次（统领试炼使用各自的固定规则，不带入）。
+    equipHeroWeapon() {
+      const id = CF.SaveSystem.equippedWeapon?.();
+      if (!id) return false;
+      const card = CF.getCard(id, CF.SaveSystem.data.cardProgress?.[id]);
+      if (!card || card.type !== "weapon") return false;
+      this.state.player.weapon = this.weaponFromCard(card, true);
       return true;
     }
 
@@ -1257,10 +1273,14 @@
       target.health -= damage;
       if (!noCounter) actor.hp -= counter;
       weapon.ready = false;
-      weapon.durability -= 1;
+      if (!weapon.permanent) weapon.durability -= 1;
       const killed = target.health <= 0;
       this.sound(ranged ? "ranged" : "melee");
-      this.addLog(`${attackerSide === "player" ? this.state.player.name : this.enemyConfig.name}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${ranged ? "且不受反击" : noCounter ? "，远程目标无法反击" : `并受到${counter}点反击`}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
+      const attackerName = attackerSide === "player" ? this.state.player.name : this.enemyConfig.name;
+      const counterText = ranged ? "且不受反击" : noCounter ? "，远程目标无法反击" : `并受到${counter}点反击`;
+      this.addLog(weapon.permanent
+        ? `${attackerName}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${counterText}；英雄武器不消耗耐久。`
+        : `${attackerName}挥动${weapon.name}${ranged ? "远程射击" : "近战攻击"}第${targetColumn + 1}路${targetRow === "front" ? "前排" : "后排"}的${target.name}，造成${damage}点伤害${counterText}；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
       this.applyWeaponAfterAttack(attackerSide, targetSide, killed);
       this.cleanDead();
       this.finishWeaponUse(attackerSide);
@@ -1275,10 +1295,14 @@
       if (!weapon || !weapon.ready || !Rules.canAttackHero(target.board)) return false;
       target.hp -= weapon.attack;
       weapon.ready = false;
-      weapon.durability -= 1;
+      if (!weapon.permanent) weapon.durability -= 1;
       this.sound(weapon.combatStyle === "ranged" ? "ranged" : "melee");
       this.sound("heroHit");
-      this.addLog(`${attackerSide === "player" ? this.state.player.name : this.enemyConfig.name}使用${weapon.name}突破战线，对${targetSide === "enemy" ? this.enemyConfig.name : "我方英雄"}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
+      const attackerName = attackerSide === "player" ? this.state.player.name : this.enemyConfig.name;
+      const targetName = targetSide === "enemy" ? this.enemyConfig.name : "我方英雄";
+      this.addLog(weapon.permanent
+        ? `${attackerName}使用${weapon.name}突破战线，对${targetName}造成${weapon.attack}点伤害；英雄武器不消耗耐久。`
+        : `${attackerName}使用${weapon.name}突破战线，对${targetName}造成${weapon.attack}点伤害；武器剩余${Math.max(0, weapon.durability)}/${weapon.maxDurability}耐久。`, attackerSide);
       this.applyWeaponAfterAttack(attackerSide, targetSide, false);
       this.finishWeaponUse(attackerSide);
       this.checkOutcome();
@@ -1311,7 +1335,7 @@
 
     finishWeaponUse(side) {
       const weapon = this.state[side].weapon;
-      if (!weapon || weapon.durability > 0) return;
+      if (!weapon || weapon.permanent || weapon.durability > 0) return;
       this.addLog(`${side === "player" ? "你的" : `${this.enemyConfig.name}的`}${weapon.name}耐久耗尽并损毁。`, side);
       this.state[side].weapon = null;
       this.sound("death");
@@ -2430,7 +2454,7 @@
       const action = side === "player" ? ' data-action="weapon-attack"' : "";
       const selected = side === "player" && this.state.selected?.type === "weapon";
       return `<button class="equipped-weapon ${side}-weapon ${weapon.ready ? "ready" : "spent"} ${selected ? "selected" : ""}"${action} title="${weapon.name}｜${weapon.combatStyle === "ranged" ? "远程无反击" : "近战受反击"}">
-        <img src="${weapon.image}" alt="${weapon.name}"><span>${weapon.name}</span><strong>⚔ ${weapon.attack}　◆ ${weapon.durability}/${weapon.maxDurability}</strong>
+        <img src="${weapon.image}" alt="${weapon.name}"><span>${weapon.name}</span><strong>⚔ ${weapon.attack}　◆ ${weapon.permanent ? "∞" : `${weapon.durability}/${weapon.maxDurability}`}</strong>
       </button>`;
     }
 
@@ -2530,7 +2554,7 @@
           <aside class="battle-sidebar">
             <div class="turn-badge">${s.phase === "player" ? `你的回合 · 第${s.round}回合` : `${s.enemy.name}的回合`}</div>
             <div class="deck-remaining-panel"><div class="battle-log-heading"><h3>我方牌库</h3><small>剩余${s.player.deck.length}张</small></div>${this.deckRemainingHTML(s.player.deck)}</div>
-            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次，每次攻击消耗1点耐久。</p><p>前排保护同列后排，狙击单位与狙击武器除外。</p><p>前后排均为空时路线突破。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
+            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。</p><p>前排保护同列后排，狙击单位与狙击武器除外。</p><p>前后排均为空时路线突破。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
           </aside>
         </div>
       </section>`;

@@ -4,6 +4,21 @@
   // Brazilian Portuguese dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("pt", {
     "exact": {
+      "英雄武器": "Arma do herói",
+      "空手": "Desarmado",
+      "随身装备": "Equipamento pessoal",
+      "冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。": "A arma escolhida é equipada automaticamente no início das batalhas de aventura e da arena: não ocupa a mão, não custa mana, nunca perde durabilidade e pode atacar uma vez a cada turno.",
+      "尚未获得武器。击败第一关地图上的七位武器首领即可获得。": "Ainda não há armas. Derrote os sete chefes de armas do mapa do capítulo 1 para obtê-las.",
+      "卸下武器": "Remover arma",
+      "装备武器": "Equipar arma",
+      "已卸下英雄武器。": "Arma do herói removida.",
+      "{0}已放进背包": "{0} guardado na mochila",
+      "已自动装备为英雄武器。": "Equipada automaticamente como arma do herói.",
+      "可在英雄档案或背包中更换英雄武器。": "Você pode trocar a arma do herói no Perfil do herói ou na Mochila.",
+      "冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。": "Em aventuras e na arena você pode atacar com ela uma vez a cada turno, sem perder durabilidade.",
+      "武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。": "Armas podem atacar uma vez por turno; a arma equipada no Perfil do herói nunca perde durabilidade.",
+      "{0}挥动{1}{2}第{3}路{4}的{5}，造成{6}点伤害{7}；英雄武器不消耗耐久。": "{0} brande {1}: {2} em {5} na pista {3} {4}, causando {6} de dano {7}; armas do herói não perdem durabilidade.",
+      "{0}使用{1}突破战线，对{2}造成{3}点伤害；英雄武器不消耗耐久。": "{0} usa {1} para romper a linha, causando {3} de dano a {2}; armas do herói não perdem durabilidade.",
       // 战斗表情（点击头像）
       "林海边境的莉瑟尔。别乱动，我的箭比招呼快。": "Lisel, da fronteira do mar de florestas. Não se mexa — minhas flechas são mais rápidas que meus cumprimentos.",
       "你好呀。你也是从林子里来的吗？": "Oi! Você também veio da floresta?",
@@ -1245,7 +1260,6 @@
       "手牌为空": "Mão vazia",
       "战术目标": "Objetivos Táticos",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Lacaios corpo a corpo e armas corpo a corpo sofrem contra-ataques; ataques à distância não sofrem.",
-      "武器每回合可攻击1次，每次攻击消耗1点耐久。": "Armas podem atacar uma vez por turno; cada ataque usa 1 de durabilidade.",
       "前排保护同列后排，狙击单位与狙击武器除外。": "A linha de frente protege a linha de trás em sua rota, exceto contra unidades franco-atirador e armas franco-atirador.",
       "前后排均为空时路线突破。": "Uma rota é rompida quando suas linhas de frente e de trás estão vazias.",
       "战线 · 击穿任一路线即可攻击英雄": "Linha de Batalha · rompa qualquer rota para atacar o herói",

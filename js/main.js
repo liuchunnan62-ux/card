@@ -1035,6 +1035,7 @@
         const name = EQUIPMENT_TIER_NAMES[kind][tier];
         return `<div class="backpack-item"><strong class="${EQUIPMENT_TIER_QUALITY[tier]}">${name}</strong><small>拥有 ${count} 件 · +${tier}${kind === "weapon" ? "攻击" : "防御"}</small><button class="secondary-btn" data-action="equip-item" data-kind="${kind}" data-tier="${tier}">装备</button></div>`;
       }).join("");
+      const heroWeapons = this.heroWeaponCardsHTML();
       const weaponItems = gearRows("weapon");
       const armorItems = gearRows("armor");
       const foodItems = CF.Restaurant.FOODS.filter(food => CF.Restaurant.foodCount(food.id)).map(food => `<div class="backpack-item"><strong>${food.icon} ${food.name}</strong><small>拥有 ${CF.Restaurant.foodCount(food.id)} 份 · 投喂在押首领好感 +${food.affinity}</small><button class="secondary-btn" data-action="prison-page">去探监</button></div>`).join("");
@@ -1042,6 +1043,7 @@
         <div class="page-heading"><div><span class="eyebrow">随身</span><h2>背包</h2></div><p>战斗中缴获的道具与装备材料都会收进这里。</p></div>
         <div class="backpack-section"><h3>珍藏物品</h3><div class="backpack-item"><strong>女王精血</strong><small>拥有 ${waterCount} 瓶 · ${bloodAwakened ? "使用后永久+1最大生命" : "通关统领试炼第七关“魅魔女王的低语”、得到女王认可后，才能吸收精血的力量（永久+1最大生命）"}</small><button class="secondary-btn" data-action="use-queen-blood" ${waterCount && bloodAwakened ? "" : "disabled"}>${bloodAwakened ? "使用" : "尚未得到认可"}</button></div></div>
         <div class="backpack-section"><h3>餐馆食物</h3>${foodItems || '<p class="empty-hint">暂无食物。可在城镇商店的金杯餐馆购买，带去营地监狱投喂在押首领。</p>'}</div>
+        <div class="backpack-section"><h3>英雄武器</h3>${heroWeapons ? `<p class="empty-hint">冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。</p><div class="hero-skill-collection hero-weapon-collection">${heroWeapons}</div>` : '<p class="empty-hint">尚未获得武器。击败第一关地图上的七位武器首领即可获得。</p>'}</div>
         <div class="backpack-section"><h3>武器材料</h3>${weaponItems || '<p class="empty-hint">暂无武器材料。</p>'}</div>
         <div class="backpack-section"><h3>盔甲材料</h3>${armorItems || '<p class="empty-hint">暂无盔甲材料。</p>'}</div>
         <div class="menu-actions"><button class="secondary-btn" data-action="home">返回主界面</button></div>
@@ -1114,6 +1116,9 @@
           <button class="mini-btn" data-action="hero-skill-equip" data-skill="${skill.id}" ${equipped ? "disabled" : ""}>${equipped ? "当前装备" : "装备技能"}</button>
         </article>`;
       }).join("");
+      const equippedWeaponId = CF.SaveSystem.equippedWeapon();
+      const equippedWeapon = equippedWeaponId ? CF.CARD_LIBRARY[equippedWeaponId] : null;
+      const weaponCards = this.heroWeaponCardsHTML();
       const levelCap = CF.SaveSystem.levelCap();
       const next = CF.HERO_LEVELS[Math.min(levelCap, hero.level + 1)];
       const currentFloor = CF.HERO_LEVELS[hero.level].xp;
@@ -1130,13 +1135,34 @@
             <div class="stat-box"><small>牌组上限</small><strong>${CF.SaveSystem.deckLimit()}张</strong></div>
             <div class="stat-box"><small>已获技能</small><strong>${unlockedSkills.length}/${obtainableSkills.length}</strong></div>
             <div class="stat-box"><small>冒险通关</small><strong>${CF.SaveSystem.data.completedRuns}</strong></div>
+            <div class="stat-box"><small>英雄武器</small><strong>🗡️ <span>${equippedWeapon ? equippedWeapon.name : "空手"}</span></strong></div>
           </div>
           <p>${hero.level >= levelCap ? `当前已达到第${levelCap >= 25 ? "五" : levelCap >= 20 ? "四" : levelCap >= 15 ? "三" : levelCap >= 10 ? "二" : "一"}关等级上限 Lv${levelCap}。` : `距离 Lv${hero.level + 1} 还需 ${next.xp - hero.xp} 经验`}</p><div class="progress"><span style="width:${pct}%"></span></div>
           <div class="skill-panel"><strong>${equippedSkill.icon} 当前英雄技能：${equippedSkill.name}</strong><p>技能最高3级。每赢得一场竞技场比赛，当前装备技能获得2点经验；夺冠还会获得决赛对手的英雄技能。</p></div>
         </div></div>
         <div class="hero-skills-heading"><div><span class="eyebrow">竞技场传承</span><h2>英雄技能</h2></div><p>出战竞技场前先装备想要培养的技能。</p></div>
         <div class="hero-skill-collection">${skillCards}</div>
+        <div class="hero-skills-heading"><div><span class="eyebrow">随身装备</span><h2>英雄武器</h2></div><p>冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。</p></div>
+        <div class="hero-skill-collection hero-weapon-collection">${weaponCards || '<p class="empty-hint">尚未获得武器。击败第一关地图上的七位武器首领即可获得。</p>'}</div>
       </section>`);
+    },
+
+    // 英雄档案与背包共用的武器卡片：已获得的首杀武器，可装备或卸下。
+    heroWeaponCardsHTML() {
+      const data = CF.SaveSystem.data;
+      const equippedId = CF.SaveSystem.equippedWeapon();
+      return CF.SaveSystem.ownedWeapons().map(id => {
+        const card = CF.getCard(id, data.cardProgress[id]);
+        const equipped = id === equippedId;
+        return `<article class="hero-skill-card hero-weapon-card ${equipped ? "equipped" : ""}">
+          <div class="hero-skill-card-title"><span>${card.image ? `<img src="${card.image}" alt="${card.name}">` : card.icon}</span><div><strong>${card.name}</strong><small>Lv${card.level} / 5</small></div></div>
+          <p>${card.description}</p>
+          <div class="hero-weapon-stats"><b>⚔ ${card.attack}</b><small>${card.combatStyle === "ranged" ? "远程武器 · 无反击" : "近战武器 · 会反击"}</small></div>
+          ${equipped
+            ? `<button class="mini-btn" data-action="hero-weapon-equip" data-weapon="">卸下武器</button>`
+            : `<button class="mini-btn" data-action="hero-weapon-equip" data-weapon="${id}">装备武器</button>`}
+        </article>`;
+      }).join("");
     },
 
     groupedDeck() {
@@ -1161,7 +1187,8 @@
         const unitStats = `${card.attack}${CF.equipDotHTML("weapon", cardEquip.weapon)}/${CF.equipDotHTML("armor", cardEquip.armor)}${card.health}`;
         return `<div class="deck-row ${injured || bondLocked ? "injured-card" : ""}" data-action="inspect-card" data-card="${id}" role="button" tabindex="0" aria-label="查看${card.name}完整卡牌"><span class="cost">${card.cost}</span><div class="deck-card-info"><strong>${thumb}<span>${card.name} ×${count}${injured ? '<b class="injured-badge">负伤</b>' : ""}${bondBadge}</span></strong><small>Lv${card.level} · ${style} · ${card.keywords.join("、") || "无关键词"}${injured || bondLocked ? " · 无法出战" : ""}${bondStatus ? ` · ${bondStatus}` : ""}</small></div><small class="deck-card-details">${card.type === "unit" ? unitStats : card.type === "weapon" ? `${card.attack}攻/${card.durability}耐久 · ${card.description}` : card.description}</small><button class="mini-btn" data-action="deck-remove" data-card="${id}">移除</button></div>`;
       }).join("");
-      const availableCollection = Object.entries(data.collection).filter(([id, owned]) => owned > 0 && !deckCounts[id]);
+      const availableCollection = Object.entries(data.collection).filter(([id, owned]) => owned > 0 && !deckCounts[id])
+        .filter(([id]) => CF.CARD_LIBRARY[id]?.type !== "weapon"); // 武器是英雄装备，在英雄档案中选择，不进牌组
       const collectionRows = availableCollection.map(([id, owned]) => {
         const card = CF.getCard(id, data.cardProgress[id], CF.Restaurant.cardBondBonus(id));
         const injured = card.type === "unit" && data.injuredCards?.includes(id);
@@ -1641,7 +1668,7 @@
       const heading = bossFight ? (storyDefeat ? "千枝城反击战结束" : `${bossName}已被击败`) : "战斗胜利";
       const intro = storyDefeat ? `${bossName}已经落败；魅魔军官随后击溃了小队，但不影响通关与奖励。` : "";
       this.modal(`<span class="eyebrow">${eyebrow}</span><h2>${heading}</h2><p>${intro}基础战利品：${baseGold}金币 · ${baseXp}英雄经验。</p>
-        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}已永久加入收藏</strong>${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${CF.Restaurant.bondOwner(bossCardReward.cardId).boss ? `${bossCardReward.nodeLabel}被同族救走了。本关全部在押首领都在营地监狱结缘后，才能使用这张卡。` : `${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。`}</small>` : ""}</div>` : ""}
+        ${bossCardReward ? `<div class="guaranteed-weapon-drop"><span class="eyebrow">首杀固定奖励</span>${this.cardPreview(bossCardReward.cardId)}<strong>${CF.CARD_LIBRARY[bossCardReward.cardId].name}${bossCardReward.weapon ? "已放进背包" : "已永久加入收藏"}</strong>${bossCardReward.weapon ? `<small>${bossCardReward.autoEquipped ? "已自动装备为英雄武器。" : "可在英雄档案或背包中更换英雄武器。"}冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。</small>` : ""}${CF.Restaurant.isCardBondLocked(bossCardReward.cardId) ? `<small>${CF.Restaurant.bondOwner(bossCardReward.cardId).boss ? `${bossCardReward.nodeLabel}被同族救走了。本关全部在押首领都在营地监狱结缘后，才能使用这张卡。` : `${bossCardReward.nodeLabel}已被押回营地监狱。带上金杯餐馆的食物去探望，好感度达到${CF.Restaurant.BOND_THRESHOLD}、与其结缘后才能使用这张卡。`}</small>` : ""}</div>` : ""}
         ${questItemReward ? `<div class="quest-item-drop"><img src="${questItemReward.image}" alt="${questItemReward.name}"><div><span class="eyebrow">关键物品</span><strong>${questItemReward.name}</strong><p>河水中的猩红丝线与古老月辉产生共鸣。它能开启统领试炼第七关。</p></div></div>` : ""}
         <p class="boss-loot-hint">翻开三张战利品牌：</p>
         <div class="boss-loot-grid">${lootCards.map((card, index) => `<button class="boss-loot-card" data-modal-action="flip-boss-card" data-index="${index}"><span class="boss-loot-face boss-loot-front">?</span><span class="boss-loot-face boss-loot-back"><strong>${card.title}</strong><small>${card.detail}</small></span></button>`).join("")}</div>
@@ -1796,7 +1823,7 @@
   };
 
   // 没有专属音效的按钮统一发出轻微的点击声。
-  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "inn-sleep", "night-choice", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
+  const QUIET_ACTIONS = new Set(["slot", "hero", "skill", "weapon-attack", "select-card", "end-turn", "player-portrait", "emote", "deck-add", "deck-remove", "hero-skill-equip", "hero-weapon-equip", "shop-buy", "rescue-injured", "train-card", "sound-preview", "flip-boss-card", "continue-boss-loot", "forge-item", "buy-food", "buy-flour", "inn-sleep", "night-choice", "feed-prisoner", "equip-target", "level-select-node", "camp-choice", "event-choice", "arena-battle", "trial-start"]);
   const clickSound = el => { if (el?.matches("button:not(:disabled), .choice-btn, .reward-card") && !QUIET_ACTIONS.has(el.dataset.action || el.dataset.modalAction)) UI.sfx("click"); };
 
   app.addEventListener("click", event => {
@@ -1856,6 +1883,14 @@
       if (CF.SaveSystem.equipHeroSkill(el.dataset.skill)) { UI.toast(`已装备「${CF.HERO_SKILLS[el.dataset.skill].name}」。`, "good"); UI.sfx("equip"); }
       UI.renderHero();
     }
+    if (action === "hero-weapon-equip") {
+      const weaponId = el.dataset.weapon || null;
+      if (CF.SaveSystem.equipHeroWeapon(weaponId)) {
+        UI.toast(weaponId ? `已装备「${CF.CARD_LIBRARY[weaponId].name}」。` : "已卸下英雄武器。", "good");
+        UI.sfx("equip");
+      }
+      if (UI.screen === "backpack") UI.renderBackpack(); else UI.renderHero();
+    }
     if (action === "deck-page") UI.renderDeck();
     if (action === "training-page") UI.renderTraining();
     if (action === "prison-page") UI.renderPrison();
@@ -1884,7 +1919,7 @@
     if (action === "new-run") UI.requestNewRun();
     if (action === "continue-run") UI.renderMap();
     if (action === "deck-remove") { const index = CF.SaveSystem.data.deck.lastIndexOf(el.dataset.card); if (index >= 0) { CF.SaveSystem.data.deck.splice(index,1); UI.sfx("cardRemove"); } CF.SaveSystem.save(); UI.renderDeck(); }
-    if (action === "deck-add" && CF.SaveSystem.data.deck.length < CF.SaveSystem.deckLimit() && !CF.SaveSystem.data.deck.includes(el.dataset.card) && !CF.Restaurant.isCardBondLocked(el.dataset.card)) { CF.SaveSystem.data.deck.push(el.dataset.card); UI.sfx("cardAdd"); CF.SaveSystem.save(); UI.renderDeck(); }
+    if (action === "deck-add" && CF.CARD_LIBRARY[el.dataset.card] && CF.CARD_LIBRARY[el.dataset.card].type !== "weapon" && CF.SaveSystem.data.deck.length < CF.SaveSystem.deckLimit() && !CF.SaveSystem.data.deck.includes(el.dataset.card) && !CF.Restaurant.isCardBondLocked(el.dataset.card)) { CF.SaveSystem.data.deck.push(el.dataset.card); UI.sfx("cardAdd"); CF.SaveSystem.save(); UI.renderDeck(); }
     if (action === "node") UI.enterNode(Number(el.dataset.choice));
     if (action === "farm-npc") UI.renderFarmNpc();
     if (action === "abandon-run") { UI.modal(`<h2>退出当前关卡？</h2><p>已击败的节点、路线解锁和本轮奖励都会保留。之后点击“继续游戏”即可从当前进度继续。</p><div class="menu-actions"><button class="primary-btn" data-modal-action="confirm-pause-run">保存并退出</button><button class="secondary-btn" data-modal-action="close">取消</button></div>`); return; }

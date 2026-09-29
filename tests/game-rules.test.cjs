@@ -1265,6 +1265,45 @@ assert.equal(firstWeaponReward.cardId, "mist_dagger", "第一个武器Boss应掉
 assert.equal(CF.SaveSystem.data.collection.mist_dagger, 1, "Boss武器应永久加入收藏");
 assert.equal(CF.Adventure.claimActiveWeaponReward(), null, "同一Boss武器奖励不可重复领取");
 assert.equal(CF.Adventure.mapStages().flat().filter(node => node.weaponBoss).length, 7, "第一关应有七个武器Boss奖励点");
+assert.equal(firstWeaponReward.autoEquipped, true, "空手时获得的首杀武器应自动装备为英雄武器");
+assert.equal(CF.SaveSystem.equippedWeapon(), "mist_dagger", "英雄武器应记录在存档中");
+assert.deepEqual([...CF.SaveSystem.ownedWeapons()], ["mist_dagger"], "已获得的武器应列在英雄武器中");
+assert.equal(CF.SaveSystem.equipHeroWeapon("riftmoon_blade"), false, "未获得的武器不能装备");
+assert.equal(CF.SaveSystem.equipHeroWeapon("recruit"), false, "非武器卡牌不能装备为英雄武器");
+assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入牌组");
+
+const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+const heroWeapon = heroWeaponBattle.state.player.weapon;
+assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");
+assert.equal(heroWeapon.cardId, "mist_dagger", "开战装备的应是英雄档案中选择的武器");
+assert.ok(heroWeaponBattle.state.player.hand.every(card => card.type !== "weapon"), "英雄武器不占手牌");
+heroWeaponBattle.state.enemy.board.front[0] = combatUnit("goblin", { attack: 2, health: 5, maxHealth: 5 });
+heroWeaponBattle.selectWeaponAttack();
+heroWeaponBattle.playerWeaponAttack("front", 0);
+assert.equal(heroWeapon.ready, false, "英雄武器每回合只能攻击一次");
+assert.equal(heroWeapon.durability, heroWeapon.maxDurability, "英雄武器攻击不消耗耐久");
+heroWeapon.ready = true;
+heroWeaponBattle.state.selected = { type: "weapon", side: "player", cardId: heroWeapon.cardId };
+heroWeaponBattle.playerWeaponAttack("front", 0);
+heroWeapon.ready = true;
+heroWeaponBattle.state.selected = { type: "weapon", side: "player", cardId: heroWeapon.cardId };
+heroWeaponBattle.playerWeaponAttack("front", 0);
+assert.equal(heroWeaponBattle.state.player.weapon, heroWeapon, "英雄武器连续攻击也不会损毁");
+
+const arenaWeaponEnemy = { ...CF.enemies.goblin_warband, mode: "arena" };
+assert.equal(new CF.Battle(arenaWeaponEnemy, {}).state.player.weapon?.cardId, "mist_dagger", "竞技场开战时也应装备英雄武器");
+assert.equal(new CF.Battle(CF.Trials.enemy(1), {}).state.player.weapon, null, "统领试炼不带入英雄武器");
+assert.equal(CF.SaveSystem.equipHeroWeapon(null), true, "应能卸下英雄武器");
+assert.equal(new CF.Battle(CF.enemies.goblin_warband, {}).state.player.weapon, null, "卸下后开战不应装备武器");
+
+storage.set("rift-expedition-save-v1", JSON.stringify({ deck: [...CF.STARTER_DECK.slice(0, 23), "mist_dagger"], collection: { mist_dagger: 1 }, hero: { equippedWeapon: "mist_dagger" } }));
+CF.SaveSystem.load();
+assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "旧存档牌组中的武器应被移出牌组");
+assert.equal(CF.SaveSystem.data.deck.length, 24, "移出武器后牌组应补足24张");
+assert.equal(CF.SaveSystem.equippedWeapon(), "mist_dagger", "已拥有的英雄武器应在读档后保留");
+storage.set("rift-expedition-save-v1", JSON.stringify({ deck: CF.STARTER_DECK, hero: { equippedWeapon: "riftmoon_blade" } }));
+CF.SaveSystem.load();
+assert.equal(CF.SaveSystem.data.hero.equippedWeapon, null, "未拥有的英雄武器应在读档时清除");
 
 const legacyDuplicatedDeck = CF.STARTER_DECK.slice(0, 12).flatMap(id => [id, id]);
 storage.set("rift-expedition-save-v1", JSON.stringify({ deck: legacyDuplicatedDeck }));

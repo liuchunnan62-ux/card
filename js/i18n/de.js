@@ -4,6 +4,21 @@
   // German dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("de", {
     "exact": {
+      "英雄武器": "Heldenwaffe",
+      "空手": "Unbewaffnet",
+      "随身装备": "Getragene Ausrüstung",
+      "冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。": "Die gewählte Waffe wird zu Beginn von Abenteuer- und Arenakämpfen automatisch ausgerüstet: Sie belegt keinen Handplatz, kostet kein Mana, verliert nie Haltbarkeit und kann jeden Zug einmal angreifen.",
+      "尚未获得武器。击败第一关地图上的七位武器首领即可获得。": "Noch keine Waffen. Besiege die sieben Waffenbosse auf der Karte von Kapitel 1, um sie zu erhalten.",
+      "卸下武器": "Waffe ablegen",
+      "装备武器": "Waffe ausrüsten",
+      "已卸下英雄武器。": "Heldenwaffe abgelegt.",
+      "{0}已放进背包": "{0} in den Rucksack gelegt",
+      "已自动装备为英雄武器。": "Automatisch als Heldenwaffe ausgerüstet.",
+      "可在英雄档案或背包中更换英雄武器。": "Du kannst die Heldenwaffe im Heldenprofil oder im Rucksack wechseln.",
+      "冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。": "In Abenteuern und in der Arena kannst du jeden Zug einmal damit angreifen, ohne Haltbarkeit zu verlieren.",
+      "武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。": "Waffen können einmal pro Zug angreifen; die im Heldenprofil ausgerüstete Waffe verliert nie Haltbarkeit.",
+      "{0}挥动{1}{2}第{3}路{4}的{5}，造成{6}点伤害{7}；英雄武器不消耗耐久。": "{0} schwingt {1}: {2} auf {5} in Bahn {3} {4} und verursacht {6} Schaden {7}; Heldenwaffen verlieren keine Haltbarkeit.",
+      "{0}使用{1}突破战线，对{2}造成{3}点伤害；英雄武器不消耗耐久。": "{0} durchbricht mit {1} die Linie und fügt {2} {3} Schaden zu; Heldenwaffen verlieren keine Haltbarkeit.",
       // 战斗表情（点击头像）
       "林海边境的莉瑟尔。别乱动，我的箭比招呼快。": "Lisel von der Grenze des Waldmeers. Keine Bewegung – meine Pfeile sind schneller als meine Grüße.",
       "你好呀。你也是从林子里来的吗？": "Hallo! Kommst du auch aus dem Wald?",
@@ -1245,7 +1260,6 @@
       "手牌为空": "Hand ist leer",
       "战术目标": "Taktische Ziele",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Nahkampf-Diener und Nahkampf-Waffen erleiden Gegenangriffe; Fernkampf-Angriffe nicht.",
-      "武器每回合可攻击1次，每次攻击消耗1点耐久。": "Waffen können einmal pro Zug angreifen; jeder Angriff verbraucht 1 Haltbarkeit.",
       "前排保护同列后排，狙击单位与狙击武器除外。": "Die vordere Reihe schützt die hintere Reihe in ihrer Bahn, außer gegen Scharfschützen-Einheiten und Scharfschützen-Waffen.",
       "前后排均为空时路线突破。": "Eine Bahn ist durchbrochen, wenn sowohl ihre vordere als auch hintere Reihe leer sind.",
       "战线 · 击穿任一路线即可攻击英雄": "Kampflinie · breche eine beliebige Bahn durch, um den Held anzugreifen",

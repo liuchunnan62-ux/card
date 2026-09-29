@@ -4,6 +4,21 @@
   // French dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("fr", {
     "exact": {
+      "英雄武器": "Arme du héros",
+      "空手": "Mains nues",
+      "随身装备": "Équipement porté",
+      "冒险与竞技场开战时自动装备所选武器：不占手牌、不耗法力、不消耗耐久，每回合都能攻击一次。": "L'arme choisie est équipée automatiquement au début des combats d'aventure et d'arène : elle n'occupe pas la main, ne coûte pas de mana, ne perd jamais de durabilité et peut attaquer une fois par tour.",
+      "尚未获得武器。击败第一关地图上的七位武器首领即可获得。": "Aucune arme pour l'instant. Battez les sept boss d'armes de la carte du chapitre 1 pour les obtenir.",
+      "卸下武器": "Retirer l'arme",
+      "装备武器": "Équiper l'arme",
+      "已卸下英雄武器。": "Arme du héros retirée.",
+      "{0}已放进背包": "{0} rangé dans le sac",
+      "已自动装备为英雄武器。": "Équipée automatiquement comme arme du héros.",
+      "可在英雄档案或背包中更换英雄武器。": "Vous pouvez changer l'arme du héros dans le Profil du héros ou le Sac.",
+      "冒险与竞技场中每回合都能用它攻击一次，不消耗耐久。": "En aventure et dans l'arène, vous pouvez attaquer avec elle une fois par tour sans perdre de durabilité.",
+      "武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。": "Les armes peuvent attaquer une fois par tour ; l'arme équipée dans le Profil du héros ne perd jamais de durabilité.",
+      "{0}挥动{1}{2}第{3}路{4}的{5}，造成{6}点伤害{7}；英雄武器不消耗耐久。": "{0} manie {1} : {2} sur {5} dans la voie {3} {4}, infligeant {6} dégâts {7} ; les armes du héros ne perdent pas de durabilité.",
+      "{0}使用{1}突破战线，对{2}造成{3}点伤害；英雄武器不消耗耐久。": "{0} utilise {1} pour percer la ligne et inflige {3} dégâts à {2} ; les armes du héros ne perdent pas de durabilité.",
       // 战斗表情（点击头像）
       "林海边境的莉瑟尔。别乱动，我的箭比招呼快。": "Lisel, de la frontière de la mer de forêts. Ne bouge pas : mes flèches sont plus rapides que mes salutations.",
       "你好呀。你也是从林子里来的吗？": "Coucou ! Toi aussi, tu viens des bois ?",
@@ -1245,7 +1260,6 @@
       "手牌为空": "Main vide",
       "战术目标": "Objectifs Tactiques",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Les serviteurs corps à corps et les armes rapprochées subissent des ripostes ; les attaques à distance n'en subissent pas.",
-      "武器每回合可攻击1次，每次攻击消耗1点耐久。": "Les armes peuvent attaquer une fois par tour ; chaque attaque utilise 1 durabilité.",
       "前排保护同列后排，狙击单位与狙击武器除外。": "La première ligne protège la seconde ligne dans sa voie, sauf contre les unités de tireur d'élite et les armes de tireur d'élite.",
       "前后排均为空时路线突破。": "Une voie est percée lorsque ses première et seconde lignes sont vides.",
       "战线 · 击穿任一路线即可攻击英雄": "Ligne de Bataille · percez n'importe quelle voie pour attaquer le héros",

@@ -38,7 +38,7 @@ function createSimulator() {
   CF.SaveSystem.load();
   const BATTLE_TYPES = ["normal", "elite", "boss"];
 
-  // 按成长假设搭建存档：英雄、法力、卡组（起始卡 + 之前章节的首杀奖励卡与第一关武器）、卡牌等级、装备与好感。
+  // 按成长假设搭建存档：英雄、法力、卡组（起始卡 + 之前章节的首杀奖励卡）、英雄武器（第一关武器）、卡牌等级、装备与好感。
   function applyProfile(chapterId, profile) {
     const data = CF.freshSave(profile.heroId || "captain");
     CF.SaveSystem.data = data;
@@ -57,11 +57,13 @@ function createSimulator() {
     const limit = CF.SaveSystem.deckLimit();
     const pool = [
       ...rewards.filter(affordable).sort((a, b) => cost(b) - cost(a)),
-      ...weapons.filter(affordable).sort((a, b) => cost(b) - cost(a)).slice(0, 2),
       ...CF.STARTER_DECK
     ];
     data.deck = [...new Set(pool)].slice(0, limit);
-    data.collection = Object.fromEntries(data.deck.map(id => [id, 1]));
+    data.collection = Object.fromEntries([...data.deck, ...weapons].map(id => [id, 1]));
+    // 武器是英雄装备：带上之前章节拿到的最高费武器（冒险中不消耗耐久，每回合可攻击）。
+    hero.equippedWeapon = weapons.sort((a, b) => cost(b) - cost(a))[0] || null;
+    weapons.forEach(id => { data.cardProgress[id] = { level: profile.cardLevel, xp: 0 }; });
     data.deck.forEach(id => {
       data.cardProgress[id] = { level: profile.cardLevel, xp: 0 };
       if (CF.CARD_LIBRARY[id].type === "unit" && profile.equipment) data.cardEquipment[id] = { weapon: profile.equipment, armor: profile.equipment };
