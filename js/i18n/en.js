@@ -4,6 +4,10 @@
   // English dictionary. Keys are the original Simplified Chinese text; {0}, {value} etc. are placeholders.
   window.CardForge.I18n.register("en", {
     "exact": {
+      "随从只能攻击同一路线的敌人。": "Minions can only attack enemies in their own lane.",
+      "必须先清空本路线的前排和后排，才能攻击英雄。": "Clear both the front and back row of this lane before attacking the hero.",
+      "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Minions can only attack enemies in their own lane: defeat the front row first, then the back row, and attack the hero once the lane is clear. Spells and skills ignore this restriction.",
+      "狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。": "Sniper minions can skip their lane's front row to hit its back row; the hero weapon can attack any lane.",
       "英雄武器": "Hero Weapon",
       "空手": "Unarmed",
       "随身装备": "Carried Gear",
@@ -1252,8 +1256,6 @@
       "手牌为空": "Hand is empty",
       "战术目标": "Tactical Goals",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Melee minions and melee weapons take counterattacks; ranged attacks don't.",
-      "前排保护同列后排，狙击单位与狙击武器除外。": "The front row protects the back row in its lane, except against sniper units and sniper weapons.",
-      "前后排均为空时路线突破。": "A lane is breached when both its front and back rows are empty.",
       "战线 · 击穿任一路线即可攻击英雄": "Battle Line · breach any lane to attack the hero",
       "我方牌库": "Your Deck",
       "关卡地图布局已保存。": "Level map layout saved.",

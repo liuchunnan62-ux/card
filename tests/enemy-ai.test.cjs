@@ -31,8 +31,8 @@ function setup({ playerHp = 30 } = {}) {
 test("远程单位有随从可打时攻击随从，不打脸", () => {
   const { battle, state, knight } = setup();
   const shooter = unit("敌方射手", 4, 3, { ranged: true });
-  state.enemy.board.back[1] = shooter;
-  battle.aiAttack("back", 1);
+  state.enemy.board.back[0] = shooter; // 与我方骑士同在第1路
+  battle.aiAttack("back", 0);
   assert.equal(state.player.hp, 30, "远程单位不应绕过随从打脸");
   assert.equal(knight.health, 4, "远程单位应攻击我方随从");
   assert.equal(shooter.health, 3, "远程攻击不受反击");
@@ -151,25 +151,30 @@ test("近战随从攻击远程随从时不受反击，攻击近战随从时照�
   assert.equal(fighter2.health, 4, "近战目标照常反击");
 });
 
-test("近战首领在没有突破口时先打前排近战随从，清掉后优先打远程随从", () => {
-  const { battle, state, knight } = setup();
+test("随从只攻击本路：先前排，再后排，本路清空才打脸，不碰其他路线", () => {
+  const { battle, state } = setup();
   state.player.board = CF.emptyBoard();
+  const guard = unit("我方前排", 1, 3);
   const archer = unit("我方弓手", 3, 3, { ranged: true });
-  state.player.board.front[0] = knight;          // 前排近战
-  state.player.board.back[1] = archer;           // 第2路无前排保护的远程
-  state.player.board.back[2] = unit("我方后排近战", 2, 2);
-  state.player.board.front[3] = unit("我方前排远程", 1, 6, { ranged: true });
+  const bystander = unit("其他路线的弓手", 1, 1, { ranged: true });
+  state.player.board.front[1] = guard;
+  state.player.board.back[1] = archer;
+  state.player.board.back[2] = bystander;        // 第3路无前排保护，但不在本路
   const brute = unit("敌方蛮兵", 4, 20);
   state.enemy.board.front[1] = brute;
   battle.aiAttack("front", 1);
-  assert.equal(knight.health, 4, "先处理前排近战随从");
-  state.player.board.front[0] = null;
-  state.player.board.back[0] = unit("填路", 1, 9);
+  battle.cleanDead();
+  assert.equal(state.player.board.front[1], null, "先击败本路前排");
+  assert.equal(bystander.health, 1, "不攻击其他路线的随从");
   brute.ready = true;
   battle.aiAttack("front", 1);
-  assert.equal(state.player.hp, 30, "没有突破口时不会打脸");
   battle.cleanDead();
-  assert.equal(state.player.board.back[1], null, "前排近战清掉后优先击杀远程随从");
+  assert.equal(state.player.board.back[1], null, "前排清掉后攻击本路后排");
+  assert.equal(state.player.hp, 30, "本路未清空前不会打脸");
+  brute.ready = true;
+  battle.aiAttack("front", 1);
+  assert.equal(state.player.hp, 26, "本路清空后攻击英雄");
+  assert.equal(bystander.health, 1, "其他路线的随从依旧不受攻击");
 });
 
 test("史莱姆首领的潮汐愈合：没有受伤随从时召唤小史莱姆，有伤员时治疗", () => {

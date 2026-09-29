@@ -4,6 +4,10 @@
   // French dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("fr", {
     "exact": {
+      "随从只能攻击同一路线的敌人。": "Les serviteurs ne peuvent attaquer que les ennemis de leur propre voie.",
+      "必须先清空本路线的前排和后排，才能攻击英雄。": "Videz la ligne avant et la ligne arrière de cette voie avant d'attaquer le héros.",
+      "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Les serviteurs ne peuvent attaquer que les ennemis de leur propre voie : d'abord la ligne avant, puis la ligne arrière, et le héros une fois la voie dégagée. Les sorts et compétences ignorent cette restriction.",
+      "狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。": "Les serviteurs tireurs d'élite peuvent ignorer la ligne avant de leur voie pour frapper la ligne arrière ; l'arme du héros peut attaquer n'importe quelle voie.",
       "英雄武器": "Arme du héros",
       "空手": "Mains nues",
       "随身装备": "Équipement porté",
@@ -1260,8 +1264,6 @@
       "手牌为空": "Main vide",
       "战术目标": "Objectifs Tactiques",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Les serviteurs corps à corps et les armes rapprochées subissent des ripostes ; les attaques à distance n'en subissent pas.",
-      "前排保护同列后排，狙击单位与狙击武器除外。": "La première ligne protège la seconde ligne dans sa voie, sauf contre les unités de tireur d'élite et les armes de tireur d'élite.",
-      "前后排均为空时路线突破。": "Une voie est percée lorsque ses première et seconde lignes sont vides.",
       "战线 · 击穿任一路线即可攻击英雄": "Ligne de Bataille · percez n'importe quelle voie pour attaquer le héros",
       "我方牌库": "Votre Deck",
       "关卡地图布局已保存。": "Disposition de la carte de niveau enregistrée.",

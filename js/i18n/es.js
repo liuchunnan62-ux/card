@@ -4,6 +4,10 @@
   // Spanish dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("es", {
     "exact": {
+      "随从只能攻击同一路线的敌人。": "Los esbirros solo pueden atacar a enemigos de su propio carril.",
+      "必须先清空本路线的前排和后排，才能攻击英雄。": "Despeja la fila delantera y la trasera de este carril antes de atacar al héroe.",
+      "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Los esbirros solo pueden atacar a enemigos de su propio carril: primero la fila delantera, luego la trasera, y al héroe cuando el carril esté despejado. Los hechizos y habilidades ignoran esta restricción.",
+      "狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。": "Los esbirros francotiradores pueden saltarse la fila delantera de su carril para golpear la trasera; el arma del héroe puede atacar cualquier carril.",
       "英雄武器": "Arma del héroe",
       "空手": "Desarmado",
       "随身装备": "Equipo personal",
@@ -1260,8 +1264,6 @@
       "手牌为空": "La mano está vacía",
       "战术目标": "Objetivos Tácticos",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Los esbirros cuerpo a cuerpo y las armas cuerpo a cuerpo sufren contraataques; los ataques a distancia no.",
-      "前排保护同列后排，狙击单位与狙击武器除外。": "La primera fila protege la segunda fila en su carril, excepto contra unidades francotirador y armas francotirador.",
-      "前后排均为空时路线突破。": "Un carril está abierto cuando tanto su primera como su segunda fila están vacías.",
       "战线 · 击穿任一路线即可攻击英雄": "Línea de Batalla · abre cualquier carril para atacar al héroe",
       "我方牌库": "Tu Mazo",
       "关卡地图布局已保存。": "Diseño del mapa de nivel guardado.",

@@ -4,6 +4,10 @@
   // German dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("de", {
     "exact": {
+      "随从只能攻击同一路线的敌人。": "Diener können nur Gegner auf ihrer eigenen Bahn angreifen.",
+      "必须先清空本路线的前排和后排，才能攻击英雄。": "Räume vordere und hintere Reihe dieser Bahn, bevor du den Helden angreifst.",
+      "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Diener können nur Gegner auf ihrer eigenen Bahn angreifen: zuerst die vordere Reihe, dann die hintere, und den Helden, sobald die Bahn frei ist. Zauber und Fähigkeiten sind davon ausgenommen.",
+      "狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。": "Scharfschützen-Diener können die vordere Reihe ihrer Bahn überspringen und die hintere treffen; die Heldenwaffe kann jede Bahn angreifen.",
       "英雄武器": "Heldenwaffe",
       "空手": "Unbewaffnet",
       "随身装备": "Getragene Ausrüstung",
@@ -1260,8 +1264,6 @@
       "手牌为空": "Hand ist leer",
       "战术目标": "Taktische Ziele",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Nahkampf-Diener und Nahkampf-Waffen erleiden Gegenangriffe; Fernkampf-Angriffe nicht.",
-      "前排保护同列后排，狙击单位与狙击武器除外。": "Die vordere Reihe schützt die hintere Reihe in ihrer Bahn, außer gegen Scharfschützen-Einheiten und Scharfschützen-Waffen.",
-      "前后排均为空时路线突破。": "Eine Bahn ist durchbrochen, wenn sowohl ihre vordere als auch hintere Reihe leer sind.",
       "战线 · 击穿任一路线即可攻击英雄": "Kampflinie · breche eine beliebige Bahn durch, um den Held anzugreifen",
       "我方牌库": "Dein Deck",
       "关卡地图布局已保存。": "Level-Kartenlayout gespeichert.",

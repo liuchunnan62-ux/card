@@ -1272,6 +1272,37 @@ assert.equal(CF.SaveSystem.equipHeroWeapon("riftmoon_blade"), false, "未获得�
 assert.equal(CF.SaveSystem.equipHeroWeapon("recruit"), false, "非武器卡牌不能装备为英雄武器");
 assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入牌组");
 
+{
+  // 分路规则：随从只能攻击同一路线的敌人，先前排后后排，本路清空才能攻击英雄；狙击可越过本路前排。
+  const laneBattle = new CF.Battle(CF.enemies.goblin_warband, {});
+  const ls = laneBattle.state;
+  ls.player.board = CF.emptyBoard();
+  ls.enemy.board = CF.emptyBoard();
+  const laneAttacker = combatUnit("vanguard", { attack: 3, health: 20, maxHealth: 20, ready: true, justSummoned: false });
+  ls.player.board.front[1] = laneAttacker;
+  ls.enemy.board.front[1] = combatUnit("goblin", { attack: 1, health: 5, maxHealth: 5 });
+  ls.enemy.board.back[1] = combatUnit("goblin_archer", { attack: 1, health: 5, maxHealth: 5 });
+  ls.enemy.board.front[2] = combatUnit("goblin", { attack: 1, health: 5, maxHealth: 5 });
+  ls.selected = { type: "attacker", row: "front", column: 1, unitId: laneAttacker.uid };
+  laneBattle.playerAttack("front", 2);
+  assert.equal(ls.enemy.board.front[2].health, 5, "随从不能攻击其他路线的敌人");
+  assert.equal(laneBattle.isTargetable("enemy", "back", 1), false, "本路前排存活时不能攻击本路后排");
+  assert.equal(laneBattle.isTargetable("enemy", "front", 1), true, "可以攻击本路前排");
+  ls.enemy.board.front[1] = null;
+  assert.equal(laneBattle.isTargetable("enemy", "back", 1), true, "本路前排被清空后可以攻击后排");
+  const hpBeforeLane = ls.enemy.hp;
+  laneBattle.playerAttackHero();
+  assert.equal(ls.enemy.hp, hpBeforeLane, "本路后排仍在时不能攻击英雄，即使其他路线是空的");
+  ls.enemy.board.back[1] = null;
+  ls.selected = { type: "attacker", row: "front", column: 1, unitId: laneAttacker.uid };
+  laneBattle.playerAttackHero();
+  assert.equal(ls.enemy.hp, hpBeforeLane - 3, "本路清空后可以攻击英雄");
+  const sniper = { keywords: ["狙击"] };
+  const sniperBoard = CF.emptyBoard();
+  sniperBoard.front[0] = { name: "前" }; sniperBoard.back[0] = { name: "后" }; sniperBoard.back[1] = { name: "邻路" };
+  assert.deepEqual([...CF.Rules.legalUnitTargets(sniper, sniperBoard, 0)].map(item => `${item.row}${item.column}`), ["front0", "back0"], "狙击可越过本路前排攻击本路后排，但不能跨路");
+}
+
 const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
 const heroWeapon = heroWeaponBattle.state.player.weapon;
 assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");

@@ -4,6 +4,10 @@
   // Brazilian Portuguese dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("pt", {
     "exact": {
+      "随从只能攻击同一路线的敌人。": "Lacaios só podem atacar inimigos da própria pista.",
+      "必须先清空本路线的前排和后排，才能攻击英雄。": "Limpe a fileira da frente e a de trás desta pista antes de atacar o herói.",
+      "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Lacaios só podem atacar inimigos da própria pista: primeiro a fileira da frente, depois a de trás, e o herói quando a pista estiver livre. Feitiços e habilidades ignoram essa restrição.",
+      "狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。": "Lacaios atiradores podem pular a fileira da frente da própria pista para atingir a de trás; a arma do herói pode atacar qualquer pista.",
       "英雄武器": "Arma do herói",
       "空手": "Desarmado",
       "随身装备": "Equipamento pessoal",
@@ -1260,8 +1264,6 @@
       "手牌为空": "Mão vazia",
       "战术目标": "Objetivos Táticos",
       "近战随从与近战武器会受到反击；远程攻击不会。": "Lacaios corpo a corpo e armas corpo a corpo sofrem contra-ataques; ataques à distância não sofrem.",
-      "前排保护同列后排，狙击单位与狙击武器除外。": "A linha de frente protege a linha de trás em sua rota, exceto contra unidades franco-atirador e armas franco-atirador.",
-      "前后排均为空时路线突破。": "Uma rota é rompida quando suas linhas de frente e de trás estão vazias.",
       "战线 · 击穿任一路线即可攻击英雄": "Linha de Batalha · rompa qualquer rota para atacar o herói",
       "我方牌库": "Seu Baralho",
       "关卡地图布局已保存。": "Layout do mapa do nível salvo.",

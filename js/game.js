@@ -36,10 +36,20 @@
     canTargetBack(board, column, keywords = []) {
       return keywords.includes("狙击") || !board.front[column];
     },
-    canAttackHero(board) {
+    // 传入 column（攻击者所在路线）时按随从的“分路”规则判断：只能攻击同一路的敌人，
+    // 先前排、后排，整路清空后才能攻击英雄；不传 column 时（英雄武器）沿用全场规则。
+    canAttackHero(board, column) {
+      if (Number.isInteger(column)) return this.isLaneOpen(board, column);
       return this.openLanes(board).length > 0;
     },
-    legalUnitTargets(attacker, board) {
+    legalUnitTargets(attacker, board, column) {
+      if (Number.isInteger(column)) {
+        const result = [];
+        if (board.front[column]) result.push({ row: "front", column, unit: board.front[column] });
+        // 狙击随从可以越过本路前排攻击本路后排，但仍不能攻击其他路线。
+        if (board.back[column] && (!board.front[column] || (attacker.keywords || []).includes("狙击"))) result.push({ row: "back", column, unit: board.back[column] });
+        return result;
+      }
       const result = [];
       board.front.forEach((unit, column) => { if (unit) result.push({ row: "front", column, unit }); });
       board.back.forEach((unit, column) => {
@@ -1206,9 +1216,10 @@
       const attacker = selected?.type === "attacker" ? this.state.player.board[selected.row][selected.column] : null;
       const target = this.state.enemy.board[targetRow][targetColumn];
       if (!attacker || attacker.uid !== selected.unitId || !target) return;
-      const legal = Rules.legalUnitTargets(attacker, this.state.enemy.board).some(item => item.row === targetRow && item.column === targetColumn);
+      const legal = Rules.legalUnitTargets(attacker, this.state.enemy.board, selected.column).some(item => item.row === targetRow && item.column === targetColumn);
       if (!legal) {
-        if (targetRow === "back" && this.state.enemy.board.front[targetColumn]) this.toast("必须先击败该路线的前排单位。", "bad");
+        if (targetColumn !== selected.column) this.toast("随从只能攻击同一路线的敌人。", "bad");
+        else if (targetRow === "back" && this.state.enemy.board.front[targetColumn]) this.toast("必须先击败该路线的前排单位。", "bad");
         return;
       }
       this.performUnitAttack("player", selected.row, selected.column, "enemy", targetRow, targetColumn);
@@ -1222,9 +1233,9 @@
       if (!attacker || attacker.uid !== selected.unitId) return;
       if (this.state.rescueEpilogue) return this.toast(`${this.enemyConfig.name}已被带离战场。`, "bad");
       if (attacker.justSummoned) return this.toast("突袭随从登场回合不能攻击英雄。", "bad");
-      const lanes = Rules.openLanes(this.state.enemy.board);
+      const lanes = Rules.canAttackHero(this.state.enemy.board, selected.column) ? [selected.column] : [];
       const trialExecution = CF.Trials?.canPuzzleAttackHero(this, attacker);
-      if (!lanes.length && !trialExecution) return this.toast("必须先打通一整条路线。", "bad");
+      if (!lanes.length && !trialExecution) return this.toast("必须先清空本路线的前排和后排，才能攻击英雄。", "bad");
       const damage = this.currentAttack(attacker);
       this.state.enemy.hp -= damage;
       attacker.ready = false;
@@ -1950,13 +1961,13 @@
     aiAttack(row, column) {
       const attacker = this.state.enemy.board[row][column];
       if (!attacker || attacker.role === "healer") return;
-      const targets = Rules.legalUnitTargets(attacker, this.state.player.board);
+      const targets = Rules.legalUnitTargets(attacker, this.state.player.board, column);
       const ranged = attacker.combatStyle === "ranged" || attacker.keywords.includes("远程");
-      const heroOpen = !attacker.justSummoned && Rules.canAttackHero(this.state.player.board);
+      const heroOpen = !attacker.justSummoned && Rules.canAttackHero(this.state.player.board, column);
       const lethal = heroOpen && this.currentAttack(attacker) >= this.state.player.hp;
       const canHitHero = heroOpen && (!ranged || lethal || !targets.length);
       if (canHitHero) {
-        const lanes = Rules.openLanes(this.state.player.board);
+        const lanes = [column];
         const damage = this.currentAttack(attacker);
         this.state.player.hp -= damage;
         attacker.ready = false;
@@ -2355,7 +2366,7 @@
       }
       if (selected.type === "attacker" && side === "enemy") {
         const attacker = this.state.player.board[selected.row][selected.column];
-        return !!attacker && Rules.legalUnitTargets(attacker, this.state.enemy.board).some(item => item.row === row && item.column === column);
+        return !!attacker && Rules.legalUnitTargets(attacker, this.state.enemy.board, selected.column).some(item => item.row === row && item.column === column);
       }
       if (selected.type === "weapon" && side === "enemy") {
         const weapon = this.state.player.weapon;
@@ -2511,7 +2522,7 @@
       const playerSkill = this.playerSkill();
       const unitCanTargetHero = s.selected?.type === "attacker" && (() => {
         const unit = s.player.board[s.selected.row]?.[s.selected.column];
-        return unit && !unit.justSummoned && (Rules.canAttackHero(s.enemy.board) || CF.Trials?.canPuzzleAttackHero(this, unit));
+        return unit && !unit.justSummoned && (Rules.canAttackHero(s.enemy.board, s.selected.column) || CF.Trials?.canPuzzleAttackHero(this, unit));
       })();
       const weaponCanTargetHero = s.selected?.type === "weapon" && !!s.player.weapon?.ready && Rules.canAttackHero(s.enemy.board);
       const puzzleSpellCanTargetHero = s.selected?.type === "card" && CF.Trials?.isPuzzleFireFlask(this, this.selectedCard());
@@ -2554,7 +2565,7 @@
           <aside class="battle-sidebar">
             <div class="turn-badge">${s.phase === "player" ? `你的回合 · 第${s.round}回合` : `${s.enemy.name}的回合`}</div>
             <div class="deck-remaining-panel"><div class="battle-log-heading"><h3>我方牌库</h3><small>剩余${s.player.deck.length}张</small></div>${this.deckRemainingHTML(s.player.deck)}</div>
-            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。</p><p>前排保护同列后排，狙击单位与狙击武器除外。</p><p>前后排均为空时路线突破。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
+            <div class="objective">${rescueObjective || CF.Trials?.objectiveHTML(this) || `<h3>战术目标</h3><p>近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。</p><p>武器每回合可攻击1次；英雄档案中装备的武器不消耗耐久。</p><p>随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。</p><p>狙击随从可越过本路前排攻击本路后排；英雄武器可攻击任意路线。</p><p>法力每回合恢复至 ${s.player.maxMana}/${s.player.maxMana}，不会自动增长。</p>`}</div>
           </aside>
         </div>
       </section>`;
