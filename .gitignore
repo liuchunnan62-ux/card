@@ -1,0 +1,4 @@
+# 安卓签名密钥只保存在本机，绝不提交（见 packaging/android/README.txt）
+packaging/android/.keys/
+# 打包输出
+release/
