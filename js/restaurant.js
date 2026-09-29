@@ -48,6 +48,7 @@
 
   const save = () => CF.SaveSystem.data;
   const foodStock = () => save().foods || (save().foods = {});
+  const fedDayMap = () => save().fedDay || (save().fedDay = {});
   const affinityMap = () => save().affinity || (save().affinity = {});
   const pick = list => list[Math.floor(Math.random() * list.length)];
 
@@ -104,6 +105,8 @@
       CF.SaveSystem.save();
       return { ok: true, food, count, cost };
     },
+    // 每名在押首领每天只能投喂一次（游戏时间，见 clock.js）。
+    fedToday(key) { return Number(fedDayMap()[key]) === CF.GameClock.day(); },
     affinity(key) { return Math.max(0, Math.min(MAX_AFFINITY, Number(affinityMap()[key]) || 0)); },
     // 好感等级：0 = 尚未结缘；1 = 结缘；之后每 BOND_STEP 点升一级。
     levelFor(value) { return value < BOND_THRESHOLD ? 0 : Math.min(MAX_BOND_LEVEL, 1 + Math.floor((value - BOND_THRESHOLD) / BOND_STEP)); },
@@ -131,6 +134,7 @@
       if (!prisoner?.captured || !prisoner.cardId) return { ok: false, reason: "这名觉醒者不在押，或没有需要结缘的卡牌。" };
       if (!food) return { ok: false, reason: "没有这道菜。" };
       if (this.affinity(key) >= MAX_AFFINITY) return { ok: false, reason: `${prisoner.name}的好感度已经达到最高的${BOND_LEVEL_NAMES[MAX_BOND_LEVEL]}。` };
+      if (this.fedToday(key)) return { ok: false, reason: `${prisoner.name}今天已经吃饱了，明天再来吧（${CF.GameClock.untilNextDayLabel()}后是新的一天）。` };
       if (this.foodCount(foodId) < 1) return { ok: false, reason: `背包里没有${food.name}，先去城镇的金杯餐馆买一些吧。` };
       const from = this.affinity(key);
       const favorite = RACES[prisoner.chapter]?.favorite === foodId;
@@ -138,6 +142,7 @@
       const bossLevelBefore = bossOwner ? this.ownerLevel(bossOwner) : 0;
       const to = Math.min(MAX_AFFINITY, from + this.affinityGain(prisoner.chapter, foodId));
       foodStock()[foodId] = this.foodCount(foodId) - 1;
+      fedDayMap()[key] = CF.GameClock.day();
       affinityMap()[key] = to;
       CF.SaveSystem.save();
       const levelFrom = this.levelFor(from);

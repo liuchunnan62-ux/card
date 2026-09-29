@@ -1337,3 +1337,10 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
 .restaurant-flour { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0 14px; padding: 12px 14px; border: 1px solid #c99b4e; border-radius: 12px; background: rgba(201,155,78,.1); }
 .restaurant-flour-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .restaurant-flour-buttons .secondary-btn { display: inline-flex; align-items: center; gap: 4px; }
+/* 游戏时间 */
+.clock-chip { position: relative; overflow: hidden; }
+.clock-chip small { margin-left: 3px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.clock-progress { position: absolute; left: 10px; right: 10px; bottom: 2px; height: 2px; border-radius: 999px; background: rgba(255,255,255,.08); }
+.clock-progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f2c86b, #7aa7e0); }
+.prison-inmate .fed-today { color: #9fd49a; }
+.fed-today-hint { margin: 0 0 8px; color: #cbbd9f; font-size: 13px; }

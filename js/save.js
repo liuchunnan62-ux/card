@@ -101,6 +101,8 @@
       foods: {},
       affinity: {},
       rations: 60,
+      fedDay: {},
+      clock: { day: 1, elapsed: 0 },
       commanderTrials: { completed: [] },
       levelMapLayout: {},
       activeChapter: 1,
@@ -190,6 +192,7 @@
       prisoners: raw.prisoners && typeof raw.prisoners === "object" ? { ...raw.prisoners } : {},
       foods: cleanCounts(raw.foods),
       affinity: cleanCounts(raw.affinity),
+      fedDay: cleanCounts(raw.fedDay),
       rations: Number.isFinite(Number(raw.rations)) ? Math.max(0, Math.floor(Number(raw.rations))) : base.rations,
       levelMapLayout: raw.levelMapLayout && typeof raw.levelMapLayout === "object" ? { ...raw.levelMapLayout } : {},
       commanderTrials: {

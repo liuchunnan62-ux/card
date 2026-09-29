@@ -35,6 +35,7 @@ load("js/emotes.js");
 load("js/save.js");
 load("js/adventure.js");
 load("js/restaurant.js");
+load("js/clock.js");
 load("js/trials.js");
 load("js/arena.js");
 load("js/heroes.js");
@@ -500,8 +501,10 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
 {
   // 金杯餐馆与在押首领好感度：第二关起的首领卡牌需结缘后才能出战，继续投喂可升级好感、强化卡牌。
   const R = CF.Restaurant;
+  // 每名首领每天只能投喂一次：测试好感成长时先把时间推进到下一天。
+  const feedNextDay = (key, foodId) => { CF.GameClock.advance(CF.GameClock.DAY_MS); return R.feed(key, foodId); };
   const data = CF.SaveSystem.data;
-  const saved = { coins: data.coins, rations: data.rations, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
+  const saved = { coins: data.coins, rations: data.rations, clock: { ...data.clock }, fedDay: { ...data.fedDay }, foods: { ...data.foods }, affinity: { ...data.affinity }, prisoners: { ...data.prisoners }, deck: [...data.deck], collection: { ...data.collection } };
   const goblinCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[0];
   const queenCard = CF.CHAPTER_TWO_REWARD_CARD_IDS[19];
   const owners = CF.Adventure.bondCardOwners();
@@ -521,22 +524,22 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   assert.equal(data.coins, 70, "购买食物应扣除金币");
   assert.equal(R.foodCount("charred_skewer"), 1, "买到的食物应放进背包");
   assert.equal(R.buyFood("harvest_feast").ok, false, "金币不足时不能购买");
-  const fed = R.feed("2-0", "charred_skewer");
+  const fed = feedNextDay("2-0", "charred_skewer");
   assert.equal(fed.ok, true, "应能投喂在押首领");
   assert.equal(fed.gained, 30, "哥布林最爱的炭烤肉串应使好感翻倍");
   assert.equal(R.foodCount("charred_skewer"), 0, "投喂会消耗食物");
-  assert.equal(R.feed("2-0", "charred_skewer").ok, false, "没有食物时不能投喂");
-  assert.equal(R.feed("2-1", "wheat_bread").ok, false, "未押回监狱的首领无法探望");
+  assert.equal(feedNextDay("2-0", "charred_skewer").ok, false, "没有食物时不能投喂");
+  assert.equal(feedNextDay("2-1", "wheat_bread").ok, false, "未押回监狱的首领无法探望");
   data.foods = { harvest_feast: 20 };
-  assert.equal(R.feed("2-0", "harvest_feast").to, 90, "普通食物按原值增加好感");
-  const bonded = R.feed("2-0", "harvest_feast");
+  assert.equal(feedNextDay("2-0", "harvest_feast").to, 90, "普通食物按原值增加好感");
+  const bonded = feedNextDay("2-0", "harvest_feast");
   assert.equal(bonded.bonded, true, "好感度达到100时应结缘");
   assert.equal(R.cardBondLevel(goblinCard), 1, "结缘为好感Lv1");
   assert.equal(R.isCardBondLocked(goblinCard), false, "结缘后卡牌应解锁");
   assert.ok(CF.SaveSystem.availableDeck().includes(goblinCard), "结缘后卡牌可以出战");
   const baseUnit = CF.getCard(goblinCard, data.cardProgress[goblinCard]);
   assert.equal(R.cardBondBonus(goblinCard), 0, "刚结缘只是解锁，没有属性加成");
-  while (R.bondLevel("2-0") < 3) R.feed("2-0", "harvest_feast");
+  while (R.bondLevel("2-0") < 3) feedNextDay("2-0", "harvest_feast");
   assert.equal(R.cardBondBonus(goblinCard), 2, "好感Lv3比结缘高两级");
   const boosted = CF.getCard(goblinCard, data.cardProgress[goblinCard], R.cardBondBonus(goblinCard));
   assert.equal(boosted.attack, baseUnit.attack + 2, "随从每高一级好感+1攻击");
@@ -548,7 +551,7 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   const spellBoosted = CF.getCard(spellId, { level: 1 }, 1);
   assert.ok(Object.keys(CF.valuesFor(CF.CARD_LIBRARY[spellId], 1)).some(key => spellBoosted[key] > spellBase[key]), "法术牌好感加成应提升伤害或效果");
   assert.equal(CF.getCard(goblinCard, { level: 1 }).attack, baseUnit.attack, "敌方同名卡牌不受玩家好感加成影响");
-  while (R.feed("2-0", "harvest_feast").ok) {}
+  while (feedNextDay("2-0", "harvest_feast").ok) {}
   assert.equal(R.affinity("2-0"), R.MAX_AFFINITY, "好感度应封顶于最高等级");
   assert.equal(R.bondLevel("2-0"), R.MAX_BOND_LEVEL, "好感最高5级");
   // 最终首领卡：全部在押首领结缘才解锁，等级取最低的一位。
@@ -562,7 +565,7 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   data.affinity[members[5]] = 250;
   assert.equal(R.cardBondLevel(queenCard), 2, "最终首领卡等级取本关在押首领的最低好感等级");
   data.prisoners[members[5]] = true; data.foods = { harvest_feast: 1 };
-  const bossUp = R.feed(members[5], "harvest_feast");
+  const bossUp = feedNextDay(members[5], "harvest_feast");
   assert.equal(bossUp.bossCard?.to, 3, "最后一名在押首领升级时，最终首领卡同步升级");
   // 队伍粮食：每场战斗按出战随从数 + 在押犯人数消耗，面粉2金币一袋补充。
   data.prisoners = { "2-0": true, "2-1": true, "3-0": true };
@@ -589,6 +592,34 @@ assert.equal(CF.Adventure.rewards, undefined, "旧的三选一奖励函数应彻
   assert.match(mainSource, /withRations\(isHungry => this\.enterNode/, "冒险战斗节点开战前应检查粮食");
   assert.match(mainSource, /withRations\(isHungry => this\.startArenaBattle/, "竞技场开战前应检查粮食");
   assert.match(mainSource, /rationChip\(\)/, "顶栏应显示粮食");
+  // 游戏时间：12分钟一天；每只首领每天只能投喂一次；每天扣除三场战斗的口粮。
+  const G = CF.GameClock;
+  assert.equal(G.DAY_MS, 12 * 60 * 1000, "现实12分钟为游戏里的一天");
+  data.clock = { day: 1, elapsed: 0 };
+  data.prisoners = { "2-0": true, "2-1": true }; data.affinity = { "2-1": 0 }; data.fedDay = {};
+  data.foods = { wheat_bread: 5 };
+  assert.equal(R.feed("2-1", "wheat_bread").ok, true, "新的一天可以投喂");
+  const again = R.feed("2-1", "wheat_bread");
+  assert.equal(again.ok, false, "同一天不能再次投喂同一只首领");
+  assert.equal(R.affinity("2-1"), 6, "同一天重复投喂不会增加好感");
+  assert.equal(R.foodCount("wheat_bread"), 4, "被拒绝的投喂不消耗食物");
+  data.affinity["2-0"] = 0;
+  assert.equal(R.feed("2-0", "wheat_bread").ok, true, "每只首领的投喂次数各自独立");
+  const dailyNeed = R.upkeep().total * G.DAILY_BATTLES;
+  data.rations = dailyNeed + 7;
+  assert.equal(G.tick(60 * 1000).length, 0, "未满一天不会结算");
+  assert.equal(G.tick(10 * 60 * 1000).length, 0, "单次计时有上限，休眠或冻结不会一下跳过一天");
+  const reports = G.advance(G.DAY_MS);
+  assert.equal(reports.length, 1, "满12分钟进入新的一天");
+  assert.equal(G.day(), 2, "天数应加一");
+  assert.equal(R.rations(), 7, "新的一天扣除三场战斗的口粮");
+  assert.equal(R.feed("2-1", "wheat_bread").ok, true, "新的一天可以再次投喂");
+  data.rations = 1;
+  const hungryDay = G.advance(G.DAY_MS)[0];
+  assert.equal(hungryDay.hungry, true, "口粮不够时当天挨饿");
+  assert.equal(R.rations(), 0, "口粮不够时库存吃光");
+  assert.ok(indexSource.indexOf("js/clock.js") > indexSource.indexOf("js/restaurant.js"), "游戏入口应加载时间系统");
+  assert.match(mainSource, /clockChip\(\)/, "顶栏应显示游戏时间");
   Object.assign(data, saved);
 }
 assert.match(mainSource, /data-action="open-restaurant"|action: "open-restaurant"/, "城镇商店应开放金杯餐馆");

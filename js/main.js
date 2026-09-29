@@ -160,6 +160,7 @@
           <span class="resource-chip hero-resource"><img class="resource-avatar" src="${heroProfile().portrait}" alt="${heroProfile().name}"><strong>Lv${data.hero.level}</strong></span>
           <span class="resource-chip">${COIN_ICON}<strong data-resource-coins>${data.coins}</strong></span>
           <span class="resource-chip">✦ <strong>${data.hero.maxMana}</strong> 最大法力</span>
+          ${this.clockChip()}
           ${this.rationChip()}
         </div>
         ${showHome ? '<button class="icon-btn" data-action="home" title="返回主菜单">⌂ 主菜单</button>' : ""}
@@ -170,7 +171,29 @@
       const R = CF.Restaurant;
       const have = R.rations();
       const { units, prisoners, total } = R.upkeep();
-      return `<span class="resource-chip ration-chip${have < total ? " short" : ""}" title="每场战斗消耗：随从${units} + 犯人${prisoners} = ${total}份粮食">🌾 <strong data-resource-rations>${have}</strong> 粮食 <small>每战-${total}</small></span>`;
+      const daily = total * CF.GameClock.DAILY_BATTLES;
+      return `<span class="resource-chip ration-chip${have < total ? " short" : ""}" title="每场战斗消耗：随从${units} + 犯人${prisoners} = ${total}份粮食；每天日常消耗${CF.GameClock.DAILY_BATTLES}场的量，共${daily}份">🌾 <strong data-resource-rations>${have}</strong> 粮食 <small>每战-${total} · 每天-${daily}</small></span>`;
+    },
+    // 顶栏时钟：现实12分钟为一天，每秒由计时器刷新文字与进度条，不重绘整个界面。
+    clockChip() {
+      const clock = CF.GameClock;
+      return `<span class="resource-chip clock-chip" title="现实${clock.DAY_MS / 60000}分钟为游戏里的一天；新的一天可以再投喂每名在押首领一次，队伍会吃掉${clock.DAILY_BATTLES}场战斗的粮食。">🕰️ <strong data-clock-day>第${clock.day()}天</strong> <small data-clock-time>${clock.timeLabel()}</small><span class="clock-progress" aria-hidden="true"><span data-clock-bar style="width:${clock.progress() * 100}%"></span></span></span>`;
+    },
+    updateClockChip() {
+      const clock = CF.GameClock;
+      app.querySelectorAll("[data-clock-day]").forEach(el => { el.textContent = `第${clock.day()}天`; });
+      app.querySelectorAll("[data-clock-time]").forEach(el => { el.textContent = clock.timeLabel(); });
+      app.querySelectorAll("[data-clock-bar]").forEach(el => { el.style.width = `${clock.progress() * 100}%`; });
+    },
+    // 新的一天：提示口粮消耗，刷新顶栏；监狱界面同步刷新“今日已喂”状态。
+    handleNewDays(reports) {
+      reports.forEach(report => {
+        this.toast(report.hungry
+          ? `第${report.day}天：粮食不够日常所需（${report.need}份），库存已经吃光了。快去金杯餐馆买面粉！`
+          : `第${report.day}天开始：队伍吃掉了${report.need}份日常口粮，在押首领又可以投喂了。`, report.hungry ? "bad" : "good");
+      });
+      if (this.screen === "prison" && !modalRoot.innerHTML) this.renderPrison();
+      else this.refreshTopbar();
     },
     // 开战前检查粮食：够就直接扣除出发；不够时让玩家选择买面粉补足或饿着肚子出战。
     withRations(start) {
@@ -567,7 +590,7 @@
         if (!prisoner.cardId) return `<div class="prison-inmate${prisoner.type === "elite" ? " elite" : ""}">${label}</div>`;
         const value = R.affinity(prisoner.key);
         const level = R.levelFor(value);
-        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${level ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span><em>${level ? "💞 " : ""}${R.tier(value)} · ${value}</em></button>`;
+        return `<button class="prison-inmate visitable${prisoner.type === "elite" ? " elite" : ""}${level ? " bonded" : ""}" data-action="prison-visit" data-key="${prisoner.key}" aria-label="探望${prisoner.name}">${label}<span class="affinity-bar" aria-hidden="true"><span style="width:${value / R.MAX_AFFINITY * 100}%"></span></span><em>${level ? "💞 " : ""}${R.tier(value)} · ${value}</em>${R.fedToday(prisoner.key) ? '<em class="fed-today">🍽️ 今日已喂</em>' : ""}</button>`;
       }).join("");
       // 各关最终首领卡：本关全部在押首领结缘后才能使用，等级取其中最低的一位。
       const bossRows = Object.values(CF.Adventure.bondCardOwners()).filter(owner => owner.boss && CF.SaveSystem.data.collection[owner.cardId]).map(owner => {
@@ -578,7 +601,7 @@
       this.frame(`<section class="screen prison-screen" style="background-image: url('${PRISON_ART}')">
         <div class="page-heading"><div><span class="eyebrow">营地</span><h2>营地监狱</h2></div><p>已关押 ${inmates.length}/${roster.length} 名觉醒者。各关的最终首领不在此列：森林狼王战死于密林，其余首领都在最后关头被同族救走。</p></div>
         <div class="prison-warden-intro">${this.wardenAvatar()}<div><strong>${PRISON_WARDEN.name}</strong><q>${PRISON_WARDEN.line}</q></div></div>
-        <p class="prison-bond-hint">第二关起击败的首领，其首杀奖励卡要与牢里的本人结缘（好感度${R.BOND_THRESHOLD}）后才能出战；继续投喂，每${R.BOND_STEP}点好感升一级（最高${R.levelName(R.MAX_BOND_LEVEL)} Lv${R.MAX_BOND_LEVEL}），结缘后每高一级：随从+${CF.BOND_UNIT_ATTACK}攻击、+${CF.BOND_UNIT_HEALTH}生命，法术效果提升${CF.BOND_SPELL_LEVELS}级。最终首领的卡牌要等本关全部在押首领结缘才能使用，等级取其中最低的一位。背包里共有 ${R.totalFood()} 份食物。</p>
+        <p class="prison-bond-hint">第二关起击败的首领，其首杀奖励卡要与牢里的本人结缘（好感度${R.BOND_THRESHOLD}）后才能出战；继续投喂，每${R.BOND_STEP}点好感升一级（最高${R.levelName(R.MAX_BOND_LEVEL)} Lv${R.MAX_BOND_LEVEL}），结缘后每高一级：随从+${CF.BOND_UNIT_ATTACK}攻击、+${CF.BOND_UNIT_HEALTH}生命，法术效果提升${CF.BOND_SPELL_LEVELS}级。最终首领的卡牌要等本关全部在押首领结缘才能使用，等级取其中最低的一位。每名首领每天（现实${CF.GameClock.DAY_MS / 60000}分钟）只能投喂一次，距离新的一天还有${CF.GameClock.untilNextDayLabel()}。背包里共有 ${R.totalFood()} 份食物。</p>
         ${bossRows ? `<div class="prison-boss-cards"><h3>最终首领卡牌</h3><ul>${bossRows}</ul></div>` : ""}
         ${tiles ? `<div class="prison-roster">${tiles}</div>` : '<p class="prison-empty">牢房还空着。击败冒险中的首领，它们就会被押回这里。</p>'}
         <div class="menu-actions"><button class="secondary-btn" data-action="town-shop-page">前往城镇商店</button><button class="secondary-btn" data-action="training-page">返回队伍营地</button><button class="secondary-btn" data-action="home">返回主界面</button></div>
@@ -607,12 +630,13 @@
       const level = R.levelFor(value);
       const next = R.nextThreshold(value);
       const maxed = next === null;
+      const fedToday = R.fedToday(key);
       const race = R.RACES[prisoner.chapter];
       const favorite = R.food(race?.favorite);
       const foods = R.FOODS.map(food => {
         const owned = R.foodCount(food.id);
         const isFavorite = race?.favorite === food.id;
-        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !maxed ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
+        return `<button class="choice-btn feed-choice${isFavorite ? " favorite" : ""}" data-modal-action="feed-prisoner" data-key="${key}" data-food="${food.id}" ${owned && !maxed && !fedToday ? "" : "disabled"}><span class="restaurant-food-icon" aria-hidden="true">${food.icon}</span><strong>${food.name} ×${owned}</strong><small>好感 +${R.affinityGain(prisoner.chapter, food.id)}${isFavorite ? " · 最爱" : ""}</small></button>`;
       }).join("");
       const card = CF.CARD_LIBRARY[prisoner.cardId];
       const bonus = R.bonusText(prisoner.cardId);
@@ -630,7 +654,7 @@
           ${bossText ? `<p class="prisoner-boss-hint">本关最终首领卡「${CF.CARD_LIBRARY[bossOwner.cardId].name}」：${bossText}</p>` : ""}
           ${this.cardPreview(prisoner.cardId, true)}
         </div></div>
-        ${maxed ? "" : `<h3>投喂食物</h3><div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
+        ${maxed ? "" : `<h3>投喂食物</h3>${fedToday ? `<p class="fed-today-hint">🍽️ ${prisoner.name}今天已经吃饱了，${CF.GameClock.untilNextDayLabel()}后的新一天才能再投喂。</p>` : '<p class="fed-today-hint">每名首领每天只能投喂一次，挑一道好菜吧。</p>'}<div class="choice-grid feed-grid">${foods}</div>${R.totalFood() ? "" : '<p class="empty-hint">背包里没有食物。去城镇商店的金杯餐馆买一些吧。</p>'}`}
         <div class="menu-actions">${maxed ? "" : '<button class="secondary-btn" data-modal-action="prison-to-restaurant">去金杯餐馆买食物</button>'}<button class="secondary-btn" data-modal-action="close-prison-visit">离开牢房</button></div>`, "training-modal");
     },
 
@@ -1842,6 +1866,22 @@
   window.addEventListener("savechange", () => { if (UI.debugOpen) UI.toggleDebug(true); });
 
   window.CardForge.UI = UI;
+
+  // 游戏时间计时器：离开封面、选人与读档界面后开始流逝，页面切到后台时暂停。
+  const CLOCK_PAUSED_SCREENS = new Set(["cover", "hero-select", "save-slots"]);
+  let clockLast = Date.now();
+  let clockSaveAt = Date.now();
+  setInterval(() => {
+    const now = Date.now();
+    const delta = now - clockLast;
+    clockLast = now;
+    const paused = document.visibilityState === "hidden" || CLOCK_PAUSED_SCREENS.has(UI.screen) || (UI.screen === "settings" && UI.settingsReturnScreen === "cover");
+    if (paused) return;
+    const reports = CF.GameClock.tick(delta);
+    if (reports.length) { clockSaveAt = now; UI.handleNewDays(reports); }
+    else if (now - clockSaveAt > 15000) { clockSaveAt = now; CF.SaveSystem.save(); }
+    UI.updateClockChip();
+  }, 1000);
   if (new URLSearchParams(window.location.search).get("prepareChapterFiveFinale") === "1") {
     CF.Adventure.prepareChapterFiveFinale();
     window.history.replaceState(null, "", window.location.pathname);
