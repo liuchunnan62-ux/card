@@ -186,7 +186,8 @@ class PlayerBot {
     legal.forEach(entry => {
       const dealt = battle.mitigatedDamage(entry.unit, battle.currentAttack(attacker));
       const kills = dealt >= entry.unit.health;
-      const counter = isRanged ? 0 : battle.mitigatedDamage(attacker, battle.currentAttack(entry.unit) + (entry.unit.keywords.includes("荆棘") ? 2 : 0));
+      // 远程攻击不受反击；远程目标也无法反击近战攻击。
+      const counter = isRanged || battle.isRanged(entry.unit) ? 0 : battle.mitigatedDamage(attacker, battle.currentAttack(entry.unit) + (entry.unit.keywords.includes("荆棘") ? 2 : 0));
       const survives = attacker.health > counter;
       if (!kills && !survives) return;
       const score = (kills ? 100 + battle.currentAttack(entry.unit) * 4 : dealt) + (survives ? 30 : -20) - entry.unit.health * 0.1;

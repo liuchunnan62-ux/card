@@ -2646,7 +2646,13 @@
       "{0} 施放法术「{1}」": "{0} wirkt Zauber „{1}“",
       "{0} 发动「{1}」": "{0} setzt „{1}“ ein",
       "英雄技能 · {0} Lv{1}": "Heldenfähigkeit · {0} St{1}",
-      "每回合": "Jede Runde"
+      "每回合": "Jede Runde",
+      "近战攻击近战目标会受到反击；远程攻击或攻击远程随从都不会。": "Nahkampfangriffe auf Nahkampfziele erleiden Gegenangriffe; Fernangriffe und Angriffe auf Fernkampfdiener nicht.",
+      "{0}从{1}近战攻击{2}的远程随从{3}，造成{4}点伤害，远程目标无法反击；目标剩余{5}/{6}生命。": "{0} greift von {1} aus den Fernkampfdiener {3} in {2} im Nahkampf an und verursacht {4} Schaden; Fernkampfziele können nicht zurückschlagen. Verbleibend: {5}/{6} Leben.",
+      "，远程目标无法反击": "; Fernkampfziele schlagen nicht zurück",
+      "没有受伤的随从，召唤了一个{0}攻/{1}血的{2}。": "Keine verwundeten Diener, daher wird ein {2} {0}/{1} beschworen.",
+      "为受伤最重的己方随从恢复生命；没有受伤的随从时，召唤一个{0}攻/{1}血的{2}。": "Heilt den am stärksten verwundeten verbündeten Diener; ist keiner verwundet, wird ein {2} {0}/{1} beschworen.",
+      "小史莱姆": "Kleiner Schleim"
     },
     "joiners": {
       "": " ",

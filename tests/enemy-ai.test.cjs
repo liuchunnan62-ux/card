@@ -134,3 +134,56 @@ test("没有目标时首领跳过英雄技能", () => {
   state.enemy.mana = 5;
   assert.equal(battle.useEnemyHeroSkill(), false, "寒牙撕咬需要我方前排目标");
 });
+
+test("近战随从攻击远程随从时不受反击，攻击近战随从时照常受反击", () => {
+  const { battle, state } = setup();
+  const enemyArcher = unit("敌方弓手", 6, 3, { ranged: true });
+  const enemyBrute = unit("敌方蛮兵", 4, 10);
+  state.enemy.board.back[1] = enemyArcher;
+  state.enemy.board.front[2] = enemyBrute;
+  const fighter = unit("我方剑士", 3, 8);
+  state.player.board.front[1] = fighter;
+  battle.performUnitAttack("player", "front", 1, "enemy", "back", 1);
+  assert.equal(fighter.health, 8, "远程目标无法反击");
+  const fighter2 = unit("我方剑士二", 3, 8);
+  state.player.board.front[3] = fighter2;
+  battle.performUnitAttack("player", "front", 3, "enemy", "front", 2);
+  assert.equal(fighter2.health, 4, "近战目标照常反击");
+});
+
+test("近战首领在没有突破口时先打前排近战随从，清掉后优先打远程随从", () => {
+  const { battle, state, knight } = setup();
+  state.player.board = CF.emptyBoard();
+  const archer = unit("我方弓手", 3, 3, { ranged: true });
+  state.player.board.front[0] = knight;          // 前排近战
+  state.player.board.back[1] = archer;           // 第2路无前排保护的远程
+  state.player.board.back[2] = unit("我方后排近战", 2, 2);
+  state.player.board.front[3] = unit("我方前排远程", 1, 6, { ranged: true });
+  const brute = unit("敌方蛮兵", 4, 20);
+  state.enemy.board.front[1] = brute;
+  battle.aiAttack("front", 1);
+  assert.equal(knight.health, 4, "先处理前排近战随从");
+  state.player.board.front[0] = null;
+  state.player.board.back[0] = unit("填路", 1, 9);
+  brute.ready = true;
+  battle.aiAttack("front", 1);
+  assert.equal(state.player.hp, 30, "没有突破口时不会打脸");
+  battle.cleanDead();
+  assert.equal(state.player.board.back[1], null, "前排近战清掉后优先击杀远程随从");
+});
+
+test("史莱姆首领的潮汐愈合：没有受伤随从时召唤小史莱姆，有伤员时治疗", () => {
+  const { battle, state } = setup();
+  battle.enemyConfig = { ...battle.enemyConfig, heroSkill: { id: "tide_mending", level: 2, fallbackSummon: { name: "小史莱姆", icon: "💧", image: "assets/cards/chapter4/dewdrop-scout.png", attack: [2, 3, 4], health: [4, 5, 6] } } };
+  state.enemy.board = CF.emptyBoard();
+  assert.equal(battle.useEnemyHeroSkill(), true);
+  const slime = [...state.enemy.board.front, ...state.enemy.board.back].find(Boolean);
+  assert.equal(slime.name, "小史莱姆");
+  assert.equal(slime.attack, 3);
+  assert.equal(slime.health, 5);
+  assert.match(battle.html(), /召唤一个3攻\/5血的小史莱姆/);
+  slime.health = 1;
+  assert.equal(battle.useEnemyHeroSkill(), true);
+  assert.equal(slime.health, 5, "有受伤随从时照常治疗");
+  assert.equal([...state.enemy.board.front, ...state.enemy.board.back].filter(Boolean).length, 1);
+});

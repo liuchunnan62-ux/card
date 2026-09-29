@@ -18,7 +18,8 @@
   //                               否则取 units/spells 卡池的前 N 张（N = min(max, base + floor(stage / per))）并复制 copies 份
   //       passive / skills / battlefield / title / icon / description  首领被动、技能说明、战场与文案
   //   heroSkill                   首领的英雄技能（arena.js 的 HERO_SKILLS 编号）：每个敌方行动回合在出牌后免费发动一次（相当于被动）；
-  //                               levels 为普通/精英/最终首领使用的技能等级（1~3），boss 可为最终首领单独指定技能
+  //                               levels 为普通/精英/最终首领使用的技能等级（1~3），boss 可为最终首领单独指定技能；
+  //                               fallbackSummon（可选）：没有受伤的己方随从时改为召唤这个随从（attack/health 按技能等级取值）
   //   routeStyle                  地图连线样式："line" 直线，"curve" 曲线（可用 routeControls 指定控制点）
   //   nodes                       节点列表，下标即节点序号：
   //       type                    normal 普通 / elite 精英 / boss 最终首领 / event 事件 / shop 商店 / camp 营地
@@ -172,7 +173,9 @@
         note: "沿发光溪流与林间小径推进。每个史莱姆首领都会治疗自身与随从；击败节点后开启所有相邻路线，首胜卡牌会在战后揭晓。" },
       clearSummary: { title: "梦幻森林归于寂静",
         text: "你击败了碧露大贤者·涅芙莉，迫使史莱姆族群退回森林深处，并将英雄等级上限提升至20级。" },
-      heroSkill: { id: "tide_mending", boss: "tide_mending", levels: { normal: 1, elite: 2, boss: 3 } }, // 史莱姆潮汐愈合
+      // 史莱姆潮汐愈合：治疗受伤最重的随从；没有受伤的随从时召唤小史莱姆（攻击/生命按技能等级 Lv1~Lv3 取值）
+      heroSkill: { id: "tide_mending", boss: "tide_mending", levels: { normal: 1, elite: 2, boss: 3 },
+        fallbackSummon: { name: "小史莱姆", icon: "💧", image: "assets/cards/chapter4/dewdrop-scout.png", attack: [2, 3, 4], health: [4, 5, 6] } },
       victoryRewards: { normal: { gold: 75, xp: 50 }, elite: { gold: 120, xp: 80 }, boss: { gold: 320, xp: 180 } },
       rewardCardIds: CF.CHAPTER_FOUR_REWARD_CARD_IDS,
       encounter: {
