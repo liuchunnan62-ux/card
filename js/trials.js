@@ -182,6 +182,8 @@
       battle.state.player.hand = [];
       battle.state.player.fatigue = 0;
       battle.draw("player", 10);
+      // 队长的试炼允许带上英雄档案中装备的武器（不消耗耐久，每回合可攻击）。
+      battle.equipHeroWeapon();
     }
   }
 

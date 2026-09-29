@@ -1412,7 +1412,9 @@ assert.equal(heroWeaponBattle.state.player.weapon, heroWeapon, "英雄武器连�
 
 const arenaWeaponEnemy = { ...CF.enemies.goblin_warband, mode: "arena" };
 assert.equal(new CF.Battle(arenaWeaponEnemy, {}).state.player.weapon?.cardId, "mist_dagger", "竞技场开战时也应装备英雄武器");
-assert.equal(new CF.Battle(CF.Trials.enemy(1), {}).state.player.weapon, null, "统领试炼不带入英雄武器");
+assert.equal(new CF.Battle(CF.Trials.enemy(1), {}).state.player.weapon, null, "其他统领试炼不带入英雄武器");
+assert.equal(new CF.Battle(CF.Trials.enemy(4), {}).state.player.weapon?.cardId, "mist_dagger", "统领试炼第四关允许带入英雄武器");
+assert.ok(new CF.Battle(CF.Trials.enemy(4), {}).state.player.weapon.permanent, "第四关的英雄武器同样不消耗耐久");
 assert.equal(CF.SaveSystem.equipHeroWeapon(null), true, "应能卸下英雄武器");
 assert.equal(new CF.Battle(CF.enemies.goblin_warband, {}).state.player.weapon, null, "卸下后开战不应装备武器");
 
