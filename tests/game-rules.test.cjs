@@ -1303,6 +1303,36 @@ assert.ok(!CF.SaveSystem.data.deck.includes("mist_dagger"), "武器不应加入�
   assert.deepEqual([...CF.Rules.legalUnitTargets(sniper, sniperBoard, 0)].map(item => `${item.row}${item.column}`), ["front0", "back0"], "狙击可越过本路前排攻击本路后排，但不能跨路");
 }
 
+{
+  // 冒险首领：随身武器 + 每回合补满10张手牌 + 分路站位。
+  const encounter = CF.Adventure.encounterFor("normal");
+  assert.equal(encounter.handRefill, true, "冒险首领应每回合补齐手牌");
+  assert.deepEqual({ ...encounter.weapon }, { id: "mist_dagger", level: 1 }, "第一关节点首领应手持自己掉落的武器");
+  const bossBattle = new CF.Battle(encounter, {});
+  const bs = bossBattle.state;
+  assert.ok(bs.enemy.weapon?.permanent, "首领开战即装备不消耗耐久的武器");
+  assert.equal(bs.enemy.weapon.cardId, "mist_dagger");
+  assert.equal(bs.enemy.hand.length, 10, "首领开战手牌应补到10张");
+  bs.enemy.hand = [];
+  bs.enemy.deck = [];
+  const bossHp = bs.enemy.hp;
+  bossBattle.refillEnemyHand();
+  assert.equal(bs.enemy.hand.length, 10, "牌库耗尽时首领应重新洗牌并补满10张");
+  assert.equal(bs.enemy.hp, bossHp, "首领补牌不应受到疲劳伤害");
+  bs.player.board = CF.emptyBoard();
+  bs.enemy.board = CF.emptyBoard();
+  bs.enemy.board.front[0] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  bs.enemy.board.front[1] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  bs.enemy.board.front[3] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  bs.player.board.front[2] = combatUnit("vanguard", { attack: 3, health: 4, maxHealth: 4 });
+  const blockSlot = bossBattle.aiChooseSlot({ attack: 2, health: 3, keywords: [] });
+  assert.equal(`${blockSlot.row}${blockSlot.column}`, "front2", "首领应把随从补到有威胁的空路线");
+  bs.enemy.board.front[2] = combatUnit("goblin_guard", { attack: 1, health: 4, maxHealth: 4 });
+  const rangedSlot = bossBattle.aiChooseSlot({ attack: 2, health: 2, keywords: ["远程"], combatStyle: "ranged" });
+  assert.equal(rangedSlot.row, "back", "路线都堵住后，远程随从应站在有前排保护的后排");
+  assert.equal(new CF.Battle(CF.enemies.goblin_warband, {}).state.enemy.weapon, null, "不经过冒险配置的敌人不带首领武器");
+}
+
 const heroWeaponBattle = new CF.Battle(CF.enemies.goblin_warband, {});
 const heroWeapon = heroWeaponBattle.state.player.weapon;
 assert.ok(heroWeapon?.permanent, "冒险开战时应自动装备英雄武器");

@@ -4,6 +4,8 @@
   // French dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("fr", {
     "exact": {
+      "{0}重新洗入牌组。": "{0} remélange son deck.",
+      "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} manie {1} ({2} d'attaque) et peut attaquer une fois par tour.",
       "随从只能攻击同一路线的敌人。": "Les serviteurs ne peuvent attaquer que les ennemis de leur propre voie.",
       "必须先清空本路线的前排和后排，才能攻击英雄。": "Videz la ligne avant et la ligne arrière de cette voie avant d'attaquer le héros.",
       "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Les serviteurs ne peuvent attaquer que les ennemis de leur propre voie : d'abord la ligne avant, puis la ligne arrière, et le héros une fois la voie dégagée. Les sorts et compétences ignorent cette restriction.",

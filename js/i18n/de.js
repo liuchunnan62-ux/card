@@ -4,6 +4,8 @@
   // German dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("de", {
     "exact": {
+      "{0}重新洗入牌组。": "{0} mischt das Deck neu.",
+      "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} führt {1} ({2} Angriff) und kann jeden Zug einmal angreifen.",
       "随从只能攻击同一路线的敌人。": "Diener können nur Gegner auf ihrer eigenen Bahn angreifen.",
       "必须先清空本路线的前排和后排，才能攻击英雄。": "Räume vordere und hintere Reihe dieser Bahn, bevor du den Helden angreifst.",
       "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Diener können nur Gegner auf ihrer eigenen Bahn angreifen: zuerst die vordere Reihe, dann die hintere, und den Helden, sobald die Bahn frei ist. Zauber und Fähigkeiten sind davon ausgenommen.",

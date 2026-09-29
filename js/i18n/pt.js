@@ -4,6 +4,8 @@
   // Brazilian Portuguese dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("pt", {
     "exact": {
+      "{0}重新洗入牌组。": "{0} embaralha o baralho novamente.",
+      "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} empunha {1} ({2} de ataque) e pode atacar uma vez a cada turno.",
       "随从只能攻击同一路线的敌人。": "Lacaios só podem atacar inimigos da própria pista.",
       "必须先清空本路线的前排和后排，才能攻击英雄。": "Limpe a fileira da frente e a de trás desta pista antes de atacar o herói.",
       "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Lacaios só podem atacar inimigos da própria pista: primeiro a fileira da frente, depois a de trás, e o herói quando a pista estiver livre. Feitiços e habilidades ignoram essa restrição.",

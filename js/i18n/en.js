@@ -4,6 +4,8 @@
   // English dictionary. Keys are the original Simplified Chinese text; {0}, {value} etc. are placeholders.
   window.CardForge.I18n.register("en", {
     "exact": {
+      "{0}重新洗入牌组。": "{0} reshuffles their deck.",
+      "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} wields {1} ({2} Attack) and can attack once every turn.",
       "随从只能攻击同一路线的敌人。": "Minions can only attack enemies in their own lane.",
       "必须先清空本路线的前排和后排，才能攻击英雄。": "Clear both the front and back row of this lane before attacking the hero.",
       "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Minions can only attack enemies in their own lane: defeat the front row first, then the back row, and attack the hero once the lane is clear. Spells and skills ignore this restriction.",

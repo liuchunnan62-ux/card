@@ -323,7 +323,19 @@
       }
       CF.SaveSystem.save();
     },
+    // 冒险中的首领：随身武器（每回合都能攻击）与每回合补满10张手牌，见 chapters.js 的 bossWeapon。
     encounterFor(type) {
+      const base = this.baseEncounterFor(type);
+      if (!base) return base;
+      const run = this.current();
+      const nodeIndex = Number.isInteger(run?.activeNode) ? run.activeNode : run?.stage;
+      const node = this.mapStages()[nodeIndex]?.[0];
+      const weapons = CF.chapterById(run?.chapter)?.bossWeapon || {};
+      const spec = weapons[base.type] || weapons[type];
+      const weaponId = node?.weaponId || spec?.id;
+      return { ...base, handRefill: true, weapon: weaponId ? { id: weaponId, level: spec?.level || 1 } : null };
+    },
+    baseEncounterFor(type) {
       const run = this.current();
       const encounterNodeIndex = Number.isInteger(run?.activeNode) ? run.activeNode : run?.stage;
       const node = this.mapStages()[encounterNodeIndex]?.[0];

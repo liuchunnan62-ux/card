@@ -4,6 +4,8 @@
   // Spanish dictionary (machine translated from English by Claude Haiku; keys are the original Simplified Chinese text).
   window.CardForge.I18n.register("es", {
     "exact": {
+      "{0}重新洗入牌组。": "{0} vuelve a barajar su mazo.",
+      "{0}手持{1}（{2}攻），每回合都能攻击一次。": "{0} empuña {1} ({2} de ataque) y puede atacar una vez cada turno.",
       "随从只能攻击同一路线的敌人。": "Los esbirros solo pueden atacar a enemigos de su propio carril.",
       "必须先清空本路线的前排和后排，才能攻击英雄。": "Despeja la fila delantera y la trasera de este carril antes de atacar al héroe.",
       "随从只能攻击同一路线的敌人：先击败前排，再攻击后排，整路清空后才能攻击英雄；法术与技能不受此限制。": "Los esbirros solo pueden atacar a enemigos de su propio carril: primero la fila delantera, luego la trasera, y al héroe cuando el carril esté despejado. Los hechizos y habilidades ignoran esta restricción.",

@@ -13,6 +13,8 @@
   const BOSS_DIALOGUE_SEQUENCE_GAP = 1300 + DIALOGUE_EXTRA_DURATION;
   const BOSS_DEFEAT_DIALOGUE_DELAY = 1900 + DIALOGUE_EXTRA_DURATION;
   const INITIAL_BATTLE_HAND = 10;
+  // 冒险首领（handRefill）每个行动回合把手牌补到这个数量。
+  const BOSS_HAND_SIZE = 10;
   // 战场中央的敌方行动播报：敌方回合内一直保留，轮到玩家后再停留 BATTLE_NOTICE_DURATION 毫秒；最多同时显示 BATTLE_NOTICE_LIMIT 条。
   const BATTLE_NOTICE_DURATION = 8000;
   const BATTLE_NOTICE_LIMIT = 8;
@@ -100,12 +102,14 @@
           id: enemy.id, name: enemy.name, icon: enemy.icon, portrait: enemy.portrait || "", battlefield: enemy.battlefield || "forest",
           hp: enemy.health, maxHp: enemy.health,
           mana: enemy.mana, maxMana: enemy.mana, board: emptyBoard(), hand: [], weapon: null,
-          deck: shuffle(CF.makeDeck(enemy.deck, enemy.cardProgress || Object.fromEntries([...new Set(enemy.deck)].map(id => [id, { level: enemy.enemyCardLevel || 1 }])))), fatigue: 0
+          deck: this.buildEnemyDeck(enemy), fatigue: 0
         }
       };
       if (enemy.mode !== "trial") this.equipHeroWeapon();
       this.draw("player", Math.min(INITIAL_BATTLE_HAND, this.state.player.deck.length));
       if (!enemy.noCards) this.draw("enemy", enemy.openingHand || 4);
+      if (enemy.handRefill && !enemy.noCards) this.refillEnemyHand();
+      if (enemy.weapon) this.equipEnemyWeapon(enemy.weapon);
       CF.Trials?.configureBattle(this);
       this.addLog(`遭遇${enemy.name}「${enemy.title}」。击穿任意一路即可攻击敌方英雄。`, "system");
       if (enemy.dialogue?.intro) {
@@ -113,6 +117,57 @@
         this.bossSpeak(enemy.dialogue.intro, {}, false);
       }
       this.render();
+    }
+
+    buildEnemyDeck(enemy) {
+      const progress = enemy.cardProgress || Object.fromEntries([...new Set(enemy.deck || [])].map(id => [id, { level: enemy.enemyCardLevel || 1 }]));
+      return shuffle(CF.makeDeck(enemy.deck || [], progress));
+    }
+
+    // 首领的底气：手牌补到10张；牌库不够时把整副牌组重新洗入牌库底部，不会因此受到疲劳伤害。
+    refillEnemyHand() {
+      const enemy = this.state.enemy;
+      const missing = BOSS_HAND_SIZE - enemy.hand.length;
+      if (missing <= 0) return;
+      if (enemy.deck.length < missing && this.enemyConfig.deck?.length) {
+        enemy.deck = [...this.buildEnemyDeck(this.enemyConfig), ...enemy.deck];
+        this.addLog(`${this.enemyConfig.name}重新洗入牌组。`, "enemy");
+      }
+      this.draw("enemy", Math.min(missing, enemy.deck.length));
+    }
+
+    // 首领随身武器：与英雄武器相同，不消耗耐久，每个行动回合都能攻击一次。
+    equipEnemyWeapon(spec) {
+      const card = CF.getCard(spec.id, { level: spec.level || 1 });
+      if (!card || card.type !== "weapon") return false;
+      this.state.enemy.weapon = this.weaponFromCard(card, true);
+      this.addLog(`${this.enemyConfig.name}手持${card.name}（${card.attack}攻），每回合都能攻击一次。`, "enemy");
+      return true;
+    }
+
+    // 敌方随从的分路站位：先堵住玩家随从能打脸的空路线（玩家该路火力越强越优先），再占玩家空着的路线施压；
+    // 远程与治疗随从放在有己方前排保护的后排，守卫和高生命随从顶在玩家火力最强的前排。
+    aiChooseSlot(unit = {}) {
+      const own = this.state.enemy.board;
+      const foe = this.state.player.board;
+      const keywords = unit.keywords || [];
+      const backline = unit.role === "healer" || unit.combatStyle === "ranged" || keywords.includes("远程");
+      const tank = keywords.includes("守卫") || (unit.health || 0) >= 6;
+      const laneAttack = column => [foe.front[column], foe.back[column]]
+        .filter(other => other && other.role !== "healer").reduce((sum, other) => sum + this.currentAttack(other), 0);
+      let best = null;
+      ["front", "back"].forEach(row => own[row].forEach((slot, column) => {
+        if (slot) return;
+        const threat = laneAttack(column);
+        let score = 0;
+        if (Rules.isLaneOpen(own, column)) score += 100 + threat * 10;
+        if (Rules.isLaneOpen(foe, column)) score += 25;
+        if (row === "front") score += backline ? -30 : 20 + (tank ? threat * 3 : 0);
+        else score += backline ? (own.front[column] ? 40 : 10) : -20;
+        score -= column * 0.01;
+        if (!best || score > best.score) best = { row, column, score };
+      }));
+      return best;
     }
 
     currentAttack(unit) { return unit.attack + (unit.tempAttack || 0); }
@@ -1461,7 +1516,10 @@
       let regeneratedEnemyHealth = 0;
       regeneratingEnemies.forEach(unit => { const before = unit.health; unit.health = Math.min(unit.maxHealth, unit.health + 2); regeneratedEnemyHealth += unit.health - before; });
       if (regeneratedEnemyHealth) this.addLog(`${regeneratingEnemies.length}个敌方再生随从在回合开始时共恢复${regeneratedEnemyHealth}点生命。`, "boss");
-      if (!this.enemyConfig.noCards) this.draw("enemy", 1);
+      if (!this.enemyConfig.noCards) {
+        if (this.enemyConfig.handRefill) this.refillEnemyHand();
+        else this.draw("enemy", 1);
+      }
       this.render();
       await wait(BOSS_ACTION_DELAY);
       if (this.enemyConfig.passive === "wolf_king") {
@@ -1716,9 +1774,9 @@
 
     summonArenaToken(name, attack, health, image = "assets/cards/recruit.png", cardId = "arena_token", options = {}) {
       const board = this.state.enemy.board;
-      let row = "front";
-      let column = board.front.findIndex(slot => !slot);
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ health, keywords: options.keyword ? [options.keyword] : [], combatStyle: options.combatStyle || "melee" });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) return false;
       board[row][column] = {
         uid: `arena-token-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -1762,12 +1820,8 @@
         this.equipWeapon("enemy", index);
         return;
       } else if (card.type === "unit") {
-        const wantsBack = card.keywords.includes("远程");
-        const rows = wantsBack ? ["back", "front"] : ["front", "back"];
-        for (const row of rows) {
-          const column = this.state.enemy.board[row].findIndex(slot => !slot);
-          if (column >= 0) { this.summon("enemy", index, row, column); return; }
-        }
+        const slot = this.aiChooseSlot(card);
+        if (slot) { this.summon("enemy", index, slot.row, slot.column); return; }
       } else if (card.effect === "damage") {
         const targets = [];
         ["front", "back"].forEach(row => this.state.player.board[row].forEach((unit, column) => { if (unit) targets.push({ row, column, unit }); }));
@@ -2005,9 +2059,9 @@
 
     summonFreeWolf(source = "狼王号令") {
       const board = this.state.enemy.board;
-      let column = board.front.findIndex(slot => !slot);
-      let row = "front";
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ attack: 1, health: 2 });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) {
         this.addLog(`${source}尝试召唤幼狼，但敌方战场没有空位。`, "boss");
         return false;
@@ -2026,9 +2080,9 @@
 
     summonGreyRushWolf(source = "灰狼增援") {
       const board = this.state.enemy.board;
-      let column = board.front.findIndex(slot => !slot);
-      let row = "front";
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ attack: 4, health: 1, keywords: ["突袭"] });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) {
         this.addLog(`${this.enemyConfig.name}发动「${source}」，但敌方战场已经占满。`, "boss");
         return false;
@@ -2047,9 +2101,9 @@
 
     summonFreeGoblin(source = "无尽绿潮", overrideStats = null) {
       const board = this.state.enemy.board;
-      let column = board.front.findIndex(slot => !slot);
-      let row = "front";
-      if (column < 0) { row = "back"; column = board.back.findIndex(slot => !slot); }
+      const slot = this.aiChooseSlot({ attack: 2, health: overrideStats?.health ?? 1 });
+      const column = slot ? slot.column : -1;
+      const row = slot?.row || "front";
       if (column < 0) {
         this.addLog(`${source}试图召唤普通哥布林，但敌方战场已经占满。`, "boss");
         return false;

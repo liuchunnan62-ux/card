@@ -201,6 +201,8 @@ test("每关首领都配置了有效的英雄技能", () => {
       data.run = run;
       const enemy = CF.Adventure.encounterFor(node.type);
       assert.ok(enemy.heroSkill && CF.HERO_SKILLS[enemy.heroSkill.id], `${where(chapter, index)}：首领没有英雄技能`);
+      assert.equal(CF.CARD_LIBRARY[enemy.weapon?.id]?.type, "weapon", `${where(chapter, index)}：首领没有有效的随身武器（bossWeapon）`);
+      assert.ok(enemy.weapon.level >= 1 && enemy.weapon.level <= 5, `${where(chapter, index)}：首领武器等级应在 1~5 之间`);
     });
   });
 });
