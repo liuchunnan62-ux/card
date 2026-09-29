@@ -2638,7 +2638,13 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": ": {0} Nv{1} → {2} Nv{3} (partida actual)",
       "被覆盖的栏位会先自动备份一次。": "Las ranuras sobrescritas se respaldan automáticamente antes.",
       "覆盖并导入": "Sobrescribir e importar",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Borrar los datos del navegador elimina tus partidas; exporta una copia con regularidad desde la página de partidas."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Borrar los datos del navegador elimina tus partidas; exporta una copia con regularidad desde la página de partidas.",
+      "🂠 手牌 {0}": "🂠 Mano {0}",
+      "敌方当前手牌数量": "Cartas en la mano del enemigo",
+      "{0} 打出随从「{1}」": "{0} juega el esbirro «{1}»",
+      "{0} 装备武器「{1}」": "{0} se equipa el arma «{1}»",
+      "{0} 施放法术「{1}」": "{0} lanza el hechizo «{1}»",
+      "{0} 发动「{1}」": "{0} usa «{1}»"
     },
     "joiners": {
       "": " ",

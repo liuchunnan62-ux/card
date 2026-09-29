@@ -2638,7 +2638,13 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": ": {0} Lv{1} → {2} Lv{3} (current save)",
       "被覆盖的栏位会先自动备份一次。": "Overwritten slots are backed up automatically first.",
       "覆盖并导入": "Overwrite & Import",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Clearing browser data deletes your saves; export a backup regularly from the Saves page."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Clearing browser data deletes your saves; export a backup regularly from the Saves page.",
+      "🂠 手牌 {0}": "🂠 Hand {0}",
+      "敌方当前手牌数量": "Cards in the enemy's hand",
+      "{0} 打出随从「{1}」": "{0} plays minion “{1}”",
+      "{0} 装备武器「{1}」": "{0} equips weapon “{1}”",
+      "{0} 施放法术「{1}」": "{0} casts spell “{1}”",
+      "{0} 发动「{1}」": "{0} uses “{1}”"
     },
     "joiners": {
       "": " ",

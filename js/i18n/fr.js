@@ -2638,7 +2638,13 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": " : {0} Niv{1} → {2} Niv{3} (sauvegarde actuelle)",
       "被覆盖的栏位会先自动备份一次。": "Les emplacements écrasés sont d’abord sauvegardés automatiquement.",
       "覆盖并导入": "Écraser et importer",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Effacer les données du navigateur supprime vos sauvegardes ; exportez-en régulièrement une copie."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Effacer les données du navigateur supprime vos sauvegardes ; exportez-en régulièrement une copie.",
+      "🂠 手牌 {0}": "🂠 Main {0}",
+      "敌方当前手牌数量": "Cartes dans la main de l’ennemi",
+      "{0} 打出随从「{1}」": "{0} joue le serviteur « {1} »",
+      "{0} 装备武器「{1}」": "{0} s’équipe de l’arme « {1} »",
+      "{0} 施放法术「{1}」": "{0} lance le sort « {1} »",
+      "{0} 发动「{1}」": "{0} utilise « {1} »"
     },
     "joiners": {
       "": " ",

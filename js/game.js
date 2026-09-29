@@ -13,9 +13,9 @@
   const BOSS_DIALOGUE_SEQUENCE_GAP = 1300 + DIALOGUE_EXTRA_DURATION;
   const BOSS_DEFEAT_DIALOGUE_DELAY = 1900 + DIALOGUE_EXTRA_DURATION;
   const INITIAL_BATTLE_HAND = 10;
-  // 战场中央的敌方行动播报：每条停留的时间与同时显示的最多条数。
+  // 战场中央的敌方行动播报：敌方回合内一直保留，轮到玩家后再停留 BATTLE_NOTICE_DURATION 毫秒；最多同时显示 BATTLE_NOTICE_LIMIT 条。
   const BATTLE_NOTICE_DURATION = 8000;
-  const BATTLE_NOTICE_LIMIT = 6;
+  const BATTLE_NOTICE_LIMIT = 8;
   const emptyBoard = () => ({ front: [null, null, null, null], back: [null, null, null, null] });
   const shuffle = cards => {
     const copy = [...cards];
@@ -69,6 +69,7 @@
         cardsPlayed: { player: 0, enemy: 0 },
         log: [],
         battleNotices: [],
+        announcedSkills: new Set(),
         noticeSeq: 0,
         bossDialogueNotice: null,
         bossDialogueSeq: 0,
@@ -118,6 +119,7 @@
     }
     recordCardPlayed(side, card) {
       this.state.cardsPlayed[side] = (this.state.cardsPlayed[side] || 0) + 1;
+      if (side === "enemy") this.announceEnemyCard(card);
       if (side === "player") this.state.usedCards.push(card.id);
     }
     playerSkill() {
@@ -139,14 +141,35 @@
     addLog(message, kind = "system") {
       this.state.log.unshift({ message, kind, round: this.state.round, enemyTurn: this.state.enemyTurns });
       this.state.log = this.state.log.slice(0, 100);
-      if (kind === "enemy" || kind === "boss") this.showBattleNotice(message, kind);
+      if (kind === "boss") this.announceBossSkill(message);
+    }
+    // 战场中央只简要播报敌方做了什么：打出了哪张牌、发动了哪个技能；伤害与结算细节只记入右侧战斗日志。
+    announceEnemyCard(card) {
+      const verb = card.type === "unit" ? "打出随从" : card.type === "weapon" ? "装备武器" : "施放法术";
+      this.showBattleNotice(`${this.enemyConfig.name} ${verb}「${card.name}」`, "enemy");
+    }
+    // 技能日志里取出技能名，同一回合同一技能只播报一次。
+    announceBossSkill(message) {
+      const name = message.match(/(?:发动(?:Lv\d+)?|触发|通过)「([^」]+)」/)?.[1];
+      if (!name) return;
+      const key = `${this.state.enemyTurns}:${name}`;
+      if (this.state.announcedSkills.has(key)) return;
+      this.state.announcedSkills.add(key);
+      this.showBattleNotice(`${this.enemyConfig.name} 发动「${name}」`, "boss");
     }
     showBattleNotice(message, kind) {
       const notice = { id: ++this.state.noticeSeq, message, kind };
       this.state.battleNotices = [...this.state.battleNotices, notice].slice(-BATTLE_NOTICE_LIMIT);
+      // 玩家回合中出现的播报（例如敌方随从被动）直接开始倒计时。
+      if (this.state.phase === "player") this.expireBattleNotices();
+    }
+    // 让当前已有的播报在 BATTLE_NOTICE_DURATION 后消失。
+    expireBattleNotices() {
+      const lastId = this.state.noticeSeq;
       setTimeout(() => {
-        this.state.battleNotices = this.state.battleNotices.filter(item => item.id !== notice.id);
-        if (!this.state.ended) this.render();
+        const before = this.state.battleNotices.length;
+        this.state.battleNotices = this.state.battleNotices.filter(item => item.id > lastId);
+        if (before !== this.state.battleNotices.length && !this.state.ended) this.render();
       }, BATTLE_NOTICE_DURATION);
     }
     bossSpeak(text, options = {}, renderNow = true) {
@@ -1384,6 +1407,7 @@
       if (this.state.rescueEpilogue) return this.rescueEpilogueTurn();
       const enemy = this.state.enemy;
       this.state.enemyTurns += 1;
+      this.state.battleNotices = [];
       enemy.mana = enemy.maxMana;
       if (enemy.weapon) enemy.weapon.ready = true;
       this.addLog(`${this.enemyConfig.name}第${this.state.enemyTurns}个行动回合开始：法力恢复为${enemy.mana}/${enemy.maxMana}，场上有${[...enemy.board.front, ...enemy.board.back].filter(Boolean).length}个随从。`, "enemy");
@@ -2173,6 +2197,7 @@
       this.state.phase = "player";
       this.state.busy = false;
       if (!initial) { this.state.round += 1; this.sound("turnStart"); }
+      this.expireBattleNotices();
       player.mana = player.maxMana;
       if (player.weapon) player.weapon.ready = true;
       player.skillCooldown = Math.max(0, player.skillCooldown - 1);
@@ -2404,7 +2429,7 @@
             <div class="combat-hero enemy enemy-hero-target ${heroTargetable ? "targetable" : ""}" data-action="hero" data-side="enemy">
               <div class="combat-identity"><h3>${s.enemy.name}</h3><small>${this.enemyConfig.title}</small></div>
               <div class="enemy-portrait-wrap">${this.portraitHTML(s.enemy, "enemy")}${this.bossDialogueHTML()}</div>
-              <div class="hero-bars"><span class="health-pill">♥ ${s.enemy.hp}/${s.enemy.maxHp}</span>${this.manaCrystalsHTML(s.enemy)}</div>
+              <div class="hero-bars"><span class="health-pill">♥ ${s.enemy.hp}/${s.enemy.maxHp}</span>${this.enemyConfig.noCards ? "" : `<span class="hand-pill" title="敌方当前手牌数量">🂠 手牌 ${s.enemy.hand.length}</span>`}${this.manaCrystalsHTML(s.enemy)}</div>
               <div class="enemy-weapon-wrap">${this.weaponHTML(s.enemy, "enemy")}</div>
               ${this.bossSkillsHTML()}
             </div>

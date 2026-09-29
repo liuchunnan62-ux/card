@@ -81,3 +81,24 @@ test("近战单位没有突破口时攻击随从", () => {
   assert.equal(state.player.hp, 30);
   assert.ok(knight.health < 8 || [1, 2, 3].some(column => state.player.board.front[column].health < 10));
 });
+
+test("战场播报只显示敌方的出牌与技能，不显示伤害结算", () => {
+  const { battle, state } = setup();
+  state.battleNotices = [];
+  state.enemy.mana = 10;
+  const index = state.enemy.hand.findIndex(card => card.type === "unit");
+  const card = state.enemy.hand[index];
+  battle.summon("enemy", index, "front", 3);
+  battle.addLog("哥布林从第1路前排发起攻击，造成3点伤害；我方英雄剩余27/30生命。", "enemy");
+  battle.addLog("哥布林战团发动「战斗号角」：本回合召唤1个2攻/2血哥布林。", "boss");
+  battle.addLog("哥布林战团通过「战斗号角」免费召唤普通哥布林到第2路前排（2攻/2血）。", "boss");
+  battle.addLog("3个敌方再生随从在回合开始时共恢复6点生命。", "boss");
+  const messages = Array.from(state.battleNotices, notice => notice.message);
+  assert.deepEqual(messages, [`哥布林战团 打出随从「${card.name}」`, "哥布林战团 发动「战斗号角」"]);
+  assert.ok(messages.every(text => !/伤害|生命/.test(text)));
+});
+
+test("敌方头像下显示手牌数量", () => {
+  const { battle, state } = setup();
+  assert.match(battle.html(), new RegExp(`🂠 手牌 ${state.enemy.hand.length}<`));
+});

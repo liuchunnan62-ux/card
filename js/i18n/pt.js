@@ -2638,7 +2638,13 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": ": {0} Nv{1} → {2} Nv{3} (save atual)",
       "被覆盖的栏位会先自动备份一次。": "Os slots sobrescritos recebem um backup automático antes.",
       "覆盖并导入": "Sobrescrever e importar",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Limpar os dados do navegador apaga seus saves; exporte um backup regularmente na página de saves."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Limpar os dados do navegador apaga seus saves; exporte um backup regularmente na página de saves.",
+      "🂠 手牌 {0}": "🂠 Mão {0}",
+      "敌方当前手牌数量": "Cartas na mão do inimigo",
+      "{0} 打出随从「{1}」": "{0} joga o lacaio “{1}”",
+      "{0} 装备武器「{1}」": "{0} equipa a arma “{1}”",
+      "{0} 施放法术「{1}」": "{0} lança o feitiço “{1}”",
+      "{0} 发动「{1}」": "{0} usa “{1}”"
     },
     "joiners": {
       "": " ",

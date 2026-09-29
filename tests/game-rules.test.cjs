@@ -140,7 +140,7 @@ assert.match(gameJs, /BOSS_DIALOGUE_SEQUENCE_GAP \* \(index \+ 1\)/, "魅魔救�
 assert.match(trialsSource, /await new Promise\(resolve => setTimeout\(resolve, FINAL_STORY_DIALOGUE_DELAY\)\)/, "女王低语最后一句应额外停留3秒");
 assert.match(gameJs, /battleNotices:\s*\[\]/, "战场应维护临时敌方行动提示");
 assert.match(gameJs, /const BATTLE_NOTICE_DURATION = 8000;/, "敌方行动提示应停留8秒，方便看清局势");
-assert.match(gameJs, /setTimeout\(\(\) => \{[\s\S]*BATTLE_NOTICE_DURATION\)/, "敌方行动提示应按停留时间自动消失");
+assert.match(gameJs, /expireBattleNotices\(\) \{[\s\S]*?BATTLE_NOTICE_DURATION\)/, "敌方行动提示应在轮到玩家后按停留时间自动消失");
 assert.match(gameJs, /deck-remaining-panel/, "战斗侧栏应显示我方剩余牌库");
 assert.match(gameJs, /battle-announcements/, "敌方行动记录应显示在战场中央");
 assert.match(battleCss, /\.battle-announcements\s*\{[^}]*flex-direction:\s*column/s, "多条敌方行动记录应分行堆叠");

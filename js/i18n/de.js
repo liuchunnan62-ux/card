@@ -2638,7 +2638,13 @@
       "：{0} Lv{1} → {2} Lv{3}（当前存档）": ": {0} St{1} → {2} St{3} (aktueller Spielstand)",
       "被覆盖的栏位会先自动备份一次。": "Überschriebene Plätze werden vorher automatisch gesichert.",
       "覆盖并导入": "Überschreiben & importieren",
-      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Das Löschen der Browserdaten entfernt deine Spielstände; exportiere regelmäßig eine Sicherung."
+      "清理浏览器数据会删除存档，请在“存档”页面定期导出备份。": "Das Löschen der Browserdaten entfernt deine Spielstände; exportiere regelmäßig eine Sicherung.",
+      "🂠 手牌 {0}": "🂠 Hand {0}",
+      "敌方当前手牌数量": "Karten auf der Hand des Gegners",
+      "{0} 打出随从「{1}」": "{0} spielt Diener „{1}“",
+      "{0} 装备武器「{1}」": "{0} rüstet Waffe „{1}“ aus",
+      "{0} 施放法术「{1}」": "{0} wirkt Zauber „{1}“",
+      "{0} 发动「{1}」": "{0} setzt „{1}“ ein"
     },
     "joiners": {
       "": " ",
