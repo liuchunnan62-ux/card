@@ -3978,7 +3978,8 @@
       "进度已保存": "Fortschritt gespeichert",
       "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Browser erlauben einer Seite nicht, ihren eigenen Tab zu schließen. Bitte schließe dieses Fenster oder diesen Tab selbst. Beim nächsten Start kannst du vom Titelbildschirm aus weiterspielen.",
       "结束游戏": "Spiel beenden",
-      "保存进度并退出": "Fortschritt speichern und beenden"
+      "保存进度并退出": "Fortschritt speichern und beenden",
+      "女王的祝福：英雄最大生命值+{0}（现在{1}）。": "Segen der Königin: max. Leben des Helden +{0} (jetzt {1})."
     },
     "joiners": {
       "": " ",

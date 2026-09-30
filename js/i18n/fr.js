@@ -3978,7 +3978,8 @@
       "进度已保存": "Progression sauvegardée",
       "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Les navigateurs ne permettent pas à une page de fermer son propre onglet. Fermez vous-même cette fenêtre ou cet onglet. La prochaine fois, vous pourrez reprendre depuis l'écran titre.",
       "结束游戏": "Quitter le jeu",
-      "保存进度并退出": "Sauvegarder et quitter"
+      "保存进度并退出": "Sauvegarder et quitter",
+      "女王的祝福：英雄最大生命值+{0}（现在{1}）。": "Bénédiction de la Reine : Vie max du héros +{0} (maintenant {1})."
     },
     "joiners": {
       "": " ",

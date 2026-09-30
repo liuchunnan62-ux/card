@@ -628,6 +628,11 @@
     queenBloodAwakened() {
       return (this.data.commanderTrials?.completed || []).includes(7);
     },
+    // 每日成长是否已开启（见 economy.js 的 dailyGrowth）。
+    dailyGrowthActive() {
+      const rule = CF.ECONOMY.dailyGrowth;
+      return (this.data.commanderTrials?.completed || []).includes(rule.requiresTrial) && this.data.hero.maxMana >= rule.requiresMaxMana;
+    },
     useQueenEssenceBlood() {
       const inventory = this.data.inventory || (this.data.inventory = {});
       if (!this.queenBloodAwakened()) return false;

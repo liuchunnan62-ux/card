@@ -4467,7 +4467,8 @@
       "进度已保存": "Progress saved",
       "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Browsers don't let a page close its own tab. Please close this window or tab yourself. Next time you open the game, you can continue from the title screen.",
       "结束游戏": "Quit Game",
-      "保存进度并退出": "Save progress and exit"
+      "保存进度并退出": "Save progress and exit",
+      "女王的祝福：英雄最大生命值+{0}（现在{1}）。": "Queen's Blessing: hero max Health +{0} (now {1})."
     },
     "joiners": {
       "": " ",

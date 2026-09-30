@@ -64,7 +64,14 @@
       const need = this.dailyRations();
       const have = CF.Restaurant.rations();
       save.rations = Math.max(0, have - need);
-      return { day, need, eaten: Math.min(have, need), hungry: have < need };
+      // 每日成长：条件满足时，英雄最大生命值随天数增长，并同步到当前冒险。
+      let maxHealthGain = 0;
+      if (CF.SaveSystem.dailyGrowthActive()) {
+        maxHealthGain = CF.ECONOMY.dailyGrowth.maxHealth;
+        save.hero.maxHealth += maxHealthGain;
+        CF.Adventure?.syncHeroGrowth?.();
+      }
+      return { day, need, eaten: Math.min(have, need), hungry: have < need, maxHealthGain };
     },
     // 在客栈睡一晚：付房费后跳到第二天早上6点，与自然过一天一样结算口粮、刷新投喂次数。
     sleepAtInn() {
