@@ -24,7 +24,8 @@
     { code: "pt", label: "Português" },
     { code: "fr", label: "Français" },
     { code: "de", label: "Deutsch" },
-    { code: "ru", label: "Русский" }
+    { code: "ru", label: "Русский" },
+    { code: "ar", label: "العربية" }
   ];
   const TRANSLATABLE_ATTRIBUTES = ["alt", "title", "aria-label", "placeholder", "data-label"];
   const dictionaries = {};
@@ -48,6 +49,7 @@
       if (code.startsWith("fr")) return "fr";
       if (code.startsWith("de")) return "de";
       if (code.startsWith("ru")) return "ru";
+      if (code.startsWith("ar")) return "ar";
     }
     return SOURCE_LANG;
   }

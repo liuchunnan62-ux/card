@@ -1409,3 +1409,6 @@ button.prison-inmate:hover { transform: translateY(-2px); border-color: var(--go
 .save-transfer-file { display: grid; gap: 6px; margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 .save-transfer-file input { color: var(--gold-bright); max-width: 100%; }
 .save-import-plan { margin: 8px 0 12px; padding-left: 20px; display: grid; gap: 4px; }
+
+/* 阿拉伯语：界面布局保持不变，文字段落按从右到左排版。 */
+html[lang="ar"] :is(p, li, h1, h2, h3, h4, small, q, blockquote, label, .toast) { unicode-bidi: plaintext; }
