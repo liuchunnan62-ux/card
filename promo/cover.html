@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  宣传封面的排版源文件（只用游戏已有素材）。
+  用浏览器打开后截图即可重新生成：
+    cover.html            → 1280×640（GitHub 社交预览尺寸）
+    cover.html?w=1920     → 1920×1080（视频/商店横幅，按 1280×720 排版后放大 1.5 倍）
+  输出放在本目录（promo/），不放进 assets/，免得打包进游戏安装包。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>裂隙征途 宣传封面</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Cinzel:wght@600;800&display=swap">
+<style>
+  :root { --gold: #f3d488; --gold-deep: #b98a3c; --ink: #0b0d10; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; background: var(--ink); }
+  body.wide { width: 1920px; height: 1080px; }
+  .poster { position: relative; width: 1280px; height: 640px; overflow: hidden; transform-origin: 0 0;
+    font-family: "Noto Serif SC", "WenQuanYi Zen Hei", serif; color: #f6ecd6;
+    background: url("../assets/ui/game-cover.png") 62% 40% / cover no-repeat; }
+  body.wide .poster { height: 720px; transform: scale(1.5); }
+  .poster::before { content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(8,9,12,.94) 0%, rgba(8,9,12,.82) 30%, rgba(8,9,12,.25) 58%, rgba(8,9,12,0) 75%),
+      linear-gradient(0deg, rgba(8,9,12,.92) 0%, rgba(8,9,12,.35) 30%, rgba(8,9,12,0) 48%),
+      radial-gradient(ellipse at 70% 20%, rgba(255,210,140,.18), transparent 55%); }
+  .copy { position: absolute; left: 64px; top: 52px; width: 560px; }
+  .eyebrow { font: 600 13px/1 "Cinzel", serif; letter-spacing: .42em; color: var(--gold); opacity: .9; }
+  h1 { margin-top: 14px; font-weight: 900; font-size: 104px; line-height: 1; letter-spacing: .06em;
+    background: linear-gradient(180deg, #fff6d8 0%, #f3d488 45%, #b98a3c 100%); -webkit-background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(60,35,8,.9)) drop-shadow(0 10px 22px rgba(0,0,0,.7)); }
+  .en { margin-top: 12px; font: 800 26px/1 "Cinzel", serif; letter-spacing: .3em; color: #e9d7ae; }
+  .tagline { margin-top: 22px; font-size: 21px; line-height: 1.55; font-weight: 600; color: #f1e6cc; text-shadow: 0 2px 8px #000; }
+  .rule { margin-top: 20px; width: 360px; height: 1px; background: linear-gradient(90deg, var(--gold-deep), transparent); }
+  .feats { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 9px; width: 520px; }
+  .feats span { padding: 6px 13px; font-size: 15px; font-weight: 600; color: #f5e3b8; border: 1px solid rgba(243,212,136,.5);
+    border-radius: 999px; background: rgba(20,16,10,.62); }
+  .cta { position: absolute; left: 64px; bottom: 44px; display: flex; align-items: center; gap: 16px; }
+  .cta b { padding: 11px 22px; border-radius: 10px; font-size: 19px; font-weight: 900; letter-spacing: .12em; color: #2b1a05;
+    background: linear-gradient(180deg, #ffe7a6, #d9a54c); box-shadow: 0 0 0 1px #fff3cc inset, 0 6px 18px rgba(0,0,0,.55); }
+  .cta small { font: 600 15px/1.45 "Cinzel", "Noto Serif SC", serif; color: #e9dcbc; letter-spacing: .04em; }
+  .cta small em { display: block; font-style: normal; font-family: "Noto Serif SC", serif; font-size: 13px; opacity: .8; letter-spacing: .08em; }
+  .heroes { position: absolute; right: 34px; bottom: 26px; display: flex; align-items: flex-end; }
+  .heroes img { width: 84px; margin-left: -14px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.75)); }
+  .heroes img:nth-child(odd) { transform: translateY(-10px); }
+  .heroes img.lead { width: 128px; margin: 0 -4px 0 -6px; transform: translateY(-4px); z-index: 2; }
+  .heroes-label { position: absolute; right: 44px; bottom: 150px; font-size: 14px; font-weight: 600; letter-spacing: .2em;
+    color: var(--gold); text-shadow: 0 2px 6px #000; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="copy">
+    <div class="eyebrow">A SINGLE-PLAYER FANTASY CARD ADVENTURE</div>
+    <h1>裂隙征途</h1>
+    <div class="en">RIFT EXPEDITION</div>
+    <p class="tagline">野兽在裂隙中觉醒，王都护卫队长罗兰·维克<br>集结小队，奔赴各地平乱。</p>
+    <div class="rule"></div>
+    <div class="feats">
+      <span>五大关卡远征</span><span>九名可选英雄</span><span>七关统领试炼</span>
+      <span>竞技场</span><span>营地经营 · 首领结缘</span><span>10 种语言</span>
+    </div>
+  </div>
+  <div class="cta">
+    <b>免费在线试玩</b>
+    <small>liuchunnan62-ux.github.io/card<em>浏览器打开即玩 · 电脑手机都可以 · 无需安装</em></small>
+  </div>
+  <div class="heroes-label">— 九名英雄 · 各有独特技能 —</div>
+  <div class="heroes">
+    <img src="../assets/heroes/elf-archer.webp" alt="">
+    <img src="../assets/heroes/violet-witch.webp" alt="">
+    <img src="../assets/heroes/dawn-priestess.webp" alt="">
+    <img src="../assets/heroes/horned-berserker.webp" alt="">
+    <img class="lead" src="../assets/hero/novice-swordsman.png" alt="">
+    <img src="../assets/heroes/silverleaf-ranger.webp" alt="">
+    <img src="../assets/heroes/crimson-hood.webp" alt="">
+    <img src="../assets/heroes/aegis-knight.webp" alt="">
+    <img src="../assets/heroes/grove-dryad.webp" alt="">
+  </div>
+</div>
+<script>
+  if (new URLSearchParams(location.search).get("w") === "1920") document.body.classList.add("wide");
+</script>
+</body>
+</html>
