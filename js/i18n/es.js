@@ -3978,7 +3978,8 @@
       "进度已保存": "Progreso guardado",
       "浏览器不允许网页自己关闭标签页，请直接关闭这个窗口或标签页。下次打开游戏即可从开始界面继续。": "Los navegadores no permiten que una página cierre su propia pestaña. Cierra tú mismo esta ventana o pestaña. La próxima vez que abras el juego podrás continuar desde la pantalla de título.",
       "结束游戏": "Salir del juego",
-      "保存进度并退出": "Guardar el progreso y salir"
+      "保存进度并退出": "Guardar el progreso y salir",
+      "女王的祝福：英雄最大生命值+{0}（现在{1}）。": "Bendición de la Reina: Salud máxima del héroe +{0} (ahora {1})."
     },
     "joiners": {
       "": " ",

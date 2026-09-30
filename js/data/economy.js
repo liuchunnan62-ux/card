@@ -13,6 +13,8 @@
     },
     // 游戏时间：现实 dayMinutes 分钟为游戏里的一天；每天额外吃掉 dailyBattles 场战斗的口粮。
     clock: { dayMinutes: 24, dailyBattles: 3, innPrice: 30 },
+    // 每日成长：通关统领试炼第 requiresTrial 关且最大法力达到 requiresMaxMana 后，每到新的一天英雄最大生命值 +maxHealth（客栈过夜同样计算）。
+    dailyGrowth: { requiresTrial: 7, requiresMaxMana: 10, maxHealth: 1 },
     // 好感：affinity 到 threshold 结缘（Lv1），之后每 step 点升一级，最高 maxLevel 级。
     bond: { threshold: 100, step: 100, maxLevel: 5, levelNames: ["", "结缘", "亲近", "挚友", "羁绊", "誓约"] },
     // 族群口味：投喂本族最爱的食物时好感度翻倍。键是章节编号。

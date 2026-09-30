@@ -163,6 +163,7 @@
         this.toast(report.hungry
           ? `第${report.day}天：粮食不够日常所需（${report.need}份），库存已经吃光了。快去金杯餐馆买面粉！`
           : `第${report.day}天开始：队伍吃掉了${report.need}份日常口粮，在押首领又可以投喂了。`, report.hungry ? "bad" : "good");
+        if (report.maxHealthGain) this.toast(`女王的祝福：英雄最大生命值+${report.maxHealthGain}（现在${CF.SaveSystem.data.hero.maxHealth}）。`, "good");
       });
       if (this.screen === "prison" && !modalRoot.innerHTML) this.renderPrison();
       else this.refreshTopbar();
